@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>基站射频收发芯片 — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #c0392b; --primary-dark: #7b241c; --accent: #e74c3c;
+    --accent2: #d97706; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+    --optical: #1a56db; --wireless: #e74c3c; --industrial: #27ae60;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  /* HERO */
+  .hero { background: linear-gradient(135deg, #991b1b 0%, #e74c3c 50%, #d97706 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  /* NAV */
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  /* CONTAINER */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  /* CARD */
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #c0392b11, #c0392b05); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #e74c3c); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #fdf0ee; }
+  /* DIAGRAM */
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  /* BOXES */
+  .info-box { border-left: 4px solid var(--primary); background: #fef5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #fffdf0; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  /* METRIC CARD */
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #7b241c, #c0392b); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  /* STEPS */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  /* CAUTION */
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  /* FORMULA */
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  /* CHIPS */
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  /* COMPARE */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #eff6ff; border: 2px solid var(--primary); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  /* FOOTER */
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  /* MISC */
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>📡 基站射频收发芯片</h1>
+  <div class="subtitle">Base Station RF Transceiver — 5G/4G 基站 RRU/AAU 核心射频芯片</div>
+  <div class="badge-row">
+    <span class="badge">📡 5G NR Sub-6GHz</span>
+    <span class="badge">⚡ Massive MIMO 64T64R</span>
+    <span class="badge">🔗 JESD204B/C</span>
+    <span class="badge">📊 ZIF 零中频架构</span>
+    <span class="badge">🧪 256QAM EVM &lt;0.8%</span>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 核心模块深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、核心对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ Section 1: 背景与定位 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div><div class="icon">📖</div><h2>背景与应用定位</h2>
+    </div>
+    <div class="card-body">
+      <p>基站射频收发芯片是<strong>5G/4G 基站 RRU（射频拉远单元）或 AAU（有源天线单元）的核心射频芯片</strong>，负责基带信号与射频信号之间的频率转换和信号调理。它是连接数字基带处理器与天线阵列的关键桥梁，决定了基站的覆盖范围、信号质量和系统容量。</p>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col red">
+          <h3>📌 产品定位</h3>
+          <p><strong>产业链位置：</strong>RRU/AAU 内部，处于天线与数字基带处理器（BBU/DU）之间</p>
+          <p><strong>核心价值：</strong>将基带数字信号高效转换为射频信号发射，并将接收的微弱射频信号高质量下变频为基带信号</p>
+          <p><strong>本质功能：</strong>频率变换（上/下变频）+ 信号调理（放大/滤波/数字化）</p>
+        </div>
+        <div class="compare-col green">
+          <h3>🎯 典型应用场景</h3>
+          <ul>
+            <li>5G NR 宏基站 (Macro Cell): Sub-6GHz n77/n78/n79</li>
+            <li>5G 小基站 (Small Cell): 室内覆盖与补盲</li>
+            <li>Massive MIMO AAU: 64T64R, 32T32R 天线阵列</li>
+            <li>4G LTE 基站升级和维护</li>
+            <li>毫米波 (mmWave) 基站前端</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">技术路线</h4>
+      <table>
+        <thead><tr><th>维度</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>制程节点</strong></td><td>RF-SOI / SiGe BiCMOS / RF-CMOS 28nm/22nm</td><td>兼顾高频性能与集成度</td></tr>
+          <tr><td><strong>收发架构</strong></td><td>ZIF（零中频）/ DIF（数字中频）</td><td>ZIF 为主流，易于多通道集成</td></tr>
+          <tr><td><strong>频段覆盖</strong></td><td>Sub-6GHz: n77(3.3-4.2G), n78(3.3-3.8G), n79(4.4-5.0G)</td><td>5G NR FR1 核心频段</td></tr>
+          <tr><td><strong>瞬时带宽</strong></td><td>100MHz / 200MHz / 400MHz</td><td>可编程，支持载波聚合</td></tr>
+          <tr><td><strong>通道数（单芯片）</strong></td><td>2T2R / 4T4R / 8T8R</td><td>多芯片组合支持 64T64R</td></tr>
+          <tr><td><strong>调制支持</strong></td><td>QPSK / 16QAM / 64QAM / 256QAM</td><td>最高 256QAM，EVM &lt;0.8%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2: 工作原理 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div><div class="icon">⚙️</div><h2>核心工作原理</h2>
+    </div>
+    <div class="card-body">
+      <p>基站射频收发芯片采用<strong>零中频（ZIF, Zero-IF）接收架构</strong>，将射频信号直接下变频到基带 I/Q 信号。与传统的超外差架构相比，ZIF 无镜像频率问题，结构简单易于多通道集成，但对 DC offset、I/Q 不平衡和 LO 泄漏较为敏感。</p>
+
+      <h4>📥 接收方向 (RX Path) 信号处理流程</h4>
+      <div class="diagram-title">图 2-1 | RX 接收链路信号流</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 120" width="800" height="120" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrRed" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#c0392b"/></marker></defs>
+          <rect x="10" y="15" width="78" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="49" y="38" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">天线+LNA</text>
+          <line x1="88" y1="33" x2="115" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="120" y="15" width="70" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="155" y="38" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">I/Q Mixer</text>
+          <line x1="190" y1="33" x2="217" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="222" y="15" width="68" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="256" y="38" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">LPF/AAF</text>
+          <line x1="290" y1="33" x2="317" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="322" y="15" width="62" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="353" y="38" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">PGA</text>
+          <line x1="384" y1="33" x2="411" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="416" y="15" width="60" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="446" y="38" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">ADC</text>
+          <line x1="476" y1="33" x2="510" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="515" y="10" width="220" height="48" rx="8" fill="#c0392b" stroke="#7b241c" stroke-width="2"/>
+          <text x="625" y="32" fill="white" font-size="12" font-weight="700" text-anchor="middle">DFE: DDC→NCO→抽取滤波</text>
+          <text x="625" y="48" fill="#fecaca" font-size="9" text-anchor="middle">下变频 + 采样率转换 + CFR</text>
+          <line x1="735" y1="33" x2="770" y2="33" stroke="#c0392b" stroke-width="2"/>
+          <text x="795" y="37" fill="#7b241c" font-size="10" font-weight="700">BBU</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:14px;">RX 链路各模块详解</h4>
+      <table>
+        <thead><tr><th>模块</th><th>功能</th><th>关键参数</th></tr></thead>
+        <tbody>
+          <tr><td><strong>LNA</strong></td><td>低噪声放大，设定系统噪声系数</td><td>NF &lt;2dB, Gain 15~25dB</td></tr>
+          <tr><td><strong>I/Q Mixer</strong></td><td>RF 下变频到基带 I/Q</td><td>IIP3 &gt;+10dBm, Conversion Gain 5~10dB</td></tr>
+          <tr><td><strong>TIA</strong></td><td>电流-电压转换（有源混频器）</td><td>噪声 &lt;3nV/sqrt(Hz)</td></tr>
+          <tr><td><strong>LPF/AAF</strong></td><td>信道选择，抗混叠滤波</td><td>BW 可编程 20~200MHz</td></tr>
+          <tr><td><strong>PGA/VGA</strong></td><td>可变增益放大，调整信号幅度</td><td>0~30dB，步进 0.5dB</td></tr>
+          <tr><td><strong>ADC</strong></td><td>模数转换</td><td>12~14bit, 200~500MSPS</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:16px;">📤 发送方向 (TX Path) 信号处理流程</h4>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 120" width="800" height="120" xmlns="http://www.w3.org/2000/svg">
+          <text x="10" y="37" fill="#7b241c" font-size="10" font-weight="700">BBU</text>
+          <line x1="43" y1="33" x2="70" y2="33" stroke="#c0392b" stroke-width="2"/>
+          <rect x="75" y="10" width="220" height="48" rx="8" fill="#c0392b" stroke="#7b241c" stroke-width="2"/>
+          <text x="185" y="32" fill="white" font-size="12" font-weight="700" text-anchor="middle">DFE: DUC→NCO→内插滤波</text>
+          <text x="185" y="48" fill="#fecaca" font-size="9" text-anchor="middle">上变频 + 波形整形 + DPD + CFR</text>
+          <line x1="295" y1="33" x2="325" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="330" y="15" width="60" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="360" y="38" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">DAC</text>
+          <line x1="390" y1="33" x2="418" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="423" y="15" width="65" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="455" y="38" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">LPF 重建</text>
+          <line x1="488" y1="33" x2="515" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="520" y="15" width="73" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="556" y="38" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">I/Q Mixer Up</text>
+          <line x1="593" y1="33" x2="620" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="625" y="15" width="75" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="662" y="38" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">PA Driver</text>
+          <line x1="700" y1="33" x2="727" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="732" y="15" width="70" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="767" y="38" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">PA→天线</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:16px;">📡 频率合成器 (LO/PLL) 架构</h4>
+      <p>架构链：<strong>TCXO（参考时钟）</strong> → PFD（鉴频鉴相器）→ CP（电荷泵）→ 环路滤波器 → <strong>宽带 VCO</strong> → 分频器 → 反馈至 PFD，同时输出至 Mixer LO。</p>
+      <table>
+        <thead><tr><th>参数</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>频率范围</strong></td><td>3.3~5.0 GHz</td><td>覆盖 n77/n78/n79 全频段</td></tr>
+          <tr><td><strong>频率步进</strong></td><td>&lt;1 kHz</td><td>精细调谐</td></tr>
+          <tr><td><strong>相噪 @100kHz</strong></td><td>&lt;−110 dBc/Hz</td><td>影响 EVM 的关键</td></tr>
+          <tr><td><strong>相噪 @1MHz</strong></td><td>&lt;−135 dBc/Hz</td><td>影响宽带 SNR</td></tr>
+          <tr><td><strong>积分抖动</strong></td><td>&lt;100 fs RMS</td><td>10k~40MHz 积分</td></tr>
+          <tr><td><strong>锁定时间</strong></td><td>&lt;50 μs</td><td>快速跳频</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:16px;">🧮 数字前端 (DFE) 子模块</h4>
+      <table>
+        <thead><tr><th>子模块</th><th>功能</th><th>关键说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>DDC（数字下变频）</strong></td><td>ADC 数据 IF/零中频 → 基带</td><td>降低数据速率，便于基带处理</td></tr>
+          <tr><td><strong>DUC（数字上变频）</strong></td><td>基带 → IF/零中频 → DAC</td><td>匹配 DAC 采样率</td></tr>
+          <tr><td><strong>NCO</strong></td><td>生成数字本振信号</td><td>高精度频率合成</td></tr>
+          <tr><td><strong>抽取/内插滤波</strong></td><td>采样率转换</td><td>多级 CIC + FIR 实现</td></tr>
+          <tr><td><strong>CFR（峰均比抑制）</strong></td><td>降低 PAPR</td><td>削峰+滤波，改善 PA 效率</td></tr>
+          <tr><td><strong>DPD（数字预失真）</strong></td><td>PA 线性化</td><td>5G 高 PAPR 场景必选</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box"><strong>💡 关键认知：</strong>ZIF 架构的核心优势是结构简单、易于多通道集成（每通道仅需一个 PLL），但 DC offset、I/Q 不平衡和 LO 泄漏是其"先天缺陷"——必须通过数字校准和温度补偿来克服。优秀的校准算法是射频收发芯片的核心竞争力。</div>
+
+      <div class="warn-box"><strong>⚠️ ZIF 架构固有挑战：</strong>① DC Offset — 本振自混频产生的直流偏置，压制基带信号动态范围；② I/Q Imbalance — 幅度和相位失配导致镜像干扰；③ LO Leakage — 本振信号泄漏到天线端，影响邻道；④ Flicker Noise — 低频闪烁噪声恶化零中频处 SNR。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2B: 模块深度解析 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header" style="background:linear-gradient(90deg,#fef3c7,#fde68a);border-bottom:2px solid #f59e0b;">
+      <div class="section-no" style="background:#d97706;">🔬</div><div class="icon">🧠</div><h2 style="color:#92400e;">核心模块深度解析</h2>
+    </div>
+    <div class="card-body">
+
+      <!-- LNA -->
+      <h4 style="color:#92400e;">一、LNA 低噪声放大器 — 系统噪声系数的"天花板"</h4>
+      <p>LNA 是接收链路的第一个有源模块，其噪声系数直接决定了整个接收系统的灵敏度上限。根据 Friis 公式，第一级增益越高、噪声越低，后续级联模块的噪声贡献就越小。</p>
+      <div class="formula">NF_total = NF₁ + (NF₂−1)/G₁ + (NF₃−1)/(G₁·G₂) + ...</div>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>NF</td><td>&lt;2.0 dB</td><td>噪声系数，越低越好</td></tr>
+          <tr><td>Gain</td><td>15~25 dB</td><td>增益不足则后级噪声贡献增大</td></tr>
+          <tr><td>IIP3</td><td>&gt;−5 dBm</td><td>线性度指标，处理阻塞信号能力</td></tr>
+          <tr><td>输入匹配 S11</td><td>&lt;−10 dB</td><td>50Ω 天线接口匹配</td></tr>
+          <tr><td>功耗</td><td>&lt;30 mW</td><td>每通道功耗</td></tr>
+        </tbody>
+      </table>
+
+      <!-- I/Q Mixer -->
+      <h4 style="color:#92400e;margin-top:20px;">二、I/Q Mixer 混频器 — 频率转换的核心</h4>
+      <p>I/Q Mixer 将射频信号与本振 (LO) 信号相乘，产生 I（同相）和 Q（正交）两路基带信号。在 ZIF 架构中，射频频率与 LO 频率相等，输出即为基带信号。</p>
+      <div class="formula">IF = RF × LO → I = RF·cos(ωt), Q = RF·sin(ωt)</div>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>IIP3</td><td>&gt;+10 dBm</td><td>三阶截点，越高线性度越好</td></tr>
+          <tr><td>Conversion Gain</td><td>5~10 dB</td><td>变频增益</td></tr>
+          <tr><td>镜像抑制</td><td>&gt;50 dBc</td><td>I/Q 校准后</td></tr>
+          <tr><td>LO-RF 隔离</td><td>&gt;40 dB</td><td>防止 LO 泄漏</td></tr>
+        </tbody>
+      </table>
+      <div class="warn-box"><strong>⚠️ 为什么 IIP3 如此重要？</strong>基站环境中常有强邻道信号（如 2G/3G/4G 共存），若 IIP3 不足，这些阻塞信号会产生三阶互调产物落入信号带内，导致灵敏度恶化。典型的 3GPP 阻塞测试要求 IIP3 > +5dBm。</div>
+
+      <!-- ADC -->
+      <h4 style="color:#92400e;margin-top:20px;">三、ADC 模数转换器 — 动态范围的最终守护者</h4>
+      <p>ZIF 架构的 ADC 直接采样基带 I/Q 信号。ADC 的 ENOB（有效位数）和采样率决定了接收机的瞬时动态范围和带宽。</p>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>分辨率</td><td>12~14 bit</td><td>量化精度</td></tr>
+          <tr><td>采样率</td><td>200~500 MSPS</td><td>支持 100/200MHz 带宽</td></tr>
+          <tr><td>ENOB</td><td>&gt;10.5 bit</td><td>有效位数，考虑噪声和失真</td></tr>
+          <tr><td>SFDR</td><td>&gt;75 dBc</td><td>无杂散动态范围</td></tr>
+          <tr><td>功耗</td><td>&lt;400 mW/ch</td><td>14bit 200MSPS 级别</td></tr>
+        </tbody>
+      </table>
+
+      <!-- PLL -->
+      <h4 style="color:#92400e;margin-top:20px;">四、频率合成器 PLL — 相位噪声的源头</h4>
+      <p>PLL 提供的本振信号相噪直接"混入"基带信号，成为 EVM 恶化的重要来源。宽带 VCO 设计需在调谐范围和相噪之间折中。</p>
+      <table>
+        <thead><tr><th>参数</th><th>规格</th><th>影响</th></tr></thead>
+        <tbody>
+          <tr><td>相噪@100kHz</td><td>&lt;−110 dBc/Hz</td><td>影响近载波 EVM</td></tr>
+          <tr><td>相噪@1MHz</td><td>&lt;−135 dBc/Hz</td><td>影响宽带 SNR</td></tr>
+          <tr><td>积分抖动 (10k~40MHz)</td><td>&lt;100 fs RMS</td><td>直接影响 256QAM EVM</td></tr>
+          <tr><td>锁定时间</td><td>&lt;50 μs</td><td>跳频速度</td></tr>
+          <tr><td>杂散</td><td>&lt;−70 dBc</td><td>参考杂散和分数杂散</td></tr>
+        </tbody>
+      </table>
+
+      <!-- DFE -->
+      <h4 style="color:#92400e;margin-top:20px;">五、DFE 数字前端 — 信号质量的关键数字环节</h4>
+      <p><strong>DDC/DUC 架构：</strong>DDC 将 ADC 高速数据流下变频到基带并降低采样率（抽取），DUC 则将基带数据插值并上变频到 DAC 所需速率。</p>
+      <div class="formula">DDC: ADC Data → NCO 混频 → 抽取滤波 (CIC+FIR) → 基带 I/Q &nbsp;&nbsp;|&nbsp;&nbsp; DUC: 基带 I/Q → 内插滤波 → NCO 混频 → DAC Data</div>
+      <p><strong>CFR（峰均比抑制）：</strong>5G NR OFDM 信号的 PAPR 可达 ~10dB，直接发射需 PA 有极大的回退功率，效率极低。CFR 通过削峰和滤波将 PAPR 降低至 ~6-7dB，大幅提升 PA 效率。</p>
+      <p><strong>DPD（数字预失真）：</strong>PA 在大功率下呈现非线性（AM-AM 和 AM-PM 失真），DPD 通过预失真映射表补偿 PA 的非线性，将 ACLR 改善 10~15dB。5G 高 PAPR 场景下 DPD 几乎是必选项。</p>
+
+      <!-- JESD204B/C -->
+      <h4 style="color:#92400e;margin-top:20px;">六、JESD204B/C 高速接口 — 确定性延迟是关键</h4>
+      <p>JESD204B/C 是基站射频收发芯片与基带处理器之间的标准高速串行接口。对于 Massive MIMO 波束赋形应用，<strong>确定性延迟</strong>（Deterministic Latency）至关重要——所有通道的数据必须在严格时间对齐内到达基带。</p>
+      <table>
+        <thead><tr><th>特性</th><th>JESD204B</th><th>JESD204C</th></tr></thead>
+        <tbody>
+          <tr><td>最大通道速率</td><td>12.5 Gbps</td><td>32 Gbps</td></tr>
+          <tr><td>编码</td><td>8b/10b</td><td>64b/66b + 64b/80b</td></tr>
+          <tr><td>效率</td><td>80%</td><td>~94%</td></tr>
+          <tr><td>确定性延迟</td><td>支持</td><td>支持（增强）</td></tr>
+          <tr><td>通道数/lane</td><td>1~8</td><td>1~16</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Multi-Chip Sync：</strong>在 64T64R 系统中，多颗芯片间的 SYNC~ 信号需要严格对齐，通常通过 SYSREF 信号实现。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 3: 电路框图 ═══════════ -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div><div class="icon">🔲</div><h2>芯片内部电路框图</h2>
+    </div>
+    <div class="card-body">
+      <div class="diagram-title">图 3-1 | 基站射频收发芯片 (2T2R) 内部架构</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 520" width="780" height="500" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <rect width="820" height="520" fill="#fafafa" rx="8"/>
+          <!-- RX0 Row -->
+          <rect x="15" y="15" width="160" height="60" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="95" y="40" font-size="11" fill="#991b1b" text-anchor="middle" font-weight="bold">RX0 接收链</text>
+          <text x="95" y="56" font-size="9" fill="#ef4444" text-anchor="middle">LNA→Mixer→TIA→LPF→PGA→ADC</text>
+          <text x="95" y="70" font-size="8" fill="#f87171" text-anchor="middle">NF&lt;2.5dB | BW 100/200/400M</text>
+
+          <!-- TX0 Row -->
+          <rect x="190" y="15" width="160" height="60" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="270" y="40" font-size="11" fill="#991b1b" text-anchor="middle" font-weight="bold">TX0 发送链</text>
+          <text x="270" y="56" font-size="9" fill="#ef4444" text-anchor="middle">DAC→LPF→Mixer→PA Driver</text>
+          <text x="270" y="70" font-size="8" fill="#f87171" text-anchor="middle">Pout+5dBm | ACLR&lt;-47dBc</text>
+
+          <!-- RX1 Row -->
+          <rect x="365" y="15" width="160" height="60" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="445" y="40" font-size="11" fill="#991b1b" text-anchor="middle" font-weight="bold">RX1 接收链</text>
+          <text x="445" y="56" font-size="9" fill="#ef4444" text-anchor="middle">同 RX0 对称结构</text>
+          <text x="445" y="70" font-size="8" fill="#f87171" text-anchor="middle">通道间匹配 &lt;±2° / ±0.5dB</text>
+
+          <!-- TX1 Row -->
+          <rect x="540" y="15" width="160" height="60" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="620" y="40" font-size="11" fill="#991b1b" text-anchor="middle" font-weight="bold">TX1 发送链</text>
+          <text x="620" y="56" font-size="9" fill="#ef4444" text-anchor="middle">同 TX0 对称结构</text>
+          <text x="620" y="70" font-size="8" fill="#f87171" text-anchor="middle">通道间匹配 &lt;±2° / ±0.5dB</text>
+
+          <!-- LO/PLL Block -->
+          <rect x="715" y="15" width="90" height="60" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="760" y="32" font-size="10" fill="#92400e" text-anchor="middle" font-weight="bold">LO/PLL</text>
+          <text x="760" y="48" font-size="8" fill="#b45309" text-anchor="middle">3.3-5.0GHz</text>
+          <text x="760" y="62" font-size="8" fill="#b45309" text-anchor="middle">PN &lt;-110dBc</text>
+
+          <!-- DFE Block -->
+          <rect x="15" y="90" width="790" height="230" rx="8" fill="#fef5f5" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="410" y="112" font-size="12" fill="#7b241c" text-anchor="middle" font-weight="bold">数字前端 (DFE) — 共享数字处理引擎</text>
+
+          <!-- DFE Row 1: DDC/DUC -->
+          <rect x="30" y="124" width="180" height="42" rx="5" fill="white" stroke="#fca5a5"/>
+          <text x="120" y="142" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">DDC (RX 数字下变频)</text>
+          <text x="120" y="158" font-size="8" fill="#ef4444" text-anchor="middle">NCO + 抽取滤波 (CIC+FIR)</text>
+
+          <rect x="225" y="124" width="180" height="42" rx="5" fill="white" stroke="#fca5a5"/>
+          <text x="315" y="142" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">DUC (TX 数字上变频)</text>
+          <text x="315" y="158" font-size="8" fill="#ef4444" text-anchor="middle">内插滤波 + NCO</text>
+
+          <rect x="420" y="124" width="180" height="42" rx="5" fill="white" stroke="#fca5a5"/>
+          <text x="510" y="142" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">NCO 数控振荡器</text>
+          <text x="510" y="158" font-size="8" fill="#ef4444" text-anchor="middle">频率精度 &lt;1Hz</text>
+
+          <rect x="615" y="124" width="175" height="42" rx="5" fill="white" stroke="#fca5a5"/>
+          <text x="702" y="142" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">I/Q 校准引擎</text>
+          <text x="702" y="158" font-size="8" fill="#ef4444" text-anchor="middle">幅度±相位补偿</text>
+
+          <!-- DFE Row 2: CFR/DPD -->
+          <rect x="30" y="178" width="250" height="42" rx="5" fill="white" stroke="#fca5a5"/>
+          <text x="155" y="196" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">CFR 峰均比抑制</text>
+          <text x="155" y="212" font-size="8" fill="#ef4444" text-anchor="middle">削峰+滤波, PAPR −3~4dB 改善</text>
+
+          <rect x="295" y="178" width="250" height="42" rx="5" fill="white" stroke="#fca5a5"/>
+          <text x="420" y="196" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">DPD 数字预失真</text>
+          <text x="420" y="212" font-size="8" fill="#ef4444" text-anchor="middle">AM-AM/AM-PM 补偿, ACLR +10~15dB</text>
+
+          <rect x="560" y="178" width="230" height="42" rx="5" fill="white" stroke="#fca5a5"/>
+          <text x="675" y="196" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">直流偏移/LO 泄漏校准</text>
+          <text x="675" y="212" font-size="8" fill="#ef4444" text-anchor="middle">温度补偿 LUT</text>
+
+          <!-- DFE Row 3: Interface -->
+          <rect x="30" y="232" width="250" height="42" rx="5" fill="white" stroke="#fca5a5"/>
+          <text x="155" y="250" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">JESD204B/C TX 链路层</text>
+          <text x="155" y="266" font-size="8" fill="#ef4444" text-anchor="middle">8b10b/64b66b, 确定性延迟</text>
+
+          <rect x="295" y="232" width="250" height="42" rx="5" fill="white" stroke="#fca5a5"/>
+          <text x="420" y="250" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">JESD204B/C RX 链路层</text>
+          <text x="420" y="266" font-size="8" fill="#ef4444" text-anchor="middle">通道解映射+同步</text>
+
+          <rect x="560" y="232" width="230" height="42" rx="5" fill="white" stroke="#fca5a5"/>
+          <text x="675" y="250" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">SYSREF 多芯片同步</text>
+          <text x="675" y="266" font-size="8" fill="#ef4444" text-anchor="middle">Subclass 1 确定性延迟</text>
+
+          <!-- Monitor Row -->
+          <rect x="15" y="335" width="790" height="55" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="410" y="352" font-size="11" fill="#475569" text-anchor="middle" font-weight="bold">系统监测 & 管理接口</text>
+          <rect x="30" y="360" width="110" height="22" rx="4" fill="#e2e8f0"/><text x="85" y="375" font-size="9" fill="#475569" text-anchor="middle">Temp Sensor ±2°C</text>
+          <rect x="150" y="360" width="110" height="22" rx="4" fill="#e2e8f0"/><text x="205" y="375" font-size="9" fill="#475569" text-anchor="middle">功率检测器</text>
+          <rect x="270" y="360" width="90" height="22" rx="4" fill="#e2e8f0"/><text x="315" y="375" font-size="9" fill="#475569" text-anchor="middle">AUX ADC</text>
+          <rect x="370" y="360" width="90" height="22" rx="4" fill="#e2e8f0"/><text x="415" y="375" font-size="9" fill="#475569" text-anchor="middle">AUX DAC</text>
+          <rect x="470" y="360" width="90" height="22" rx="4" fill="#e2e8f0"/><text x="515" y="375" font-size="9" fill="#475569" text-anchor="middle">SPI Slave</text>
+          <rect x="570" y="360" width="80" height="22" rx="4" fill="#e2e8f0"/><text x="610" y="375" font-size="9" fill="#475569" text-anchor="middle">GPIO</text>
+          <rect x="660" y="360" width="55" height="22" rx="4" fill="#e2e8f0"/><text x="687" y="375" font-size="9" fill="#475569" text-anchor="middle">JTAG</text>
+
+          <!-- Power Row -->
+          <rect x="15" y="400" width="790" height="45" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="410" y="420" font-size="10" fill="#991b1b" text-anchor="middle" font-weight="bold">电源管理: AVDD 1.8V | DVDD 1.2V | Vcore 0.9V | IO 1.8V/2.5V | 多轨供电，独立域隔离</text>
+
+          <!-- Interface labels -->
+          <text x="95" y="470" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">RF Port 0: RX0/TX0 (3.3-5.0GHz)</text>
+          <text x="445" y="470" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">RF Port 1: RX1/TX1 (3.3-5.0GHz)</text>
+          <text x="760" y="470" font-size="9" fill="#6b7280" text-anchor="middle">Flip-Chip BGA</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>说明：</strong>本图展示 2T2R 单芯片架构。RX0/RX1 各含完整接收链（LNA 至 ADC），TX0/TX1 各含完整发送链（DAC 至 PA Driver），共享 LO/PLL 和 DFE 引擎。多芯片级联可扩展至 4T4R、8T8R 甚至 64T64R（多芯片组合）。通道间相位一致性 &lt;±2°、幅度一致性 &lt;±0.5dB 是 Massive MIMO 波束赋形的基本要求。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 4: 核心对比 ═══════════ -->
+<section id="sec4">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">4</div><div class="icon">⚖️</div><h2>代际与技术对比</h2>
+    </div>
+    <div class="card-body">
+      <h4>5G NR vs 4G LTE 收发芯片需求对比</h4>
+      <table>
+        <thead><tr><th>对比维度</th><th>4G LTE 基站</th><th>5G NR 基站</th><th>提升/变化</th></tr></thead>
+        <tbody>
+          <tr><td><strong>频段</strong></td><td>600MHz~2.7GHz</td><td>3.3~5.0GHz (Sub-6G) + mmWave</td><td>频率翻倍</td></tr>
+          <tr><td><strong>最大带宽</strong></td><td>20 MHz (CA 合计 100MHz)</td><td>100/200/400 MHz</td><td>5~20×</td></tr>
+          <tr><td><strong>调制阶数</strong></td><td>64QAM 为主</td><td>256QAM（后续 1024QAM）</td><td>EVM 要求更严</td></tr>
+          <tr><td><strong>MIMO 天线数</strong></td><td>2T2R~8T8R</td><td>64T64R (Massive MIMO)</td><td>8~32×</td></tr>
+          <tr><td><strong>PAPR</strong></td><td>~8 dB (SC-FDMA UL)</td><td>~10 dB (OFDM)</td><td>PA 效率更低</td></tr>
+          <tr><td><strong>EVM 要求 (256QAM)</strong></td><td>~4%</td><td>&lt;3.5% (系统)；&lt;0.8% (DUT)</td><td>更严格</td></tr>
+          <tr><td><strong>ACLR</strong></td><td>&lt;−45 dBc</td><td>&lt;−47 dBc</td><td>更严格</td></tr>
+          <tr><td><strong>基带接口</strong></td><td>CPRI / JESD204B</td><td>eCPRI / JESD204C</td><td>速率提升</td></tr>
+          <tr><td><strong>单芯片功耗</strong></td><td>~3W (2T2R)</td><td>~5W (2T2R)</td><td>带宽和线性度换取</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">收发架构对比：ZIF vs 超外差</h4>
+      <div class="compare-grid">
+        <div class="compare-col red">
+          <h3>✅ ZIF 零中频（当前主流）</h3>
+          <ul>
+            <li>结构简单，成本低，易于多通道集成</li>
+            <li>无镜像频率问题</li>
+            <li>仅需一个 PLL 频率源</li>
+            <li>适合 Massive MIMO 64T64R</li>
+            <li>缺点：DC offset, I/Q 不平衡需校准</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>🔶 超外差（经典方案）</h3>
+          <ul>
+            <li>性能优秀，无 DC offset 问题</li>
+            <li>需要中频滤波器（通常为声表 SAW）</li>
+            <li>需要多个 PLL（RF LO + IF LO）</li>
+            <li>镜像抑制依赖外部滤波器</li>
+            <li>集成度低，不适合多通道阵列</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">MIMO 规模演进</h4>
+      <table>
+        <thead><tr><th>MIMO 配置</th><th>典型应用</th><th>芯片需求</th><th>校准复杂度</th></tr></thead>
+        <tbody>
+          <tr><td><strong>2T2R</strong></td><td>小基站 / 4G 升级</td><td>1 颗芯片</td><td>低</td></tr>
+          <tr><td><strong>4T4R</strong></td><td>小基站 / 室内覆盖</td><td>1~2 颗芯片</td><td>中</td></tr>
+          <tr><td><strong>8T8R</strong></td><td>宏基站基础配置</td><td>1~2 颗芯片</td><td>中</td></tr>
+          <tr><td><strong>32T32R</strong></td><td>宏基站 Massive MIMO</td><td>4~8 颗芯片</td><td>高</td></tr>
+          <tr><td><strong>64T64R</strong></td><td>宏基站旗舰 Massive MIMO</td><td>8~16 颗芯片</td><td>极高（相位±2°, 幅度±0.5dB）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 5: 核心指标 ═══════════ -->
+<section id="sec5">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">5</div><div class="icon">📊</div><h2>核心性能指标</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📌 5.1 接收链路指标</h4>
+      <table>
+        <thead><tr><th>指标名称</th><th>规格</th><th>单位</th><th>测试条件</th></tr></thead>
+        <tbody>
+          <tr><td><strong>频率范围</strong></td><td>3.3~5.0</td><td>GHz</td><td>n77/n78/n79 全覆盖</td></tr>
+          <tr><td><strong>瞬时带宽</strong></td><td>100 / 200 / 400</td><td>MHz</td><td>可编程</td></tr>
+          <tr><td><strong>噪声系数 NF</strong></td><td>&lt;2.5</td><td>dB</td><td>Max gain 模式下</td></tr>
+          <tr><td><strong>增益范围</strong></td><td>0~50</td><td>dB</td><td>步进 0.5dB</td></tr>
+          <tr><td><strong>IIP3</strong></td><td>&gt;+5</td><td>dBm</td><td>Min gain 模式下</td></tr>
+          <tr><td><strong>镜像抑制</strong></td><td>&gt;50</td><td>dBc</td><td>I/Q 校准后</td></tr>
+          <tr><td><strong>ADC ENOB</strong></td><td>&gt;10.5</td><td>bit</td><td>@200MHz BW</td></tr>
+          <tr><td><strong>功耗</strong></td><td>&lt;1.5</td><td>W/ch</td><td>单接收通道</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.2 发送链路指标</h4>
+      <table>
+        <thead><tr><th>指标名称</th><th>规格</th><th>单位</th><th>测试条件</th></tr></thead>
+        <tbody>
+          <tr><td><strong>输出功率</strong></td><td>+5</td><td>dBm</td><td>PA Driver 输出</td></tr>
+          <tr><td><strong>ACLR</strong></td><td>&lt;−47</td><td>dBc</td><td>100MHz 5G NR 信号</td></tr>
+          <tr><td><strong>EVM</strong></td><td>&lt;0.8</td><td>%</td><td>256QAM, PA Driver 输出</td></tr>
+          <tr><td><strong>LO Leakage</strong></td><td>&lt;−45</td><td>dBc</td><td>校准后</td></tr>
+          <tr><td><strong>镜像抑制</strong></td><td>&gt;55</td><td>dBc</td><td>TX 侧</td></tr>
+          <tr><td><strong>功耗</strong></td><td>&lt;2.0</td><td>W/ch</td><td>单发送通道</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.3 LO 频率合成器指标</h4>
+      <div class="metric-card">
+        <div class="metric-header"><h4>相位噪声 · Phase Noise</h4><span class="metric-abbr">PN</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">@100kHz Offset</span><span>&lt;−110 dBc/Hz</span></div>
+          <div class="metric-row"><span class="metric-label">@1MHz Offset</span><span>&lt;−135 dBc/Hz</span></div>
+          <div class="metric-row"><span class="metric-label">@10MHz Offset</span><span>&lt;−150 dBc/Hz</span></div>
+          <div class="metric-row"><span class="metric-label">积分抖动</span><span>&lt;100 fs RMS（10k~40MHz）</span></div>
+          <div class="metric-row"><span class="metric-label">影响</span><span>LO 相噪直接转化为基带 SNR 恶化 → EVM 上升</span></div>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">📌 5.4 系统级指标</h4>
+      <table>
+        <thead><tr><th>指标名称</th><th>规格</th><th>单位</th><th>含义说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>通道数</strong></td><td>2T2R / 4T4R / 8T8R</td><td>-</td><td>单芯片支持；多芯片组合支持 64T64R</td></tr>
+          <tr><td><strong>基带接口</strong></td><td colspan="2">JESD204B/C</td><td>支持多 lane 绑定，Subclass 1 确定性延迟</td></tr>
+          <tr><td><strong>功耗 (8T8R)</strong></td><td>&lt;25</td><td>W</td><td>全通道正常工作</td></tr>
+          <tr><td><strong>工作温度</strong></td><td>−40~+105</td><td>°C</td><td>工业级温度范围</td></tr>
+          <tr><td><strong>封装</strong></td><td colspan="2">Flip-Chip BGA</td><td>&lt;15×15mm (8T8R)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="metric-card" style="margin-top:18px;">
+        <div class="metric-header"><h4>噪声系数 · NF</h4><span class="metric-abbr">Noise Figure</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>输入信噪比与输出信噪比的比值（dB），衡量接收链路自身引入的噪声</span></div>
+          <div class="formula">NF = 10·log₁₀(SNR_in / SNR_out) = 10·log₁₀(1 + T_eff/T₀) &nbsp;&nbsp;|&nbsp;&nbsp; 系统要求: &lt;2.5dB @ n78</div>
+          <div class="metric-row"><span class="metric-label">链路预算</span><span>NF=2.5dB → 灵敏度 −94dBm @ 100MHz BW, 256QAM → 链路余量约 5dB</span></div>
+          <div class="metric-row"><span class="metric-label">关键</span><span>LNA 贡献主要 NF，后级噪声贡献被 LNA 增益压制</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 6: 影响因素 ═══════════ -->
+<section id="sec6">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">6</div><div class="icon">🔗</div><h2>指标影响因素分析</h2>
+    </div>
+    <div class="card-body">
+      <h4>📍 关键指标影响因素网络</h4>
+      <table>
+        <thead><tr><th>关键指标</th><th>被哪些因素影响（降级）</th><th>该指标又影响哪些下游性能</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>噪声系数 NF</strong></td>
+            <td><span class="chip chip-red">LNA 本身噪声</span><span class="chip chip-red">温度</span><span class="chip chip-red">工艺角 (SS/TT/FF)</span><span class="chip chip-red">电源纹波</span><span class="chip chip-red">输入匹配 S11</span></td>
+            <td><span class="chip chip-blue">接收灵敏度</span><span class="chip chip-blue">链路预算</span><span class="chip chip-blue">覆盖范围</span></td>
+          </tr>
+          <tr>
+            <td><strong>TX ACLR</strong></td>
+            <td><span class="chip chip-red">PA 非线性</span><span class="chip chip-red">DPD 精度/收敛</span><span class="chip chip-red">DAC 量化噪声</span><span class="chip chip-red">电源调制</span><span class="chip chip-red">温度漂移</span></td>
+            <td><span class="chip chip-blue">邻道干扰</span><span class="chip chip-blue">3GPP 合规性</span><span class="chip chip-blue">系统容量</span></td>
+          </tr>
+          <tr>
+            <td><strong>EVM</strong></td>
+            <td><span class="chip chip-red">LO 相噪</span><span class="chip chip-red">I/Q 不平衡</span><span class="chip chip-red">PA 非线性</span><span class="chip chip-red">ADC/DAC 时钟抖动</span><span class="chip chip-red">LO 泄漏</span><span class="chip chip-red">频率误差</span></td>
+            <td><span class="chip chip-blue">调制精度</span><span class="chip chip-blue">256QAM/1024QAM 可行性</span><span class="chip chip-blue">数据吞吐率</span></td>
+          </tr>
+          <tr>
+            <td><strong>镜像抑制</strong></td>
+            <td><span class="chip chip-red">I/Q 幅度失配</span><span class="chip chip-red">I/Q 相位误差</span><span class="chip chip-red">LPF 带宽差异</span><span class="chip chip-red">温度漂移</span></td>
+            <td><span class="chip chip-blue">接收动态范围</span><span class="chip chip-blue">抗阻塞能力</span><span class="chip chip-blue">灵敏度</span></td>
+          </tr>
+          <tr>
+            <td><strong>功耗</strong></td>
+            <td><span class="chip chip-red">通道数</span><span class="chip chip-red">带宽</span><span class="chip chip-red">PVT corner</span><span class="chip chip-red">ADC/DAC 采样率</span><span class="chip chip-red">温度</span></td>
+            <td><span class="chip chip-blue">模块热设计</span><span class="chip chip-blue">散热方案</span><span class="chip chip-blue">系统可靠性</span><span class="chip chip-blue">运营电费</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="success-box" style="margin-top:16px;">
+        <strong>✅ 关键共同影响因素（所有射频收发芯片均适用）：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>电源完整性 (PDN)：</strong>AVDD 和 DVDD 必须独立的低噪声 LDO 供电。电源纹波直接耦合到 VCO 造成相噪恶化，耦合到 LNA 造成 NF 增加。建议 AVDD 纹波 &lt;5mVpp。</li>
+          <li><strong>时钟质量 (Phase Noise)：</strong>参考时钟 TCXO 的相噪直接影响 PLL 输出相噪 → LO 相噪 → EVM。建议 TCXO 相噪 &lt;−150dBc/Hz @1kHz。</li>
+          <li><strong>PCB 布局 (RF Isolation)：</strong>TX 大信号（+5dBm）耦合到 RX 小信号（−90dBm）路径将造成严重自干扰。TX/RX 走线需交叉垂直或添加接地隔离带。</li>
+          <li><strong>温度 (Temperature)：</strong>温度变化导致 LNA 偏置漂移（NF 增加）、VCO 频率漂移（锁定失败）、I/Q 平衡破坏（镜像抑制下降）。温度补偿校准 LUT 是必须的。</li>
+          <li><strong>工艺角 (PVT Corner)：</strong>SS（慢 NMOS/慢 PMOS）corner 下增益不足、带宽缩窄；FF corner 下功耗增大、可能振荡。三温（−40/+25/+105°C）测试必不可少。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 7: 测试方法 ═══════════ -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法详解</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📐 7.1 接收链路噪声系数测试（Y 因子法）</h4>
+      <p><strong>测试原理：</strong>通过切换热/冷两种已知噪声温度源，测量 DUT 输出端的噪声功率比（Y 因子），计算出 DUT 的噪声系数和增益。</p>
+      <div class="formula">Y = N_hot / N_cold &nbsp;&nbsp;|&nbsp;&nbsp; NF = ENR − 10·log₁₀(Y−1) &nbsp;&nbsp;|&nbsp;&nbsp; ENR: 噪声源超噪比</div>
+
+      <h4 style="margin-top:14px;">测试设备清单</h4>
+      <table>
+        <thead><tr><th>设备名称</th><th>推荐型号</th><th>关键规格</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>噪声系数分析仪</td><td>Keysight N8976B</td><td>10MHz~7GHz, NF 精度 ±0.05dB</td><td>噪声系数测量</td></tr>
+          <tr><td>智能噪声源</td><td>Keysight N4002A</td><td>10MHz~26.5GHz, ENR 6~7dB</td><td>热/冷噪声标准源</td></tr>
+          <tr><td>矢量信号发生器</td><td>Keysight M9384B</td><td>100kHz~44GHz, 2GHz BW</td><td>CW/调制信号源</td></tr>
+          <tr><td>信号与频谱分析仪</td><td>Keysight N9042B</td><td>2Hz~50GHz, 分析带宽 4GHz</td><td>频谱、ACLR、杂散测量</td></tr>
+          <tr><td>矢量网络分析仪</td><td>Keysight PNA-X N5247B</td><td>10M~67GHz</td><td>S 参数增益/平度</td></tr>
+          <tr><td>可编程直流电源</td><td>Keysight N6705C</td><td>4ch, 低噪声, 50W/ch</td><td>多轨供电</td></tr>
+          <tr><td>温控平台</td><td>MPI Thermal TA-5000</td><td>−60~+200°C</td><td>三温测试</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">测试框图</h4>
+      <div class="diagram-title">图 7-1 | 接收链路噪声系数测试框图（Y 因子法）</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 180" width="760" height="180" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arr7r" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#c0392b"/></marker></defs>
+          <rect x="15" y="30" width="150" height="60" rx="8" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="90" y="50" fill="#991b1b" font-size="11" font-weight="700" text-anchor="middle">噪声源 N4002A</text>
+          <text x="90" y="67" fill="#ef4444" font-size="9" text-anchor="middle">ENR=6dB, 28V DC</text>
+          <text x="90" y="82" fill="#ef4444" font-size="9" text-anchor="middle">热/冷切换 (TTL)</text>
+          <line x1="165" y1="60" x2="215" y2="60" stroke="#c0392b" stroke-width="2" marker-end="url(#arr7r)"/>
+          <rect x="220" y="30" width="180" height="60" rx="8" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="310" y="50" fill="#991b1b" font-size="11" font-weight="700" text-anchor="middle">DUT RX 链路</text>
+          <text x="310" y="67" fill="#ef4444" font-size="9" text-anchor="middle">LNA→Mixer→PGA→ADC</text>
+          <text x="310" y="82" fill="#ef4444" font-size="9" text-anchor="middle">设置最大增益 + 待测频段</text>
+          <line x1="400" y1="60" x2="450" y2="60" stroke="#c0392b" stroke-width="2" marker-end="url(#arr7r)"/>
+          <rect x="455" y="30" width="140" height="60" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="525" y="50" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">频谱分析仪</text>
+          <text x="525" y="67" fill="#b45309" font-size="9" text-anchor="middle">N9042B / N8976B</text>
+          <text x="525" y="82" fill="#b45309" font-size="9" text-anchor="middle">NF 模式 / SA 模式</text>
+          <line x1="595" y1="60" x2="625" y2="60" stroke="#c0392b" stroke-width="2" marker-end="url(#arr7r)"/>
+          <rect x="630" y="30" width="135" height="60" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="697" y="50" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">NF 分析仪/PC</text>
+          <text x="697" y="67" fill="#16a34a" font-size="9" text-anchor="middle">数据采集与处理</text>
+          <rect x="15" y="110" width="750" height="55" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="390" y="132" fill="#475569" font-size="10" text-anchor="middle">Step 1: 校准 (噪声源直连分析仪) → Step 2: DUT 上电 → Step 3: 增益校准 (可选)</text>
+          <text x="390" y="150" fill="#475569" font-size="10" text-anchor="middle">Step 4: NF 扫描 (3.3~5.0GHz, 间隔10MHz) → Step 5: 三温重复 (−40/+25/+105°C)</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:18px;">📊 7.2 增益与线性度测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>增益 S21 测试</h5><p>VNA (PNA-X N5247B) 测量 S21 vs 频率（3.3~5.0GHz），验证带内平坦度 &lt;±0.5dB，增益可编程步进精度 0.5dB。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>IIP3 双音测试</h5><p>信号发生器输出双音（f1, f2 间隔 1MHz），每音 −20dBm 输入，频谱分析仪测量 IM3 产物（2f1−f2, 2f2−f1），计算 <span class="formula-inline">IIP3 = P_in + ΔP/2</span>。要求 IIP3 &gt;+5dBm。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>P1dB 压缩点测试</h5><p>输入 CW 信号，步进增加功率，测量增益下降 1dB 时对应的输入功率。P1dB 反映接收链路对大信号的线性容纳能力。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">🔍 7.3 镜像抑制 / I/Q 平衡测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>信号注入</h5><p>向 DUT RX 注入 LO+10MHz 的 RF 单音信号（功率 −30dBm）。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>基带 I/Q 采集</h5><p>采集 ADC 输出（或基带 JESD204B 输出）I 路和 Q 路时域数据。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>I/Q 不平衡计算</h5><p>计算幅度比 |Q|/|I|（理想为 1）和相位差 ∠(Q)−∠(I)（理想为 90°），得出幅度不平衡（dB）和相位误差（度）。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>校准后验证</h5><p>开启片上 I/Q 校准引擎，重新测量。镜像抑制 = 20·log₁₀(|Desired|/|Image|) &gt;50dBc。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">📡 7.4 TX ACLR / EVM 测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>信号生成</h5><p>使用信号发生器或 DFE 生成 100MHz BW 5G NR TM3.1 测试信号（256QAM），通过 JESD204B/C 接口送入 DUT 发送链路。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>频谱测量 (ACLR)</h5><p>频谱分析仪（N9042B）测量中心信道功率与相邻/隔邻信道功率之比。5G NR 要求 ACLR &lt;−45dBc，DUT 目标 &lt;−47dBc 留有余量。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>EVM 解调</h5><p>VSA 解调 256QAM 信号，测量 EVM。系统级要求 &lt;3.5%，DUT（PA Driver 输出）要求 &lt;0.8%。同时记录星座图、EVM vs 子载波。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>DPD 验证</h5><p>开启 DPD → 验证 ACLR 改善 &gt;10dB；关闭 DPD → ACLR 应明显恶化。确认 DPD 查找表正常更新。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">🔴 7.5 LO 泄漏测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>零基带输入</h5><p>关闭 TX 基带 I/Q 信号（I=Q=0），仅 LO 信号通过混频器有限隔离泄漏到输出端。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>频谱测量</h5><p>频谱分析仪在 LO 频率处测量泄漏功率。要求 LO Leakage &lt;−45dBc（相对于满量程输出）。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">🟡 7.6 LO 相噪测试</h4>
+      <table>
+        <thead><tr><th>测试项目</th><th>测试方法</th><th>判定标准</th></tr></thead>
+        <tbody>
+          <tr><td><strong>相噪测量</strong></td><td>E5052B 相噪分析仪，测量 LO 输出 @100kHz, 1MHz, 10MHz offset</td><td>&lt;−110 / −135 / −150 dBc/Hz</td></tr>
+          <tr><td><strong>积分抖动</strong></td><td>相噪积分 10k~40MHz</td><td>&lt;100 fs RMS</td></tr>
+          <tr><td><strong>锁定时间</strong></td><td>频率阶跃（100MHz 跳变），示波器测 Lock 检测信号延迟</td><td>&lt;50 μs</td></tr>
+          <tr><td><strong>频率精度</strong></td><td>频率计数器长期监测</td><td>&lt;±1ppm</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 8: 注意事项 ═══════════ -->
+<section id="sec8">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">8</div><div class="icon">⚠️</div><h2>测试与使用注意事项</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>⚡ 通用注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">🔌 上电时序（绝对关键！）</div><p>上电: AVDD 1.8V → 等待 &gt;10ms → DVDD 1.2V → 等待 &gt;5ms → Vcore 0.9V → 等待 &gt;5ms → IO 1.8V；断电: 严格反向！颠倒时序可能导致芯片 latch-up 或永久损坏！</p></div>
+        <div class="caution-item"><div class="ci-title">🕐 参考时钟质量</div><p>TCXO: 频率精度 ±1ppm；相噪 &lt;−150dBc/Hz @1kHz；频率: 38.4MHz 或 40MHz（参考 JESD204B SYSREF）；任意频偏 &gt;5ppm 将导致 PLL 失锁。</p></div>
+        <div class="caution-item"><div class="ci-title">🧮 I/Q 校准必做</div><p>ZIF 架构的 I/Q 不平衡是固有的。每次上电、每次切换频段、每次温度变化 &gt;10°C 后，必须执行 I/Q 校准流程。未校准的镜像抑制可能仅 25~30dBc。</p></div>
+        <div class="caution-item"><div class="ci-title">📡 LO 泄漏校准</div><p>TX LO 泄漏影响邻道 ACLR 和系统 EVM。校准过程需在目标频段和温度下完成。多数芯片提供片上 LO 泄漏校准 DAC 或数字补偿。</p></div>
+        <div class="caution-item"><div class="ci-title">🌡️ 温度补偿</div><p>LNA 偏置、VCO 频率、I/Q 平衡、LO 泄漏均随温度漂移。必须内置温度传感 LUT，在温度变化时自动加载对应校准参数。建议每 10°C 一个校准点。</p></div>
+        <div class="caution-item"><div class="ci-title">🛡️ ESD 防护</div><p>HBM: 2kV, CDM: 500V；RF 端口对 ESD 尤其敏感（小尺寸 LNA 输入管）；建议 PCB 添加 RF 限幅器或 TVS；操作时全程佩戴接地手环。</p></div>
+      </div>
+
+      <h4 style="margin-top:20px;">🔴 射频专项注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">🔄 TX-to-RX 泄漏</div><p>在 FDD（频分双工）系统中，TX 发射功率（+5dBm 经过 PA 可能 +30~+40dBm）通过双工器有限隔离（~50dB）泄漏到 RX 端。RX LNA 的 IIP3 必须足够高以承受此阻塞信号。</p></div>
+        <div class="caution-item"><div class="ci-title">📏 通道间匹配</div><p>Massive MIMO 要求所有通道的相位差 &lt;±2°、幅度差 &lt;±0.5dB。校准需要在出厂时完成初始校准，并在现场运行时定期更新（通道漂移跟踪）。</p></div>
+        <div class="caution-item"><div class="ci-title">🔗 JESD204 同步</div><p>多芯片系统中所有芯片的 SYSREF 信号必须在 1 UI 内对齐（通常 &lt;100ps skew）。PCB 上 SYSREF 布线需等长，建议 PCB layout 等长误差 &lt;10mil。</p></div>
+        <div class="caution-item"><div class="ci-title">⚡ PA 负载牵引</div><p>PA Driver 的输出负载阻抗（天线/PA 输入阻抗）随频率和温度变化。建议测试不同 VSWR（1:1, 2:1, 4:1）条件下的 EVM 和 ACLR 退化。</p></div>
+      </div>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🚨 射频收发芯片测试最常见错误：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>未做 I/Q 校准就开始测试：</strong>镜像抑制仅 25~30dBc，EVM 虚高，所有测量无效</li>
+          <li><strong>忽视电缆和连接器损耗：</strong>RF 电缆在 5GHz 可能损失 1~2dB，NF 测量需做去嵌入</li>
+          <li><strong>频谱仪过载：</strong>TX 测试时 PA Driver 输出 +5dBm，必须确认频谱仪输入衰减器设置合适</li>
+          <li><strong>LO 泄漏掩盖真实信号：</strong>TX 测试时若未校准 LO 泄漏，ACLR 测量结果包含 LO 杂散贡献</li>
+          <li><strong>忽视温度稳定：</strong>射频参数对温度极其敏感，每次温度变更后需等待 &gt;30min 热稳定</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 9: 选型指南 ═══════════ -->
+<section id="sec9">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">9</div><div class="icon">🧭</div><h2>选型与应用指南</h2>
+    </div>
+    <div class="card-body">
+
+      <div class="compare-grid">
+        <div class="compare-col red">
+          <h3>🏗️ 宏基站 (Macro Cell) 选用</h3>
+          <ul>
+            <li>8T8R 或更高通道数芯片</li>
+            <li>Multi-chip 组合支持 64T64R Massive MIMO</li>
+            <li>400MHz 瞬时带宽（支持载波聚合）</li>
+            <li>DPD + CFR 全功能开启</li>
+            <li>JESD204C 32Gbps/lane（大数据量）</li>
+            <li>功耗可在 25W (8T8R) 以内</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>🏠 小基站 (Small Cell) 选用</h3>
+          <ul>
+            <li>2T2R 或 4T4R 即可满足</li>
+            <li>100/200MHz 带宽即可</li>
+            <li>功耗预算更紧张（&lt;5W 2T2R）</li>
+            <li>可降低 DPD 复杂度（2T2R 计算量小）</li>
+            <li>JESD204B 12.5Gbps/lane 足够</li>
+            <li>成本敏感，优先选择成熟工艺（28nm RF-CMOS）</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">通道数选择速查</h4>
+      <table>
+        <thead><tr><th>通道配置</th><th>典型场景</th><th>单芯片方案</th><th>多芯片级联</th><th>校准复杂度</th></tr></thead>
+        <tbody>
+          <tr><td><strong>2T2R</strong></td><td>小基站 / 室内覆盖 / 4G 升级</td><td>1× 2T2R 芯片</td><td>不需要</td><td>低</td></tr>
+          <tr><td><strong>4T4R</strong></td><td>Small Cell / 企业级基站</td><td>1× 4T4R 芯片</td><td>2× 2T2R</td><td>低~中</td></tr>
+          <tr><td><strong>8T8R</strong></td><td>宏基站基础 / 郊区覆盖</td><td>1× 8T8R 芯片</td><td>2× 4T4R</td><td>中</td></tr>
+          <tr><td><strong>32T32R</strong></td><td>宏基站 Massive MIMO</td><td>-</td><td>4× 8T8R</td><td>高</td></tr>
+          <tr><td><strong>64T64R</strong></td><td>旗舰宏基站 Massive MIMO</td><td>-</td><td>8× 8T8R</td><td>极高</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">频段与带宽选择</h4>
+      <table>
+        <thead><tr><th>5G NR 频段</th><th>频率范围</th><th>典型带宽</th><th>适用区域</th><th>推荐芯片配置</th></tr></thead>
+        <tbody>
+          <tr><td><strong>n77</strong></td><td>3.3~4.2 GHz</td><td>100/200/400 MHz</td><td>中国/欧洲/日本</td><td>400MHz BW + 8T8R</td></tr>
+          <tr><td><strong>n78</strong></td><td>3.3~3.8 GHz</td><td>100/200 MHz</td><td>中国（主频段）/全球</td><td>200MHz BW + 8T8R</td></tr>
+          <tr><td><strong>n79</strong></td><td>4.4~5.0 GHz</td><td>100 MHz</td><td>中国（补充频段）/日本</td><td>200MHz BW + 8T8R</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>💡 AE 工程直觉：</strong>"2T2R 小基站用一颗芯片搞定，8T8R 宏基站一颗芯片也够。到了 64T64R，是 8 颗 8T8R 芯片的阵列——通道一致性是生死线（相位±2°，幅度±0.5dB）。I/Q 校准不做好，再好的 PLL 和 LNA 也白搭。DPD 是 5G 的标配不是选配。"
+      </div>
+
+      <h4 style="margin-top:18px;">系统链路预算速算示例 (5G NR n78, 100MHz BW, 256QAM, 宏基站)</h4>
+      <table>
+        <thead><tr><th>环节</th><th>增益/损耗</th><th>累计</th></tr></thead>
+        <tbody>
+          <tr><td>TX: PA Driver 输出</td><td>-</td><td>+5 dBm</td></tr>
+          <tr><td>TX: 外置 PA 增益</td><td>+30 dB</td><td>+35 dBm (3.2W)</td></tr>
+          <tr><td>TX: 双工器/滤波器损耗</td><td>−2 dB</td><td>+33 dBm (天线端口)</td></tr>
+          <tr><td>RX: 天线接收 (10km 路径损耗)</td><td>−125 dB</td><td>−92 dBm (LNA 输入)</td></tr>
+          <tr><td>RX: LNA + RX 链总增益</td><td>+45 dB</td><td>−47 dBm (ADC 输入，满量程 −5 dBm)</td></tr>
+          <tr><td>RX: NF=2.5dB</td><td>灵敏度 −94 dBm</td><td>链路余量 ~2 dB ✅</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<div class="footer">
+AE 知识文档 · 基站射频收发芯片 (Base Station RF Transceiver)<br>
+  覆盖原理、框图、指标、影响因素、测试方法与选型指南 · 文档版本 v2.0 · 生成时间：2026-06-19<br>
+  原始 MD 版本 v1.0 · <a href="../../docs/02_无线通信/01_基站射频收发芯片.md">查看原始 Markdown</a>
+</div>
+
+</body>
+</html>

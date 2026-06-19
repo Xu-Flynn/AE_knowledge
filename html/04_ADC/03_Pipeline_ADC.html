@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline ADC 流水线模数转换器 — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #27ae60; --primary-dark: #166534; --accent: #e74c3c;
+    --accent2: #0891b2; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  /* HERO */
+  .hero { background: linear-gradient(135deg, #166534 0%, #27ae60 50%, #0891b2 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  /* NAV */
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  /* CONTAINER */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  /* CARD */
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #27ae6011, #27ae6005); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #16a34a); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #dcfce7; }
+  /* DIAGRAM */
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  /* BOXES */
+  .info-box { border-left: 4px solid var(--primary); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #ecfeff; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  /* METRIC CARD */
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #166534, #27ae60); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  /* STEPS */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  /* CAUTION */
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  /* FORMULA */
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  /* CHIPS */
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  /* COMPARE */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #eff6ff; border: 2px solid var(--primary); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  /* FOOTER */
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  /* MISC */
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>&#x1F3ED; Pipeline ADC</h1>
+  <div class="subtitle">流水线模数转换器 — 中高速、中高精度的多级并行 ADC</div>
+  <div class="badge-row"><span class="badge">&#x1F3AF; 8~16 bit</span><span class="badge">&#x26A1; 10M~1 GSPS</span><span class="badge">&#x1F3D7; 多级流水线</span><span class="badge">&#x1F504; 1.5-bit/级</span><span class="badge">&#x2696; 数字校正</span></div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 核心模块深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、核心对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ Section 1: 背景与定位 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div><div class="icon">📖</div><h2>背景与应用定位</h2>
+    </div>
+    <div class="card-body">
+
+<p>Pipeline ADC 是<strong>中高速、中高精度领域的主流 ADC 架构</strong>，通过多级流水线结构将逐次逼近的串行过程分解为多级并行处理：每一级完成低分辨率量化后，将残差放大并传递到下一级继续量化。在 10 MSPS~1 GSPS 速率范围内，Pipeline ADC 在速度、精度和功耗之间取得了最优平衡，广泛用于无线通信、视频处理、医疗成像和仪器仪表等领域。</p>
+
+<div class="compare-grid" style="margin-top:16px;">
+  <div class="compare-col blue">
+    <h3>&#x1F4CC; 产品定位</h3>
+    <p><strong>产业链位置：</strong>RF/IF 前端与数字基带处理器之间，负责高速高精度模数转换</p>
+    <p><strong>核心价值：</strong>多级流水线并行处理，在 MSPS~GSPS 速率下实现 10~16 bit 分辨率</p>
+    <p><strong>本质功能：</strong>N 级流水线级联：每级 Sub-ADC (粗量化) + Sub-DAC (重构) + 残差放大 (MDAC) + 数字校正</p>
+  </div>
+  <div class="compare-col green">
+    <h3>&#x1F3AF; 典型应用场景</h3>
+    <ul>
+      <li>无线通信基站 (IF 采样接收机)</li>
+      <li>宽带软件无线电 (SDR) 接收机</li>
+      <li>医疗超声/CT 成像前端</li>
+      <li>高速数据采集卡 (DAQ)</li>
+      <li>雷达数字波束成形接收机</li>
+      <li>视频/图像传感器接口</li>
+    </ul>
+  </div>
+</div>
+
+<h4 style="margin-top:20px;">技术路线</h4>
+<table>
+  <thead><tr><th>维度</th><th>规格</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><strong>分辨率</strong></td><td>8~16 bit</td><td>由级间增益精度和 comparator offset 校准决定</td></tr>
+    <tr><td><strong>采样率</strong></td><td>10 MSPS~1 GSPS</td><td>流水线延迟 6~12 周期，吞吐率 = f<sub>s</sub></td></tr>
+    <tr><td><strong>每级位数</strong></td><td>1~4 bit/级 (典型 1.5b)</td><td>更低/级 &rarr; 更易校准但更多级数</td></tr>
+    <tr><td><strong>级间增益</strong></td><td>G = 2<sup>k</sup> (k=每级分辨率)</td><td>闭环运放实现精确增益，增益误差直接影响 INL</td></tr>
+    <tr><td><strong>冗余与校正</strong></td><td>1.5-bit/级 + 数字纠错</td><td>冗余容忍比较器失调，消除失码</td></tr>
+    <tr><td><strong>MDAC 架构</strong></td><td>开关电容 MDAC</td><td>同时完成 DAC 减法、残差采样和增益放大</td></tr>
+    <tr><td><strong>工艺</strong></td><td>CMOS (65nm~7nm)</td><td>先进工艺下运放增益下降，需增益增强技术</td></tr>
+    <tr><td><strong>功耗特性</strong></td><td>mW~W</td><td>多级运放静态偏置 + 动态开关功耗</td></tr>
+  </tbody>
+</table>
+</div>
+</section>
+
+<!-- ═══════════ Section 2: 工作原理 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div><div class="icon">⚙️</div><h2>多级流水线转换原理</h2>
+    </div>
+    <div class="card-body">
+
+<p>Pipeline ADC 的核心是将<strong>N-bit 转换分解为多级低分辨率转换流水线</strong>。每一级包含 Sub-ADC (粗量化)、Sub-DAC (重构)、减法器和残差放大器 (MDAC)。级间并行工作，每周期完成一个新采样，延迟由流水线深度决定。</p>
+
+      <div class="diagram-title">图 2-1 | Pipeline ADC 多级流水线信号流向</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 175" width="800" height="175" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <defs><marker id="arrPG" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker>
+          <marker id="arrPB" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <rect width="820" height="175" fill="#fafafa" rx="8"/>
+
+          <text x="15" y="38" font-size="9" fill="#475569" font-weight="bold">VIN</text>
+          <line x1="35" y1="34" x2="55" y2="34" stroke="#27ae60" stroke-width="1.5" marker-end="url(#arrPG)"/>
+
+          <rect x="60" y="15" width="68" height="38" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="94" y="30" font-size="8" fill="#991b1b" text-anchor="middle" font-weight="bold">S/H</text>
+          <text x="94" y="44" font-size="7" fill="#ef4444" text-anchor="middle">采样保持</text>
+
+          <line x1="128" y1="34" x2="148" y2="34" stroke="#27ae60" stroke-width="1.5" marker-end="url(#arrPG)"/>
+
+          <!-- Stage 1 -->
+          <rect x="153" y="8" width="120" height="90" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="213" y="24" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">Stage 1</text>
+          <text x="213" y="38" font-size="7" fill="#ef4444" text-anchor="middle">Sub-ADC (1.5b)</text>
+          <line x1="213" y1="42" x2="213" y2="52" stroke="#ef4444" stroke-width="0.5"/>
+          <text x="213" y="60" font-size="7" fill="#ef4444" text-anchor="middle">→ DAC 重构</text>
+          <text x="213" y="74" font-size="7" fill="#ef4444" text-anchor="middle">→ MDAC (G=2)</text>
+          <text x="213" y="88" font-size="7" fill="#ef4444" text-anchor="middle">Vres1</text>
+
+          <line x1="273" y1="34" x2="293" y2="34" stroke="#27ae60" stroke-width="1.5" marker-end="url(#arrPG)"/>
+
+          <!-- Stage 2 -->
+          <rect x="298" y="8" width="120" height="90" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="358" y="24" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">Stage 2</text>
+          <text x="358" y="38" font-size="7" fill="#ef4444" text-anchor="middle">Sub-ADC (1.5b)</text>
+          <line x1="358" y1="42" x2="358" y2="52" stroke="#ef4444" stroke-width="0.5"/>
+          <text x="358" y="60" font-size="7" fill="#ef4444" text-anchor="middle">→ DAC 重构</text>
+          <text x="358" y="74" font-size="7" fill="#ef4444" text-anchor="middle">→ MDAC (G=2)</text>
+          <text x="358" y="88" font-size="7" fill="#ef4444" text-anchor="middle">Vres2</text>
+
+          <line x1="418" y1="34" x2="438" y2="34" stroke="#27ae60" stroke-width="1.5" marker-end="url(#arrPG)"/>
+
+          <text x="460" y="38" font-size="8" fill="#6b7280" text-anchor="middle">...</text>
+
+          <line x1="480" y1="34" x2="500" y2="34" stroke="#27ae60" stroke-width="1.5" marker-end="url(#arrPG)"/>
+
+          <!-- Final Stage (Flash) -->
+          <rect x="505" y="15" width="100" height="38" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="555" y="30" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">Stage M</text>
+          <text x="555" y="44" font-size="7" fill="#b45309" text-anchor="middle">Flash ADC</text>
+
+          <!-- Digital bits from each stage -->
+          <line x1="213" y1="96" x2="213" y2="115" stroke="#1a56db" stroke-width="1"/>
+          <line x1="358" y1="96" x2="358" y2="115" stroke="#1a56db" stroke-width="1"/>
+          <line x1="555" y1="53" x2="555" y2="115" stroke="#1a56db" stroke-width="1"/>
+
+          <!-- Delay alignment + digital correction -->
+          <rect x="610" y="110" width="170" height="50" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="695" y="128" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">数字延迟对齐+纠错</text>
+          <text x="695" y="144" font-size="7" fill="#3b82f6" text-anchor="middle">1.5b冗余 → 移位叠加</text>
+          <text x="695" y="156" font-size="7" fill="#3b82f6" text-anchor="middle">D=D₁·2^N-1+D₂·2^N-2+...</text>
+
+          <line x1="213" y1="135" x2="608" y2="135" stroke="#1a56db" stroke-width="1"/>
+          <line x1="358" y1="135" x2="358" y2="130" stroke="#1a56db" stroke-width="1"/>
+          <line x1="555" y1="135" x2="608" y2="135" stroke="#1a56db" stroke-width="1"/>
+
+          <line x1="780" y1="135" x2="795" y2="135" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="805" y="139" font-size="10" fill="#166534" font-weight="bold">DOUT</text>
+
+          <!-- Clock -->
+          <text x="213" y="168" font-size="8" fill="#f59e0b" text-anchor="middle">⏱ Φ1采样/Φ2放大 | 相邻级时钟交错 | 吞吐率=fs | 延迟=M×Tclk</text>
+        </svg>
+      </div>
+
+<h4>1. 单级流水线操作 (1.5-bit 为例)</h4>
+<div class="formula">V<sub>residue</sub> = G &times; (V<sub>in</sub> &minus; V<sub>DAC</sub>) &nbsp; | &nbsp; G = 2<sup>k&minus;1</sup> (1.5b 时 G=2)</div>
+<table>
+  <thead><tr><th>步骤</th><th>操作</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>1. 采样</td><td>S/H 采样 V<sub>in</sub></td><td>前端 T/H 或 MDAC 自采样</td></tr>
+    <tr><td>2. 粗量化</td><td>Sub-ADC (2 个比较器, 3 区间)</td><td>判决 V<sub>in</sub> 落在 3 个区间: &lt;-V<sub>REF</sub>/4, 中间, &gt;+V<sub>REF</sub>/4</td></tr>
+    <tr><td>3. DAC 重构</td><td>Sub-DAC 输出对应电平</td><td>&minus;V<sub>REF</sub>/2, 0, +V<sub>REF</sub>/2</td></tr>
+    <tr><td>4. 残差放大</td><td>MDAC 放大 (V<sub>in</sub>&minus;V<sub>DAC</sub>) &times;2</td><td>残差放大到满幅供下一级量化</td></tr>
+  </tbody>
+</table>
+
+<h4>2. 1.5-bit/级 冗余与数字校正</h4>
+<p>每级使用 1.5-bit (2 个比较器 + 3 区间判决) 而非 2-bit，留出 &plusmn;V<sub>REF</sub>/4 的冗余区间。比较器失调在冗余范围内被容忍，相邻级输出经移位相加即可完成数字校正——这是 Pipeline ADC 能够容忍较大比较器失调的根本原因。</p>
+<div class="formula">最终码 = D<sub>1</sub> &times; 2<sup>N&minus;1</sup> + D<sub>2</sub> &times; 2<sup>N&minus;2</sup> + ... + D<sub>M</sub> &times; 2<sup>N&minus;M</sup></div>
+
+<h4>3. MDAC &mdash; 精度核心</h4>
+<p>开关电容 MDAC (Multiplying DAC) 同时完成：采样输入、减去 DAC 电平、乘以级间增益。在&Phi;1 (采样相) 采样输入到电容；在&Phi;2 (放大相) 切换电容下极板到 DAC 参考电平，运放闭环放大。增益精度取决于电容比例和运放开环增益。</p>
+<div class="formula">G<sub>effective</sub> = G<sub>ideal</sub> &times; (1 &minus; 1/(A<sub>OL</sub>&beta;)) &nbsp; | &nbsp; &#x3B2; = 反馈系数</div>
+
+<h4>4. 流水线时序与吞吐率</h4>
+<p>每级需要两相非交叠时钟 (&Phi;1 采样 + &Phi;2 放大)，相邻级时钟相位交错。采样数据在每个时钟沿依次通过各级，首级处理第 n 个采样时，第二级处理第 n-1 个采样... 形成流水线。延迟 = M&times;T<sub>clk</sub> (M 级)，但每个时钟周期输出一个转换结果。</p>
+<div class="formula">吞吐率 = f<sub>s</sub> = 1/T<sub>clk</sub> &nbsp; | &nbsp; 延迟 = M &times; T<sub>clk</sub> (M = 流水线级数)</div>
+
+<div class="info-box"><strong>&#x1F4A1; AE 核心认知：</strong>Pipeline ADC 的精妙之处在于以 1.5-bit/级 + 数字校正的架构，将比较器精度要求从 N-bit 降低到 &plusmn;V<sub>REF</sub>/4 (仅需 2-bit 级精度)。真正的精度瓶颈是 MDAC 的级间增益误差和运放建立精度。</div>
+</div>
+</section>
+
+<!-- ═══════════ Section 2B: 模块深度解析 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header" style="background:linear-gradient(90deg,#fef3c7,#fde68a);border-bottom:2px solid #f59e0b;">
+      <div class="section-no" style="background:#d97706;">🔬</div><div class="icon">🧠</div><h2 style="color:#92400e;">核心模块深度解析</h2>
+    </div>
+    <div class="card-body">
+
+<h4 style="color:#92400e;">一、MDAC (Multiplying DAC) &mdash; 精度的物理载体</h4>
+<p>MDAC 是 Pipeline ADC 最关键的模拟模块，集成 DAC 减法、残差增益放大和采样保持功能于一体：</p>
+<div class="formula">V<sub>out</sub> = (C<sub>s</sub>/C<sub>f</sub>) &times; V<sub>in</sub> &minus; &#x3A3;(C<sub>i</sub>/C<sub>f</sub>) &times; V<sub>DAC,i</sub></div>
+<table>
+  <thead><tr><th>参数</th><th>公式/关系</th><th>工程权衡</th></tr></thead>
+  <tbody>
+    <tr><td>理想增益</td><td>G = C<sub>s</sub>/C<sub>f</sub> = 2<sup>k&minus;1</sup></td><td>C<sub>s</sub> 总面积由 kT/C 噪声决定</td></tr>
+    <tr><td>增益误差</td><td>&#x3B5;<sub>G</sub> &asymp; 1/(A<sub>OL</sub>&beta;) + &#x394;C/C</td><td>运放增益 + 电容匹配；直接影响 INL</td></tr>
+    <tr><td>建立时间</td><td>t<sub>settle</sub> = (N+1)ln2&times;&tau;/&#x3B2;</td><td>高 &#x3B2; (低增益) &rarr; 更快建立</td></tr>
+    <tr><td>kT/C 噪声</td><td>v<sub>n</sub><sup>2</sup> = kT/(&#x3B2;C<sub>total</sub>)</td><td>C 增大 &rarr; 噪声降 &rarr; 速度和功耗代价</td></tr>
+  </tbody>
+</table>
+
+<h4 style="color:#92400e;margin-top:20px;">二、运放设计 &mdash; 速度与功耗的博弈</h4>
+<p>Pipeline ADC 中的运放必须在半个时钟周期内完成建立，其 GBW 和摆率 (Slew Rate) 要求随采样率提高而急剧增加：</p>
+<div class="formula">GBW > (N+1)&middot;&#x3B2;&middot;ln2 / (2&pi;&middot;t<sub>settle</sub>) &nbsp; | &nbsp; SR > V<sub>FS</sub>/t<sub>slew</sub></div>
+<table>
+  <thead><tr><th>运放架构</th><th>增益</th><th>速度</th><th>功耗</th><th>适用</th></tr></thead>
+  <tbody>
+    <tr><td>套筒式 (Telescopic)</td><td>50~60 dB</td><td>高</td><td>低</td><td>先进工艺，低压</td></tr>
+    <tr><td>折叠式 (Folded Cascode)</td><td>60~70 dB</td><td>中高</td><td>中</td><td>通用，输出摆幅大</td></tr>
+    <tr><td>两级运放 (Miller)</td><td>80~100 dB</td><td>中</td><td>中高</td><td>高线性度，需补偿</td></tr>
+    <tr><td>增益增强 (Gain-Boosted)</td><td>100~120 dB</td><td>中</td><td>高</td><td>极高精度，&gt;14b</td></tr>
+  </tbody>
+</table>
+
+<h4 style="color:#92400e;margin-top:20px;">三、Sub-ADC 设计</h4>
+<p>每级的 Sub-ADC 是低分辨率 Flash ADC (通常 1~4 bit)。对于 1.5-bit/级的方案，仅需 2 个比较器，阈值设为 &plusmn;V<sub>REF</sub>/4。比较器失调只要不超过 &plusmn;V<sub>REF</sub>/4 即可被数字校正容忍——这是 1.5-bit 架构的核心优势。先进设计中常使用动态比较器以消除静态功耗。</p>
+<div class="compare-grid">
+  <div class="compare-col blue"><h3>1.5-bit/级 (最常用)</h3><p>&#x2705; 最大冗余容忍范围 (&plusmn;V<sub>REF</sub>/4)<br>&#x2705; 比较器设计最简单<br>&#x2705; MDAC 增益最低 (G=2) 最易实现<br>&#x274C; 级数最多 (N 级 for N-bit)<br>&#x274C; 总延迟最大<br>&#x274C; 总功耗较高 (多级累加)</p></div>
+  <div class="compare-col green"><h3>多位/级 (2.5~3.5b/级)</h3><p>&#x2705; 级数少，延迟小<br>&#x2705; 每级完成更多位，总功耗可能更低<br>&#x274C; MDAC 增益高 (G=4~8) 建立困难<br>&#x274C; 比较器需要更高精度<br>&#x274C; 冗余容忍范围缩小<br>&#x274C; 电容匹配要求更高</p></div>
+</div>
+
+<h4 style="color:#92400e;margin-top:20px;">四、时钟分布与级间时序</h4>
+<p>高速 Pipeline ADC 中，精准的两相非交叠时钟 (&#x3A6;1, &#x3A6;2) 分布至关重要。每级需要：采样相 (&#x3A6;1) + 放大相 (&#x3A6;2)，相邻级相位交错。时钟偏斜 (skew) 直接侵蚀建立时间余量：</p>
+<div class="formula">剩余建立时间 = T<sub>clk</sub>/2 &minus; t<sub>skew</sub> &minus; t<sub>non-overlap</sub></div>
+<p>在 GSPS 级 Pipeline ADC 中，半周期仅 500 ps，时钟偏斜必须 &lt;10 ps 才能保证运放有足够的建立时间。</p>
+
+<h4 style="color:#92400e;margin-top:20px;">五、校准技术</h4>
+<table>
+  <thead><tr><th>校准类型</th><th>校准对象</th><th>方法</th><th>复杂度</th></tr></thead>
+  <tbody>
+    <tr><td>数字后台校准</td><td>级间增益误差</td><td>PN 注入 + 相关性检测 / Skip-and-Fill</td><td>高</td></tr>
+    <tr><td>模拟前台校准</td><td>MDAC 电容失配</td><td>已知参考电压校准电容权重</td><td>中</td></tr>
+    <tr><td>冗余容忍</td><td>Sub-ADC 比较器失调</td><td>1.5-bit/级 + 数字纠错 (天然容忍)</td><td>低</td></tr>
+    <tr><td>运放增益校准</td><td>有限 A<sub>OL</sub> 引起的增益误差</td><td>动态偏置 / Gain-Boosting / 后台测量</td><td>中高</td></tr>
+  </tbody>
+</table>
+</div>
+</section>
+
+<!-- ===== Section 3: 电路框图 ===== -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div><div class="icon">🔲</div><h2>芯片内部电路框图</h2>
+    </div>
+    <div class="card-body">
+      <div class="diagram-title">图 3-1 | Pipeline ADC 芯片内部架构（M 级流水线）</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 430" width="800" height="430" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <defs>
+            <marker id="arrPG2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker>
+            <marker id="arrPB2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker>
+          </defs>
+          <rect width="820" height="430" fill="#fafafa" rx="8"/>
+
+          <!-- ▀▀▀▀▀ 模拟域 ▀▀▀▀▀ -->
+          <rect x="15" y="15" width="590" height="220" rx="8" fill="none" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="8,4"/>
+          <text x="25" y="35" font-size="10" fill="#e74c3c" font-weight="bold">模拟域 — M 级流水线核心</text>
+
+          <!-- S/H -->
+          <rect x="25" y="55" width="70" height="40" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="60" y="72" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">T/H</text>
+          <text x="60" y="86" font-size="7" fill="#ef4444" text-anchor="middle">输入采样</text>
+
+          <line x1="95" y1="75" x2="115" y2="75" stroke="#e74c3c" stroke-width="1.5" marker-end="url(#arrPG2)"/>
+
+          <!-- Stage 1 Detail -->
+          <rect x="120" y="45" width="170" height="95" rx="6" fill="#fff1f1" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="205" y="62" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">Stage 1 (1.5-bit)</text>
+          <rect x="130" y="72" width="65" height="30" rx="4" fill="white" stroke="#fca5a5"/>
+          <text x="162" y="90" font-size="8" fill="#991b1b" text-anchor="middle" font-weight="bold">Sub-ADC</text>
+          <rect x="205" y="72" width="65" height="30" rx="4" fill="white" stroke="#fca5a5"/>
+          <text x="237" y="90" font-size="8" fill="#991b1b" text-anchor="middle" font-weight="bold">MDAC</text>
+          <text x="205" y="120" font-size="7" fill="#ef4444" text-anchor="middle">2个比较器 G=2 | GBW 最高</text>
+          <text x="205" y="135" font-size="7" fill="#ef4444" text-anchor="middle">Vres1 → Stage 2</text>
+
+          <line x1="290" y1="75" x2="310" y2="75" stroke="#e74c3c" stroke-width="1.5" marker-end="url(#arrPG2)"/>
+
+          <!-- Stage 2 Detail -->
+          <rect x="315" y="50" width="155" height="85" rx="6" fill="#fff1f1" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="392" y="68" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">Stage 2 (1.5-bit)</text>
+          <text x="392" y="86" font-size="7" fill="#ef4444" text-anchor="middle">Sub-ADC + MDAC (G=2)</text>
+          <text x="392" y="100" font-size="7" fill="#ef4444" text-anchor="middle">+ 比较器冗余容忍</text>
+          <text x="392" y="120" font-size="7" fill="#ef4444" text-anchor="middle">Vres2 → Stage 3</text>
+
+          <line x1="470" y1="75" x2="488" y2="75" stroke="#e74c3c" stroke-width="1.5" marker-end="url(#arrPG2)"/>
+
+          <text x="507" y="79" font-size="8" fill="#6b7280">...</text>
+
+          <line x1="520" y1="75" x2="535" y2="75" stroke="#e74c3c" stroke-width="1.5"/>
+
+          <!-- Final Stage Flash -->
+          <rect x="538" y="55" width="55" height="40" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="565" y="72" font-size="8" fill="#92400e" text-anchor="middle" font-weight="bold">Flash</text>
+          <text x="565" y="86" font-size="7" fill="#b45309" text-anchor="middle">M级</text>
+
+          <!-- Clock and current -->
+          <rect x="25" y="152" width="200" height="45" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1"/>
+          <text x="125" y="170" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">非交叠时钟发生器</text>
+          <text x="125" y="186" font-size="7" fill="#b45309" text-anchor="middle">Φ1/Φ2 | 相邻级交替 | 偏斜&lt;10ps</text>
+
+          <rect x="240" y="152" width="180" height="45" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="330" y="170" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">VREF + 偏置电流源</text>
+          <text x="330" y="186" font-size="7" fill="#ef4444" text-anchor="middle">高速缓冲 | 多级去耦</text>
+
+          <!-- ▀▀▀▀▀ 数字域 ▀▀▀▀▀ -->
+          <rect x="15" y="245" width="590" height="100" rx="8" fill="none" stroke="#1a56db" stroke-width="1.5" stroke-dasharray="8,4"/>
+          <text x="25" y="265" font-size="10" fill="#1a56db" font-weight="bold">数字域 — 延迟对齐与数字纠错</text>
+
+          <!-- Stage 1 digital -->
+          <rect x="30" y="278" width="100" height="35" rx="5" fill="#dbeafe" stroke="#93c5fd"/>
+          <text x="80" y="300" font-size="8" fill="#1e40af" text-anchor="middle" font-weight="bold">移位寄存器 1</text>
+
+          <line x1="130" y1="296" x2="150" y2="296" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrPB2)"/>
+
+          <rect x="155" y="278" width="100" height="35" rx="5" fill="#dbeafe" stroke="#93c5fd"/>
+          <text x="205" y="300" font-size="8" fill="#1e40af" text-anchor="middle" font-weight="bold">移位寄存器 2</text>
+
+          <line x1="255" y1="296" x2="275" y2="296" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrPB2)"/>
+
+          <rect x="280" y="280" width="100" height="32" rx="5" fill="#dbeafe" stroke="#93c5fd"/>
+          <text x="330" y="300" font-size="8" fill="#1e40af" text-anchor="middle" font-weight="bold">移位寄存器 M</text>
+
+          <line x1="380" y1="296" x2="400" y2="296" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrPB2)"/>
+
+          <!-- Digital correction -->
+          <rect x="405" y="275" width="140" height="42" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="475" y="293" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">数字纠错加法器</text>
+          <text x="475" y="308" font-size="7" fill="#3b82f6" text-anchor="middle">移位叠加 D=D₁·2^N-1+...</text>
+
+          <line x1="545" y1="296" x2="560" y2="296" stroke="#1a56db" stroke-width="1.5"/>
+
+          <text x="580" y="300" font-size="10" fill="#166534" font-weight="bold">N-bit</text>
+
+          <!-- Calibration -->
+          <rect x="30" y="318" width="200" height="20" rx="4" fill="#e8f0fe"/>
+          <text x="130" y="332" font-size="7" fill="#1e40af" text-anchor="middle">可选: 后台校准 (PN注入/相关性/Skip-and-Fill)</text>
+
+          <!-- ▀▀▀▀▀ 右侧: 电源与接口 ▀▀▀▀▀ -->
+          <rect x="620" y="15" width="185" height="330" rx="8" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="8,4"/>
+          <text x="630" y="35" font-size="10" fill="#f59e0b" font-weight="bold">电源与接口域</text>
+
+          <rect x="635" y="55" width="155" height="45" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="712" y="73" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">电源管理</text>
+          <text x="712" y="90" font-size="7" fill="#ef4444" text-anchor="middle">AVDD / DVDD / VIO</text>
+
+          <text x="712" y="130" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">运放架构</text>
+          <text x="712" y="146" font-size="7" fill="#b45309" text-anchor="middle">套筒式 / 折叠式</text>
+          <text x="712" y="160" font-size="7" fill="#b45309" text-anchor="middle">两级 / Gain-Boosted</text>
+
+          <text x="712" y="190" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">输出接口</text>
+          <text x="712" y="206" font-size="7" fill="#475569" text-anchor="middle">并行 LVDS / CMOS</text>
+          <text x="712" y="220" font-size="7" fill="#475569" text-anchor="middle">串行 JESD204B/C</text>
+
+          <text x="712" y="250" font-size="9" fill="#475569" text-anchor="middle" font-weight="bold">关键规格</text>
+          <text x="712" y="266" font-size="7" fill="#475569" text-anchor="middle">Stage1 GBW &gt; 数 GHz</text>
+          <text x="712" y="280" font-size="7" fill="#475569" text-anchor="middle">14b → εG &lt; 0.006%</text>
+          <text x="712" y="294" font-size="7" fill="#475569" text-anchor="middle">延迟 = M × Tclk</text>
+
+          <text x="410" y="395" font-size="9" fill="#475569" text-anchor="middle">CMOS 工艺 65nm~7nm | 吞吐率 = fs | 分辨率 8~16 bit | 10 MSPS~1 GSPS</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>说明：</strong>Pipeline ADC 的核心竞争力在于 1.5-bit/级 + 数字纠错架构——用冗余区间容忍比较器失调，将精度压力转移到 MDAC 的级间增益和运放建立。第一级 MDAC 的设计要求最严苛。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 4: 核心对比 ===== -->
+<section id="sec4"><div class="card"><div class="card-header"><div class="section-no">4</div><div class="icon">X</div><h2>核心对比：ADC 架构全景</h2></div><div class="card-body">
+
+<h4>四大 ADC 架构对比</h4>
+<table><thead><tr><th>维度</th><th>Pipeline</th><th>SAR</th><th>Sigma-Delta</th><th>Flash</th></tr></thead><tbody>
+<tr><td>分辨率</td><td>8~16 bit</td><td>8~18 bit</td><td>16~32 bit</td><td>4~8 bit</td></tr>
+<tr><td>采样率</td><td>10M~1 GSPS</td><td>DC~10 MSPS</td><td>DC~100 kHz</td><td>100M~10 GSPS</td></tr>
+<tr><td>功耗</td><td>mW~W</td><td>nW~mW</td><td>&#x3BC;W~mW</td><td>W</td></tr>
+<tr><td>面积</td><td>大(多级级联)</td><td>小</td><td>中(数字为主)</td><td>极大</td></tr>
+<tr><td>延迟</td><td>6~12 周期</td><td>N 周期</td><td>大(滤波)</td><td>1 周期</td></tr>
+<tr><td>吞吐率</td><td>高 (每周期)</td><td>中 (N周期/次)</td><td>低 (滤波抽取后)</td><td>极高</td></tr>
+<tr><td>校准需求</td><td>需要(增益误差)</td><td>>12b需要</td><td>天然高精度</td><td>需要</td></tr>
+<tr><td>运放数量</td><td>M个(每级1个)</td><td>0(动态)</td><td>2~5个</td><td>多(预放大器)</td></tr>
+<tr><td>主要误差源</td><td>级间增益/建立</td><td>电容失配</td><td>量化噪声</td><td>比较器失调</td></tr>
+</tbody></table>
+<div class="info-box"><strong>决策树：</strong>BW&lt;100k+&gt;16b &rarr; Sigma-Delta | 100k~10M+10~16b &rarr; SAR | &gt;10M+10~14b &rarr; Pipeline | &gt;1G &rarr; Flash/TI</div>
+<h4>Pipeline 代际演进</h4>
+<table><thead><tr><th>节点</th><th>工艺</th><th>分辨率</th><th>f<sub>s</sub></th><th>功耗</th><th>技术</th></tr></thead><tbody>
+<tr><td>传统</td><td>0.35~0.18&#x3BC;m</td><td>10~14b</td><td>10~80M</td><td>100~500 mW</td><td>1.5b/级, 简单运放</td></tr>
+<tr><td>现代</td><td>65~40nm</td><td>12~14b</td><td>80~250M</td><td>50~300 mW</td><td>增益增强, 运放共享</td></tr>
+<tr><td>先进</td><td>28~7nm</td><td>14~16b</td><td>250M~1G</td><td>fJ/step</td><td>后台校准, 时间交织, 先进运放</td></tr>
+</tbody></table>
+</div></section>
+
+<!-- ===== Section 5: 核心指标 ===== -->
+<section id="sec5"><div class="card"><div class="card-header"><div class="section-no">5</div><div class="icon">X</div><h2>核心指标</h2></div><div class="card-body">
+
+<h4>关键参数</h4>
+<table><thead><tr><th>参数</th><th>范围</th><th>说明</th></tr></thead><tbody>
+<tr><td>分辨率</td><td>8~16 bit</td><td>由级间增益精度和 MDAC 建立精度决定</td></tr>
+<tr><td>采样率 f<sub>s</sub></td><td>10 MSPS~1 GSPS</td><td>受运放 GBW 和建立时间限制</td></tr>
+<tr><td>功耗</td><td>10 mW~2 W</td><td>与级数、f<sub>s</sub> 和运放类型直接相关</td></tr>
+<tr><td>SNDR</td><td>45~88 dB</td><td>f<sub>in</sub> 近 Nyquist 时下降</td></tr>
+<tr><td>ENOB</td><td>7.2~14.3 bit</td><td>(SNDR&minus;1.76)/6.02</td></tr>
+<tr><td>SFDR</td><td>55~95 dBc</td><td>受运放谐波和开关非线性影响</td></tr>
+<tr><td>INL</td><td>&#x00B1;0.5~&#x00B1;4 LSB</td><td>级间增益误差累积</td></tr>
+<tr><td>DNL</td><td>&#x00B1;0.3~&#x00B1;1 LSB</td><td>1.5b/级冗余确保无失码</td></tr>
+<tr><td>流水线延迟</td><td>6~12 周期</td><td>M&times;T<sub>clk</sub>；对控制环路需考虑</td></tr>
+<tr><td>Walden FoM</td><td>0.1~2 pJ/step</td><td>P/(2<sup>ENOB</sup>&times;f<sub>s</sub>)</td></tr>
+</tbody></table>
+<div class="metric-card"><div class="metric-header"><h4>级间增益误差 (Inter-stage Gain Error)</h4><span class="metric-abbr">核心</span></div><div class="metric-body">
+<div class="metric-row"><span class="metric-label">定义</span><span>MDAC 实际增益与理想增益 (G=2<sup>k&minus;1</sup>) 的偏差</span></div>
+<div class="metric-row"><span class="metric-label">公式</span><span>&#x3B5;<sub>G</sub> = (G<sub>actual</sub>&minus;G<sub>ideal</sub>)/G<sub>ideal</sub> &asymp; &minus;1/(A<sub>OL</sub>&beta;) &minus; &#x394;C/C</span></div>
+<div class="metric-row"><span class="metric-label">典型</span><span>未校准: 0.1~1%; 校准后: &lt;0.01%; 14b 需要 &lt;0.006%</span></div>
+</div></div>
+</div></section>
+
+<!-- ===== Section 6: 影响因素 ===== -->
+<section id="sec6"><div class="card"><div class="card-header"><div class="section-no">6</div><div class="icon">X</div><h2>影响因素分析</h2></div><div class="card-body">
+
+<table><thead><tr><th>指标</th><th>影响因素</th><th>影响下游</th></tr></thead><tbody>
+<tr><td>ENOB</td><td><span class="chip chip-red">MDAC增益误差</span> <span class="chip chip-yellow">运放噪声</span> <span class="chip chip-blue">时钟抖动</span> <span class="chip chip-red">kT/C</span></td><td>SNR, 精度</td></tr>
+<tr><td>INL/DNL</td><td><span class="chip chip-red">电容失配</span> <span class="chip chip-yellow">运放增益</span> <span class="chip chip-green">校准效能</span></td><td>ENOB, SFDR</td></tr>
+<tr><td>SFDR</td><td><span class="chip chip-red">运放谐波</span> <span class="chip chip-yellow">开关非线性</span> <span class="chip chip-blue">参考纹波</span></td><td>EVM, 杂散</td></tr>
+<tr><td>f<sub>s,max</sub></td><td><span class="chip chip-yellow">运放GBW/SR</span> <span class="chip chip-blue">时钟偏斜</span> <span class="chip chip-red">建立时间</span></td><td>信号带宽</td></tr>
+<tr><td>功耗</td><td><span class="chip chip-blue">级数M</span> <span class="chip chip-green">f<sub>s</sub></span> <span class="chip chip-yellow">运放偏置</span></td><td>热预算</td></tr>
+<tr><td>延迟</td><td><span class="chip chip-blue">流水线级数</span> <span class="chip chip-green">时钟周期</span> <span class="chip chip-yellow">输出锁存</span></td><td>控制环路稳定性</td></tr>
+</tbody></table>
+<div class="info-box"><strong>总结：</strong>Pipeline ADC 性能的决定因素是 MDAC 的增益精度和运放建立速度。先进工艺下运放本征增益下降，使得增益增强 (Gain-Boosting) 和数字校准技术成为 14+ bit 设计的必备手段。</div>
+</div></section>
+
+<!-- ===== Section 7: 测试方法 ===== -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>⓵ 动态性能 — FFT 频谱法 (SNR/SNDR/SFDR)</h4>
+      <p>施加低相噪正弦波 (f<sub>in</sub> 接近 Nyquist/2) → 相干采样 → 采集 128K~1M 点 → 加窗 FFT → 计算 SNR/SNDR/SFDR。高频 near-Nyquist 输入最能暴露运放建立不足和时钟抖动的影响。</p>
+
+      <div class="diagram-title">图 7-1 | 动态性能 FFT 测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 130" width="800" height="130" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <defs><marker id="arrTP" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker></defs>
+          <rect width="820" height="130" fill="#fafafa" rx="8"/>
+          <rect x="10" y="30" width="125" height="55" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="72" y="50" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">超低相噪信号源</text>
+          <text x="72" y="68" font-size="7" fill="#3b82f6" text-anchor="middle">R&amp;S SMA100B</text>
+          <text x="72" y="80" font-size="7" fill="#3b82f6" text-anchor="middle">相噪&lt;−140dBc/Hz</text>
+          <line x1="135" y1="57" x2="160" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrTP)"/>
+          <rect x="165" y="30" width="80" height="55" rx="6" fill="#fef2f2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="205" y="50" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">带通滤波</text>
+          <text x="205" y="68" font-size="7" fill="#ef4444" text-anchor="middle">BPF</text>
+          <text x="205" y="80" font-size="7" fill="#ef4444" text-anchor="middle">滤除谐波</text>
+          <line x1="245" y1="57" x2="270" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrTP)"/>
+          <rect x="275" y="35" width="80" height="45" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="315" y="55" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">DUT</text>
+          <text x="315" y="70" font-size="8" fill="#16a34a" text-anchor="middle">Pipeline ADC</text>
+          <line x1="355" y1="57" x2="380" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrTP)"/>
+          <rect x="385" y="30" width="120" height="55" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="445" y="50" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">逻辑分析仪</text>
+          <text x="445" y="68" font-size="7" fill="#3b82f6" text-anchor="middle">Keysight 16860A</text>
+          <text x="445" y="80" font-size="7" fill="#3b82f6" text-anchor="middle">Nrec≥128K 点</text>
+          <line x1="505" y1="57" x2="530" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrTP)"/>
+          <rect x="535" y="35" width="100" height="45" rx="6" fill="#f8f9fc" stroke="#475569" stroke-width="1.5"/>
+          <text x="585" y="55" font-size="9" fill="#475569" text-anchor="middle" font-weight="bold">FFT 分析</text>
+          <text x="585" y="70" font-size="7" fill="#6b7280" text-anchor="middle">SNR/SNDR/SFDR</text>
+          <text x="315" y="105" font-size="9" fill="#475569" text-anchor="middle">判定: SNDR ≥ 标称−3dB | SFDR ≥ 标称−5dBc | fin 近 Nyquist 最严苛</text>
+        </svg>
+      </div>
+
+      <h4>⓶ INL/DNL — 码密度直方图法</h4>
+      <p>施加低失真正弦波 → 采集 &gt;1M 点 → 正弦码密度直方图分析。高速 Pipeline 输出码率极高，需保证采集卡时序分辨率充足。也可使用高精度斜坡信号源 → 逐码统计法。</p>
+
+      <div class="diagram-title">图 7-2 | INL/DNL 码密度测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 110" width="800" height="110" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <defs><marker id="arrTP2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker></defs>
+          <rect width="820" height="110" fill="#fafafa" rx="8"/>
+          <rect x="10" y="30" width="100" height="55" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="60" y="50" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">低失真信号源</text>
+          <text x="60" y="68" font-size="7" fill="#3b82f6" text-anchor="middle">THD 比DUT高3bit</text>
+          <text x="60" y="80" font-size="7" fill="#3b82f6" text-anchor="middle">正弦/斜坡</text>
+          <line x1="110" y1="57" x2="135" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrTP2)"/>
+          <rect x="140" y="35" width="80" height="45" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="180" y="55" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">DUT</text>
+          <text x="180" y="70" font-size="8" fill="#16a34a" text-anchor="middle">Pipeline ADC</text>
+          <line x1="220" y1="57" x2="245" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrTP2)"/>
+          <rect x="250" y="30" width="120" height="55" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="310" y="50" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">高速采集卡</text>
+          <text x="310" y="68" font-size="7" fill="#3b82f6" text-anchor="middle">&gt;1M 采样点</text>
+          <text x="310" y="80" font-size="7" fill="#3b82f6" text-anchor="middle">时序精度充足</text>
+          <line x1="370" y1="57" x2="395" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrTP2)"/>
+          <rect x="400" y="35" width="100" height="45" rx="6" fill="#f8f9fc" stroke="#475569" stroke-width="1.5"/>
+          <text x="450" y="52" font-size="9" fill="#475569" text-anchor="middle" font-weight="bold">PC 分析</text>
+          <text x="450" y="68" font-size="7" fill="#6b7280" text-anchor="middle">DNL/INL 计算</text>
+          <text x="180" y="95" font-size="9" fill="#475569" text-anchor="middle">判定: INL &lt; ±2 LSB (14b) | DNL &lt; ±0.5 LSB | 无失码</text>
+        </svg>
+      </div>
+
+      <h4>⓷ 流水线延迟测量</h4>
+      <p>施加阶跃输入信号 (快速上升沿) → 同时捕获模拟输入和 ADC 数字输出 (高速示波器 + 逻辑探头) → 测量从模拟阶跃到对应数字码出现在输出端口的时间差。</p>
+      <p><strong>设备：</strong>AWG (Keysight 33600A) + 高速示波器 (Keysight MSO-S 系列) + 逻辑探头。</p>
+      <p><strong>判定：</strong>延迟 = 标称值 ±1 个时钟周期 (典型 6~12 T<sub>clk</sub>)。</p>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 8: 注意事项 ===== -->
+<section id="sec8"><div class="card"><div class="card-header"><div class="section-no">8</div><div class="icon">X</div><h2>注意事项</h2></div><div class="card-body">
+
+<div class="caution-grid">
+<div class="caution-item"><div class="ci-title">&#x26A1; MDAC 建立时间</div><p>Pipeline ADC 中最关键的设计约束。运放必须在半周期内建立到目标精度 (如 14b = 0.006%)。运放 GBW 和摆率不足直接导致 INL 和 SNDR 恶化。第一级 MDAC 的要求最苛刻。</p></div>
+<div class="caution-item"><div class="ci-title">&#x1F4A5; 参考电压缓冲</div><p>MDAC 中 DAC 切换从 V<sub>REF</sub> 抽取瞬态电流 &rarr; V<sub>REF</sub> 纹波。需要片上高速缓冲器 + 片外多级去耦 (10&#x3BC;F + 0.1&#x3BC;F + 10nF)。第一级 MDAC 参考缓冲器的 BW 需 > 数倍 f<sub>s</sub>。</p></div>
+<div class="caution-item"><div class="ci-title">&#x23F0; 时钟偏斜</div><p>高速 Pipeline (&gt;200 MSPS) 中，&#x3A6;1/&#x3A6;2 的非交叠间隔和偏斜直接侵蚀建立时间。偏斜需 &lt;5~10 ps，需在版图中做时钟树平衡。差分时钟 (CML/LVDS) 优于单端。</p></div>
+<div class="caution-item"><div class="ci-title">&#x1F50C; 前端 T/H 线性度</div><p>前端采样保持电路的非线性 (尤其是开关 R<sub>on</sub> 调制) 直接限制整体 SFDR。自举开关 (Bootstrapped Switch) 是必备技术。高线性度 (&gt;90 dB SFDR) 需底部板采样。</p></div>
+<div class="caution-item"><div class="ci-title">&#x1F30A; 级间串扰</div><p>后级 MDAC 的大信号跳变通过衬底和电源耦合到前级 &rarr; 记忆效应 (Memory Effect)。版图隔离 (深 N-well, Guard Ring) 和信号路径线性化至关重要。</p></div>
+<div class="caution-item"><div class="ci-title">&#x1F321; 热梯度</div><p>多级运放的功耗集中产生热梯度 &rarr; 版图需对称布局，关键模块 (第一级 MDAC、Bandgap) 置于芯片等温线上，远离输出驱动等大功耗模块。</p></div>
+</div>
+<div class="danger-box"><strong>TOP 5 常见错误：</strong><br>1. MDAC 运放建立不足 &rarr; 高频 SNDR 骤降<br>2. V<sub>REF</sub> 去耦不足 &rarr; 级间串扰 &rarr; SFDR 降<br>3. 时钟偏斜过大 &rarr; 建立余量不足 &rarr; 功能失效<br>4. 前端 T/H 非线性 &rarr; 整体 SFDR 天花板<br>5. 数字输出驱动与模拟域隔离不足 &rarr; 衬底耦合噪声</div>
+</div></section>
+
+<!-- ===== Section 9: 选型指南 ===== -->
+<section id="sec9"><div class="card"><div class="card-header"><div class="section-no">9</div><div class="icon">X</div><h2>选型指南</h2></div><div class="card-body">
+
+<div class="compare-grid"><div class="compare-col blue"><h3>选用 Pipeline</h3><ul>
+<li>BW 10M~500 MHz</li>
+<li>10~14 bit 分辨率</li>
+<li>需要高吞吐率 (每周期 1 次转换)</li>
+<li>可接受流水线延迟 (6~12 周期)</li>
+<li>无线通信/视频/雷达等中高频应用</li></ul></div>
+<div class="compare-col red"><h3>不适合 Pipeline</h3><ul>
+<li>&lt;10 MHz + &gt;14b &rarr; SAR/Sigma-Delta</li>
+<li>&gt;500 MHz + &lt;10b &rarr; Time-Interleaved</li>
+<li>极低功耗 (&lt;1 mW) &rarr; SAR</li>
+<li>需要单周期延迟 &rarr; Flash</li>
+<li>成本/面积极度敏感 &rarr; SAR</li></ul></div></div>
+<h4>按场景选型</h4>
+<table><thead><tr><th>场景</th><th>分辨率</th><th>f<sub>s</sub></th><th>特点</th></tr></thead><tbody>
+<tr><td>基站 IF 接收</td><td>12~14b</td><td>80~250M</td><td>高 SFDR, 低噪声</td></tr>
+<tr><td>软件无线电</td><td>12~16b</td><td>50~500M</td><td>宽带, 高线性度</td></tr>
+<tr><td>医疗超声</td><td>12~14b</td><td>40~80M/ch</td><td>多通道, 低功耗/ch</td></tr>
+<tr><td>高速 DAQ</td><td>14~16b</td><td>100~250M</td><td>最高精度, 可接受功耗</td></tr>
+<tr><td>雷达接收</td><td>12~14b</td><td>100~500M</td><td>宽带, 低延迟</td></tr>
+<tr><td>视频处理</td><td>10~12b</td><td>50~150M</td><td>中精度, 低成本</td></tr>
+</tbody></table>
+<div class="info-box"><strong>AE认知：</strong>Pipeline ADC 是高速中高精度的最佳选择。选型核心在于确认第一级 MDAC 的建立时间 (运放 GBW) 是否匹配目标 f<sub>s</sub>。14b@250MSPS 的 Pipeline ADC 的第一级运放 GBW 通常需达到 5~10 GHz (先进工艺)。</div>
+</div></section>
+
+<div class="footer">
+AE 知识文档 · Pipeline ADC 模数转换器<br>
+  覆盖原理、框图、指标、影响因素、测试方法与选型指南 · 文档版本 v2.0 · 生成时间：2026-06-19<br>
+</div>
+
+</body>
+</html>

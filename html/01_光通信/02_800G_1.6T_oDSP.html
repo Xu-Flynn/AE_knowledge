@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>800G & 1.6T oDSP 光数字信号处理器 — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #1a56db; --primary-dark: #0e3a8e; --accent: #e74c3c;
+    --accent2: #27ae60; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+    --optical: #1a56db; --wireless: #e74c3c; --industrial: #27ae60;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .hero { background: linear-gradient(135deg, #0e3a8e 0%, #1a56db 50%, #0891b2 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #1a56db11, #1a56db05); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #2563eb); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #e8f0fe; }
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  .info-box { border-left: 4px solid var(--primary); background: #eff6ff; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #1e40af, #1a56db); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #eff6ff; border: 2px solid var(--primary); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>🔷 800G &amp; 1.6T oDSP</h1>
+  <div class="subtitle">下一代光数字信号处理器 (Next-Gen Optical DSP) — 面向 AI/ML 超大规模数据中心的 212Gbps PAM4 核心芯片</div>
+  <div class="badge-row">
+    <span class="badge">📡 PAM4/PAM6 调制</span>
+    <span class="badge">⚡ 5nm/3nm FinFET</span>
+    <span class="badge">🔗 1.6TAUI-8</span>
+    <span class="badge">📊 iFEC 级联编码</span>
+    <span class="badge">🧪 212Gbps PAM4</span>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 核心模块深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、代际对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ Section 1: 背景与定位 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div><div class="icon">📖</div><h2>背景与应用定位</h2>
+    </div>
+    <div class="card-body">
+      <p>800G/1.6T oDSP 是面向<strong>下一代超大规模数据中心光互连的核心芯片</strong>，部署于 800G OSFP/QSFP-DD800 及 1.6T OSFP-XD 光模块中。相比 400G/800G 一代，1.6T oDSP 在单通道速率（106Gbps 直接翻倍至 212Gbps PAM4）、调制阶数（新增 PAM6 可选）和 DSP 复杂度（新增 NLC 非线性补偿、升级至级联 iFEC+KP4 FEC、MLSD 从 64-State 升级至 256-State）上均有质的飞跃。这是 <strong>AI/ML 训练集群 GPU 间互连</strong>的关键使能技术，被业界视为光互连的"分水岭"产品。</p>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col blue">
+          <h3>📌 产品定位</h3>
+          <p><strong>产业链位置：</strong>光模块内部，处于超高速 ADC/DAC (224GS/s) 与 Host ASIC 之间</p>
+          <p><strong>核心价值：</strong>在 1UI=9.43ps 的极端条件下，将"被光纤严重破坏"的 212Gbps PAM4 信号恢复至 Post-FEC BER &lt; 1e-15</p>
+          <p><strong>本质功能：</strong>超高速数字信号处理（21-tap FFE + 5-tap Spec DFE + 256-State MLSD + NLC + 级联 FEC）</p>
+          <p><strong>制程节点：</strong>5nm/3nm FinFET CMOS，支撑 &gt;1.7Tbps 总吞吐量和 &lt;20W 功耗</p>
+        </div>
+        <div class="compare-col green">
+          <h3>🎯 典型应用场景</h3>
+          <ul>
+            <li>AI/ML 训练集群的 800G/1.6T 光互联 (GPU-to-GPU, NVLink 跨机架)</li>
+            <li>超大规模数据中心 Spine-Leaf 互联架构</li>
+            <li>800GBASE-DR8 / 2xFR4 光模块</li>
+            <li>1.6T OSFP-XD 光模块 (8x200G 或 4x400G 灵活配置)</li>
+            <li>下一代相干 800G/1.2T DWDM 长距传输</li>
+            <li>CPO (Co-Packaged Optics) 共封装光学集成</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">技术演进路线 -- 400G/800G 到 800G/1.6T</h4>
+      <table>
+        <thead><tr><th>参数</th><th>400G/800G oDSP</th><th>800G/1.6T oDSP</th><th>提升</th></tr></thead>
+        <tbody>
+          <tr><td><strong>单 lane 速率</strong></td><td>106Gbps PAM4 (53Gbaud)</td><td>212Gbps PAM4 (106Gbaud)</td><td>2x</td></tr>
+          <tr><td><strong>最高总速率</strong></td><td>850Gbps</td><td>1.7Tbps</td><td>2x</td></tr>
+          <tr><td><strong>调制格式</strong></td><td>PAM4</td><td>PAM4 / PAM6 可选</td><td>更高阶可选</td></tr>
+          <tr><td><strong>制程</strong></td><td>7nm FinFET</td><td>5nm / 3nm FinFET</td><td>更先进</td></tr>
+          <tr><td><strong>FEC 方案</strong></td><td>KP4-FEC (NCG ~6.2dB)</td><td>KP4 + iFEC 级联 (总 NCG ~11dB)</td><td>+4.8dB NCG</td></tr>
+          <tr><td><strong>均衡方案</strong></td><td>FFE(15t)+DFE(3t)+MLSD(64st)</td><td>FFE(21t)+DFE(5t)+MLSD(256st)+NLC</td><td>大幅增强</td></tr>
+          <tr><td><strong>最大功耗</strong></td><td>&lt;14W</td><td>&lt;20W (1.6T 模式)</td><td>效率提升 ~1.7x (pJ/bit)</td></tr>
+          <tr><td><strong>ADC/DAC 采样率</strong></td><td>112GS/s</td><td>224GS/s</td><td>2x</td></tr>
+          <tr><td><strong>1 UI 宽度</strong></td><td>18.8ps</td><td>9.43ps</td><td>时序裕量减半</td></tr>
+          <tr><td><strong>封装</strong></td><td>FC-BGA</td><td>FC-BGA / CPO 共封装</td><td>更紧凑</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;"><strong>💡 关键认知：</strong>212Gbps PAM4 是行业公认的"分水岭"速率。1UI=9.43ps 意味着所有时序路径必须重新设计，传统均衡方案已不足以应对信道损伤。NLC（非线性补偿）和级联 FEC 从"锦上添花"变为"必不可少"。这是光互连从 100G/lane 时代迈向 200G/lane 时代的标志性产品。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2: 工作原理 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div><div class="icon">⚙️</div><h2>核心工作原理</h2>
+    </div>
+    <div class="card-body">
+      <p>800G/1.6T oDSP 在 400G/800G 基础上面临<strong>速率翻倍</strong>带来的全新挑战。212Gbps PAM4 (106Gbaud) 下，1UI 仅 9.43ps，所有 DSP 模块必须在更短的时间内完成更复杂的运算。Nyquist 频率升至 53GHz，PCB 损耗可达 40dB+，对模拟前端 (AFE) 和时钟系统的要求成倍提高。</p>
+
+      <h4>⚡ 212Gbps PAM4 的五大关键挑战</h4>
+      <table>
+        <thead><tr><th>#</th><th>挑战</th><th>数值</th><th>对比 106Gbps</th><th>工程应对</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>超短 UI 宽度</strong></td><td>1UI = 9.43ps</td><td>减半 (18.8 到 9.43ps)</td><td>DFE Speculative 架构 + 全并行 MLSD</td></tr>
+          <tr><td>2</td><td><strong>高频信道损耗</strong></td><td>Nyquist = 53GHz, PCB 损耗可达 40dB+</td><td>频率翻倍，损耗远超平方增长</td><td>21-tap FFE，补偿能力 >35dB</td></tr>
+          <tr><td>3</td><td><strong>SNR 要求更严</strong></td><td>PAM4 SNR 需求比 NRZ 高 ~9.5dB；速率翻倍噪声带宽翻倍</td><td>等效 SNR 再降 3dB</td><td>ADC ENOB >6bit @53GHz + 级联 FEC</td></tr>
+          <tr><td>4</td><td><strong>时钟抖动</strong></td><td>RJ &lt;150fs RMS</td><td>比 106G 严格约 17%</td><td>CDR 二阶 PLL BW 升至 15~20MHz</td></tr>
+          <tr><td>5</td><td><strong>ADC/DAC 性能</strong></td><td>&gt;6 ENOB @53GHz, 224GS/s</td><td>采样率翻倍，模拟带宽翻倍</td><td>5nm/3nm 先进工艺 + 交织架构</td></tr>
+        </tbody>
+      </table>
+
+      <h4>📥 接收方向 (RX Path) 信号处理流程</h4>
+      <div class="diagram-title">图 2-1 | 800G/1.6T oDSP RX 接收链路 -- 212Gbps PAM4 信号流</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 120" width="800" height="120" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrBlue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <rect x="5" y="12" width="80" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="45" y="35" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">PD+TIA</text>
+          <line x1="85" y1="30" x2="108" y2="30" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="112" y="10" width="72" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="148" y="28" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">ADC</text>
+          <text x="148" y="42" fill="#3b82f6" font-size="7" text-anchor="middle">8b 224GS/s</text>
+          <line x1="184" y1="30" x2="210" y2="30" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="214" y="6" width="590" height="50" rx="8" fill="#1a56db" stroke="#0e3a8e" stroke-width="2"/>
+          <text x="509" y="28" fill="white" font-size="11" font-weight="700" text-anchor="middle">oDSP RX: Skew->IQ Comp->CD Comp->FFE(21t)->DFE(5t)->MLSD(256St)->NLC->CDR->FEC Dec(iFEC+KP4)</text>
+          <text x="509" y="46" fill="#bfdbfe" font-size="8" text-anchor="middle">212Gbps PAM4 全链路均衡补偿 + 非线性补偿 + 级联纠错解码 -> 输出至 Host SerDes (1.6TAUI-8)</text>
+        </svg>
+      </div>
+
+      <h4>📤 发送方向 (TX Path) 信号处理流程</h4>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 120" width="800" height="120" xmlns="http://www.w3.org/2000/svg">
+          <text x="10" y="35" fill="#1e40af" font-size="10" font-weight="700">Host SerDes</text>
+          <line x1="82" y1="30" x2="108" y2="30" stroke="#1a56db" stroke-width="2"/>
+          <rect x="112" y="6" width="590" height="50" rx="8" fill="#1a56db" stroke="#0e3a8e" stroke-width="2"/>
+          <text x="407" y="28" fill="white" font-size="11" font-weight="700" text-anchor="middle">oDSP TX: FEC Encode(KP4+iFEC)->PAM4/PAM6 Map->Pulse Shaping(RRC)->Pre-emp(5t FIR)->NLC Pre-comp</text>
+          <text x="407" y="46" fill="#bfdbfe" font-size="8" text-anchor="middle">级联FEC编码 + 高阶符号映射 + 频谱整形 + 5-tap预均衡 + 光纤Kerr非线性预补偿</text>
+          <line x1="702" y1="30" x2="728" y2="30" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="732" y="10" width="78" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="771" y="28" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">DAC</text>
+          <text x="771" y="42" fill="#3b82f6" font-size="7" text-anchor="middle">8~10b 224GS/s</text>
+        </svg>
+      </div>
+
+      <div class="info-box"><strong>💡 关键认知：</strong>800G/1.6T oDSP 的信号链比上一代增加了两个关键模块 -- <strong>NLC（非线性补偿，补偿光纤 Kerr 效应）</strong>和<strong>级联 FEC（iFEC+KP4，总 NCG ~11dB）</strong>。这两个模块是 212Gbps 速率下实现可靠传输的必要条件，也是区分两代产品的核心技术标志。此外，均衡器从 FFE(15t)+DFE(3t)+MLSD(64St) 全面升级至 FFE(21t)+DFE(5t)+MLSD(256St)，复杂度指数级提升。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2B: 模块深度解析 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header" style="background:linear-gradient(90deg,#fef3c7,#fde68a);border-bottom:2px solid #f59e0b;">
+      <div class="section-no" style="background:#d97706;">🔬</div><div class="icon">🧠</div><h2 style="color:#92400e;">核心模块深度解析 -- 800G/1.6T 增强版</h2>
+    </div>
+    <div class="card-body">
+
+      <!-- FFE 21-tap -->
+      <h4 style="color:#92400e;">一、增强型前馈均衡器 (FFE) -- 21-tap 自适应 FIR</h4>
+      <p>800G/1.6T oDSP 的 FFE 从 15-tap 升级为 <strong>21-tap</strong>，以应对 Nyquist 频率升至 53GHz 后更加严重的信道损耗（PCB 损耗可达 40dB+）。前向抽头用于补偿 pre-cursor ISI（反射引起），后向抽头补偿 post-cursor ISI（信道滚降引起）。自适应算法从固定步长 LMS 升级为变步长 LMS，初始阶段大步长快速收敛，稳态阶段小步长保证低误差。</p>
+      <div class="formula">y[n] = Σ(k=-5 to 15) c[k] . x[n-k]  |  变步长 LMS: c[k]^(n+1) = c[k]^(n) + mu(n).e(n).x(n-k)</div>
+      <table>
+        <thead><tr><th>参数</th><th>400G/800G (15-tap)</th><th>800G/1.6T (21-tap)</th><th>提升原因</th></tr></thead>
+        <tbody>
+          <tr><td>前向抽头 (pre-cursor)</td><td>3~5 tap</td><td>5~7 tap</td><td>高速下反射 ISI 更严重</td></tr>
+          <tr><td>后向抽头 (post-cursor)</td><td>9~11 tap</td><td>13~15 tap</td><td>53GHz Nyquist 处损耗滚降更陡</td></tr>
+          <tr><td>最大补偿 @Nyquist</td><td>&gt;30dB @26.5GHz</td><td>&gt;35dB @53GHz</td><td>高频损耗远超平方增长</td></tr>
+          <tr><td>系数位宽</td><td>8~10 bit</td><td>10~12 bit</td><td>更高精度需求</td></tr>
+          <tr><td>自适应算法</td><td>固定步长 LMS</td><td>变步长 LMS (mu=fn(error))</td><td>兼顾收敛速度与稳态误差</td></tr>
+          <tr><td>乘法器数/lane</td><td>15 个</td><td>21 个</td><td>功耗增加 ~40%/lane</td></tr>
+        </tbody>
+      </table>
+
+      <!-- DFE 5-tap Spec -->
+      <h4 style="color:#92400e;margin-top:20px;">二、高阶判决反馈均衡器 (DFE) -- 5-tap Speculative</h4>
+      <p>DFE 从 3-tap 升级为 <strong>5-tap</strong>，以消除更长 post-cursor ISI 拖尾。在 PAM4 (4 电平) + 5-tap DFE 下，理论需要 4^5 = <strong>1024 条并行推测路径</strong>，这在功耗和面积上不可接受。实际采用<strong>混合架构</strong>降低复杂度：h1/h2 使用 Speculative（并行 16 条路径），h3~h5 使用 Direct Feedback。这是 212Gbps 速率下满足 1UI=9.43ps 时序约束的唯一可行方案。</p>
+      <div class="formula">y[n] = x[n] - Σ(k=1 to 5) d[n-k] . b[k]  |  h1/h2: Speculative (16路并行) | h3~h5: Direct Feedback</div>
+      <table>
+        <thead><tr><th>架构方案</th><th>并行路径数</th><th>延迟约束</th><th>功耗/lane</th><th>可行性</th></tr></thead>
+        <tbody>
+          <tr><td>全 Speculative (5-tap)</td><td>1024</td><td>无</td><td>~5W</td><td>不可接受</td></tr>
+          <tr><td style="font-weight:700;color:#1a56db;">混合架构 (h1/h2 Spec + h3~h5 Direct)</td><td style="font-weight:700;">16</td><td>h3~h5 <1UI=9.43ps</td><td>~1.2W</td><td>量产方案</td></tr>
+          <tr><td>全 Direct Feedback</td><td>1</td><td>所有 tap <1UI (不可实现)</td><td>最低</td><td>物理不可行</td></tr>
+        </tbody>
+      </table>
+      <div class="warn-box"><strong>⚠️ 错误传播风险：</strong>5-tap DFE 下，一个判决错误最长传播 5 个符号周期 (约 47ps @106Gbaud)。256-State MLSD 作为 DFE 的后级可有效缓解此问题，将错误传播概率降低 1~2 个数量级。</div>
+
+      <!-- MLSD 256-State -->
+      <h4 style="color:#92400e;margin-top:20px;">三、256-State 最大似然序列检测器 (MLSD) -- Viterbi 算法</h4>
+      <p>256-State MLSD 是 800G/1.6T oDSP 的核心差异化模块，比上一代 64-State 提升 4 倍状态数，带来额外 <strong>+2.5~3.5dB SNR 增益</strong>。PAM4 调制下，每个状态有 4 条入径，每符号周期需执行 256x4 = <strong>1024 次加-比-选 (ACS) 操作</strong>。为在 1UI=9.43ps 内完成，采用全并行 radix-4 ACS 架构和深度流水线。</p>
+      <table>
+        <thead><tr><th>特性</th><th>64-State MLSD (400G/800G)</th><th>256-State MLSD (800G/1.6T)</th></tr></thead>
+        <tbody>
+          <tr><td>状态数</td><td>64 (对应 L=3 信道记忆)</td><td>256 (对应 L=4 信道记忆)</td></tr>
+          <tr><td>每状态入径数</td><td>4 (PAM4)</td><td>4 (PAM4)</td></tr>
+          <tr><td>ACS 操作/符号</td><td>256 次</td><td>1024 次</td></tr>
+          <tr><td>SNR 增益 (vs DFE only)</td><td>+1~2dB</td><td style="color:#1a56db;font-weight:600;">+2.5~3.5dB</td></tr>
+          <tr><td>回溯深度</td><td>32~64</td><td>64~128 (更长记忆)</td></tr>
+          <tr><td>延迟</td><td>32~64 UI</td><td>64~128 UI (~0.6~1.2ns)</td></tr>
+          <tr><td>功耗/lane</td><td>~1W</td><td>~2W</td></tr>
+          <tr><td>实现架构</td><td>部分并行</td><td>全并行 radix-4 ACS + 深度流水线</td></tr>
+          <tr><td>PM 归一化</td><td>减法归一化</td><td>模归一化 (防溢出, 更低延迟)</td></tr>
+        </tbody>
+      </table>
+
+      <!-- NLC (DBP) -->
+      <h4 style="color:#92400e;margin-top:20px;">四、非线性补偿 (NLC) -- 数字反向传播 (DBP)</h4>
+      <p><strong>NLC 是 800G/1.6T 的全新核心模块</strong>，用于补偿光纤传输中的 Kerr 非线性效应。在 212Gbps 速率下，光纤非线性引起的信号失真已无法被线性均衡器 (FFE/DFE) 补偿，必须引入非线性 DSP。NLC 基于数字反向传播 (DBP)，在数字域逆向求解非线性薛定谔方程 (NLSE)，将接收信号"虚拟反向传播"通过光纤。</p>
+      <div class="formula">∂A/∂z + (alpha/2)A + (j.beta_2/2).∂^2A/∂t^2 = j.gamma.|A|^2.A  (NLSE 非线性薛定谔方程)</div>
+      <table>
+        <thead><tr><th>步骤</th><th>操作</th><th>域</th><th>补偿目标</th></tr></thead>
+        <tbody>
+          <tr><td>1. 线性子步 (Linear Step)</td><td>CD 补偿 (频域 FFT 相乘)</td><td>频域</td><td>群速度色散 (GVD)</td></tr>
+          <tr><td>2. 非线性子步 (Nonlinear Step)</td><td>SPM 相位旋转: A.exp(j.gamma.|A|^2.dz_eff)</td><td>时域</td><td>自相位调制 (SPM)</td></tr>
+        </tbody>
+      </table>
+      <p><strong>分段策略：</strong>光纤被划分为 N 段，每段依次执行线性和非线性补偿。分段数 N_steps：短距 1~2 段，中距 3~5 段，长距 8~16 段。每增加一段，NLC 功耗增加约 0.3W，但 SNR 提升逐渐饱和。NLC 的效果高度依赖光纤参数 (gamma, beta_2, alpha) 的精确性 -- 参数误差 &gt;5% 时 NLC 反而可能恶化性能。</p>
+
+      <!-- Cascade FEC -->
+      <h4 style="color:#92400e;margin-top:20px;">五、级联 FEC 编解码器 -- iFEC + KP4-FEC</h4>
+      <p>800G/1.6T 采用<strong>级联 FEC 架构</strong>，通过内码 (iFEC，软判决) + 外码 (KP4-FEC，硬判决 RS) 的串行级联，将总净编码增益 (NCG) 从单一 KP4 的约 6.2dB 提升至约 11dB。两级编码互补 -- iFEC 擅长纠正随机误码，KP4 擅长清除内码输出中的突发残留错误。</p>
+      <table>
+        <thead><tr><th>参数</th><th>内码 iFEC (软判决)</th><th>外码 KP4-FEC (硬判决)</th><th>级联总效果</th></tr></thead>
+        <tbody>
+          <tr><td><strong>码型</strong></td><td>LDPC / Turbo 类 (待确认)</td><td>RS(544,514) over GF(2^10)</td><td>串行级联 (Concatenated)</td></tr>
+          <tr><td><strong>码率</strong></td><td>~0.87</td><td>0.945 (514/544)</td><td>总冗余 ~20%</td></tr>
+          <tr><td><strong>NCG 贡献</strong></td><td>~9.5dB</td><td>~6.2dB</td><td>~11dB 总 NCG</td></tr>
+          <tr><td><strong>Pre-FEC 门限</strong></td><td>~1.5e-2 (内码入口)</td><td>2.4e-4 (外码入口)</td><td>内码输出 -> 外码输入</td></tr>
+          <tr><td><strong>纠错特点</strong></td><td>擅长随机错误</td><td>擅长突发错误 (t=15符号)</td><td>互补纠错能力</td></tr>
+        </tbody>
+      </table>
+      <div class="formula">级联 FEC 瀑布曲线: Pre-FEC BER=1e-2 (iFEC解码后->~2.4e-4) -> KP4解码后-> Post-FEC BER < 1e-15</div>
+
+      <!-- PAM6 -->
+      <h4 style="color:#92400e;margin-top:20px;">六、PAM6 调制 (可选模式)</h4>
+      <p>PAM6 是 800G/1.6T oDSP 的可选高阶调制格式，每符号传输 3 bit（vs PAM4 的 2 bit），在相同 Baud Rate 下提升 50% 数据吞吐量。代价是 SNR 需求比 NRZ 高约 14dB（PAM4 约 9.5dB），且需要 5 个判决阈值（vs PAM4 的 3 个），阈值间距减半，对噪声和 ISI 更加敏感。</p>
+      <table>
+        <thead><tr><th>特性</th><th>PAM4</th><th>PAM6</th><th>差异</th></tr></thead>
+        <tbody>
+          <tr><td>bit/symbol</td><td>2</td><td>3</td><td>+50% 频谱效率</td></tr>
+          <tr><td>电平数</td><td>4 (-3,-1,+1,+3)</td><td>6 (-5,-3,-1,+1,+3,+5)</td><td>5个判决阈值 (vs 3个)</td></tr>
+          <tr><td>SNR 代价 vs NRZ</td><td>~9.5dB</td><td>~14dB</td><td>额外 ~4.5dB SNR 需求</td></tr>
+          <tr><td>判决阈值间距</td><td>2 (归一化)</td><td>1 (减半)</td><td>对噪声 2x 更敏感</td></tr>
+          <tr><td>适用场景</td><td>通用 (DR/FR/LR/ER)</td><td>极短距高 SNR (DR <100m)</td><td>功耗/SNR换吞吐量</td></tr>
+          <tr><td>商用成熟度</td><td>主流量产</td><td>探索阶段 [待确认]</td><td>IEEE 标准化中</td></tr>
+        </tbody>
+      </table>
+      <div class="warn-box"><strong>⚠️ PAM6 工程权衡：</strong>PAM6 提升 50% 数据率但额外需要约 4.5dB SNR。在 212Gbps 速率下 SNR 已经极度紧张，PAM6 仅适用于极短距 (<100m DR) 或超高功率预算场景。2026 年主流部署仍以 PAM4 为主，PAM6 作为技术储备为未来预留演进空间。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 3: 电路框图 ═══════════ -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div><div class="icon">🔲</div><h2>芯片内部电路框图</h2>
+    </div>
+    <div class="card-body">
+      <div class="diagram-title">图 3-1 | 800G/1.6T oDSP 芯片内部架构 -- 5nm/3nm FinFET CMOS, 1.7Tbps</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 840 570" width="820" height="560" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <rect width="840" height="570" fill="#fafafa" rx="8"/>
+          <!-- Top Row: AFE / Interface Blocks -->
+          <rect x="8" y="8" width="195" height="63" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="105" y="30" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">RX AFE Interface</text>
+          <text x="105" y="45" font-size="8" fill="#3b82f6" text-anchor="middle">8x212G PAM4, Deskew <0.3ps</text>
+          <text x="105" y="60" font-size="7" fill="#60a5fa" text-anchor="middle">ADC I/F 8b 224GS/s, CTLE 0~18dB</text>
+
+          <rect x="218" y="8" width="195" height="63" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="315" y="30" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">TX AFE Interface</text>
+          <text x="315" y="45" font-size="8" fill="#3b82f6" text-anchor="middle">8x212G PAM4, Pre-emp 5tap</text>
+          <text x="315" y="60" font-size="7" fill="#60a5fa" text-anchor="middle">DAC I/F 8~10b 224GS/s</text>
+
+          <rect x="428" y="8" width="195" height="63" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="525" y="30" font-size="10" fill="#92400e" text-anchor="middle" font-weight="bold">CDR / PLL / CMU</text>
+          <text x="525" y="45" font-size="8" fill="#b45309" text-anchor="middle">Multi-Bank x8, RefClk 156.25/312.5M</text>
+          <text x="525" y="60" font-size="7" fill="#d97706" text-anchor="middle">Baud-Rate MM-PD, PLL BW 15~20MHz</text>
+
+          <rect x="638" y="8" width="195" height="63" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="735" y="30" font-size="10" fill="#166534" text-anchor="middle" font-weight="bold">FEC Codec</text>
+          <text x="735" y="45" font-size="8" fill="#16a34a" text-anchor="middle">iFEC (内码 NCG~9.5dB) + KP4 (外码)</text>
+          <text x="735" y="60" font-size="7" fill="#4ade80" text-anchor="middle">总冗余 ~20%, 总 NCG ~11dB</text>
+
+          <!-- DSP Datapath Main -->
+          <rect x="8" y="80" width="825" height="248" rx="8" fill="#eff6ff" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="420" y="100" font-size="11" fill="#1e40af" text-anchor="middle" font-weight="bold">增强型 DSP 数据路径 (DSP Datapath) -- 212Gbps PAM4 / lane</text>
+
+          <!-- Row 1: Skew, FFE, CDR, DFE -->
+          <rect x="18" y="112" width="185" height="44" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="110" y="130" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">Skew Comp (8ch)</text>
+          <text x="110" y="146" font-size="7" fill="#3b82f6" text-anchor="middle"><0.3ps, Auto Align</text>
+
+          <rect x="218" y="112" width="185" height="44" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="310" y="130" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">FFE (21-tap Adaptive)</text>
+          <text x="310" y="146" font-size="7" fill="#3b82f6" text-anchor="middle">变步长LMS, 补偿>35dB@53GHz</text>
+
+          <rect x="418" y="112" width="185" height="44" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="510" y="130" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">CDR (Baud-rate MM)</text>
+          <text x="510" y="146" font-size="7" fill="#3b82f6" text-anchor="middle">二阶PLL, BW 15~20MHz</text>
+
+          <rect x="618" y="112" width="195" height="44" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="715" y="130" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">DFE (5-tap Spec)</text>
+          <text x="715" y="146" font-size="7" fill="#3b82f6" text-anchor="middle">h1/h2并行16路 + h3~h5 Direct</text>
+
+          <!-- Row 2: MLSD, TX DSP -->
+          <rect x="18" y="168" width="390" height="44" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="213" y="186" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">MLSD 256-State Viterbi Decoder (全并行 radix-4 ACS)</text>
+          <text x="213" y="202" font-size="7" fill="#3b82f6" text-anchor="middle">1024 ACS/符号, 回溯深度 64~128, ~2W/lane</text>
+
+          <rect x="423" y="168" width="390" height="44" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="618" y="186" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">TX Precoder + Pulse Shaping (RRC) + 5-tap FIR Pre-emphasis</text>
+          <text x="618" y="202" font-size="7" fill="#3b82f6" text-anchor="middle">PAM4/PAM6 符号映射 + 频谱整形 + 预均衡</text>
+
+          <!-- Row 3: NLC, CD Comp -->
+          <rect x="18" y="224" width="390" height="44" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1"/>
+          <text x="213" y="242" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">NLC (非线性补偿) -- 数字反向传播 DBP (新!)</text>
+          <text x="213" y="258" font-size="7" fill="#b45309" text-anchor="middle">每段: 频域CD补偿 + 时域SPM相位旋转, 2~8段可选</text>
+
+          <rect x="423" y="224" width="390" height="44" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="618" y="242" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">CD Compensation (频域) +/-5000ps/nm + IQ Imbalance Comp</text>
+          <text x="618" y="258" font-size="7" fill="#3b82f6" text-anchor="middle">相干模式: +IQ不平衡 + 相位噪声补偿 + 偏振解复用</text>
+
+          <!-- Row 4: Adaptive Trainer -->
+          <rect x="18" y="280" width="795" height="36" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="415" y="302" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">自适应训练引擎 (Trainer): FFE/DFE/MLSD/NLC 系数联合训练 + 在线跟踪 + 快速重收敛</text>
+
+          <!-- Monitor Row -->
+          <rect x="8" y="338" width="825" height="58" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="420" y="356" font-size="10" fill="#475569" text-anchor="middle" font-weight="bold">系统监测 & 管理接口</text>
+          <rect x="18" y="364" width="100" height="22" rx="4" fill="#e2e8f0"/><text x="68" y="379" font-size="8" fill="#475569" text-anchor="middle">PRBS Gen/Chk</text>
+          <rect x="126" y="364" width="105" height="22" rx="4" fill="#e2e8f0"/><text x="178" y="379" font-size="8" fill="#475569" text-anchor="middle">Eye Mon 3D Scan</text>
+          <rect x="239" y="364" width="95" height="22" rx="4" fill="#e2e8f0"/><text x="286" y="379" font-size="8" fill="#475569" text-anchor="middle">Temp Sens +/-1C</text>
+          <rect x="342" y="364" width="95" height="22" rx="4" fill="#e2e8f0"/><text x="389" y="379" font-size="8" fill="#475569" text-anchor="middle">BER Counters</text>
+          <rect x="445" y="364" width="95" height="22" rx="4" fill="#e2e8f0"/><text x="492" y="379" font-size="8" fill="#475569" text-anchor="middle">Link Training</text>
+          <rect x="548" y="364" width="75" height="22" rx="4" fill="#e2e8f0"/><text x="585" y="379" font-size="8" fill="#475569" text-anchor="middle">SPI Slave</text>
+          <rect x="631" y="364" width="75" height="22" rx="4" fill="#e2e8f0"/><text x="668" y="379" font-size="8" fill="#475569" text-anchor="middle">MDIO C45</text>
+          <rect x="714" y="364" width="75" height="22" rx="4" fill="#e2e8f0"/><text x="751" y="379" font-size="8" fill="#475569" text-anchor="middle">JTAG Debug</text>
+
+          <!-- Power Row -->
+          <rect x="8" y="408" width="825" height="45" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="420" y="435" font-size="10" fill="#991b1b" text-anchor="middle" font-weight="bold">电源管理: 多轨 LDO (Vcore 0.75-0.85V | Vio 1.2V | Vana 1.8V) | 每 Lane 独立 Power Gating | AVDD/DVDD 隔离</text>
+
+          <!-- Interface labels -->
+          <text x="110" y="485" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">Host-Side: 8x212G PAM4 (1.6TAUI-8)</text>
+          <text x="420" y="485" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">Line-Side: 8x212G 或 4x425G PAM4 (光口)</text>
+          <text x="735" y="485" font-size="9" fill="#6b7280" text-anchor="middle">FC-BGA / CPO 封装</text>
+
+          <!-- Edge labels -->
+          <text x="6" y="520" font-size="8" fill="#94a3b8" text-anchor="start">RX方向: 光信号 -> PD+TIA -> ADC(224GS/s) -> oDSP RX DSP (Skew/FFE/CDR/DFE/MLSD/NLC/CD Comp/FEC Dec) -> Host SerDes</text>
+          <text x="6" y="535" font-size="8" fill="#94a3b8" text-anchor="start">TX方向: Host SerDes -> FEC Enc -> TX DSP (PAM4/6 Map/RRC/FIR/NLC Pre-comp) -> DAC(224GS/s) -> Driver -> 光调制器</text>
+          <text x="420" y="555" font-size="8" fill="#64748b" text-anchor="middle">NLC 为 800G/1.6T 新增核心模块 | 级联 FEC (iFEC+KP4) 提供 ~11dB 总 NCG | PAM6 可选高级调制</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>说明：</strong>RX AFE 接收外部 ADC 224GS/s 数据 -> DSP 数据路径进行 Skew 补偿->21-tap FFE->CDR->5-tap Speculative DFE->256-State MLSD->NLC 非线性补偿->CD 频域补偿->级联 FEC 解码 (iFEC->KP4)->通过 1.6TAUI-8 接口输出至 Host。TX 方向反之。与 400G/800G oDSP 相比，核心升级为：21-tap FFE (vs 15-tap)、5-tap Spec DFE (vs 3-tap)、256-State MLSD (vs 64-State)、新增 NLC (DBP)、级联 FEC (iFEC+KP4)。PAM6 可选高级调制模式为技术储备。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 4: 代际对比 ═══════════ -->
+<section id="sec4">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">4</div><div class="icon">⚖️</div><h2>代际对比 -- 400G/800G vs 800G/1.6T</h2>
+    </div>
+    <div class="card-body">
+      <h4>全面代际提升对比</h4>
+      <table>
+        <thead><tr><th>对比维度</th><th>400G/800G oDSP</th><th>800G/1.6T oDSP</th><th>提升/变化</th></tr></thead>
+        <tbody>
+          <tr><td><strong>总数据速率</strong></td><td>425~850 Gbps</td><td>850~1700 Gbps</td><td style="color:#1a56db;font-weight:600;">2x</td></tr>
+          <tr><td><strong>单 Lane 速率</strong></td><td>106Gbps PAM4 (53Gbaud)</td><td>212Gbps PAM4 (106Gbaud)</td><td style="color:#1a56db;font-weight:600;">2x</td></tr>
+          <tr><td><strong>Host 通道</strong></td><td>8x106G (800GAUI-8)</td><td>8x212G (1.6TAUI-8)</td><td>速率翻倍</td></tr>
+          <tr><td><strong>光侧通道</strong></td><td>4x212G / 8x106G</td><td>8x212G 或 4x425G</td><td>灵活配置</td></tr>
+          <tr><td><strong>制程节点</strong></td><td>7nm FinFET</td><td>5nm / 3nm FinFET</td><td>1~2 代工艺提升</td></tr>
+          <tr><td><strong>调制格式</strong></td><td>PAM4</td><td>PAM4 / PAM6 可选</td><td>新增高阶选项</td></tr>
+          <tr><td><strong>FFE Tap 数</strong></td><td>15 tap</td><td>21 tap</td><td>+40% 抽头</td></tr>
+          <tr><td><strong>DFE Tap 数</strong></td><td>3 tap Speculative</td><td>5 tap Speculative (混合架构)</td><td>更强 ISI 消除</td></tr>
+          <tr><td><strong>MLSD 状态数</strong></td><td>64 State</td><td>256 State</td><td>4x 状态</td></tr>
+          <tr><td><strong>NLC 非线性补偿</strong></td><td>无</td><td>标配 (DBP, 2~8 段可选)</td><td>🆕 新增核心模块</td></tr>
+          <tr><td><strong>FEC 方案</strong></td><td>KP4-FEC (NCG~6.2dB)</td><td>iFEC + KP4 级联 (NCG~11dB)</td><td>+4.8dB NCG</td></tr>
+          <tr><td><strong>ADC/DAC 采样率</strong></td><td>112GS/s</td><td>224GS/s</td><td>2x</td></tr>
+          <tr><td><strong>最大功耗</strong></td><td><14W (800G 模式)</td><td><20W (1.6T 模式)</td><td>效率 ~1.7x (pJ/bit 下降)</td></tr>
+          <tr><td><strong>转发延迟</strong></td><td><100ns</td><td><120ns</td><td>含级联 FEC 编解码</td></tr>
+          <tr><td><strong>CD 容忍度</strong></td><td>+/-400ps/nm</td><td>+/-200ps/nm</td><td>速率越高越敏感</td></tr>
+          <tr><td><strong>DGD 容忍度</strong></td><td>20ps</td><td>15ps</td><td>更严格 PMD 要求</td></tr>
+          <tr><td><strong>信道补偿@Nyquist</strong></td><td>>28dB @26.5GHz</td><td>>35dB @53GHz</td><td>频率翻倍补偿更强</td></tr>
+          <tr><td><strong>恢复时钟 RJ</strong></td><td><180fs RMS</td><td><150fs RMS</td><td>更严格</td></tr>
+          <tr><td><strong>1 UI 宽度</strong></td><td>18.8ps</td><td>9.43ps</td><td>时序裕量减半</td></tr>
+          <tr><td><strong>封装形式</strong></td><td>FC-BGA</td><td>FC-BGA / CPO 共封装</td><td>新增 CPO 选项</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">均衡策略演进 -- 按距离选择</h4>
+      <table>
+        <thead><tr><th>应用场景</th><th>距离</th><th>推荐均衡方案</th><th>MLSD</th><th>NLC</th><th>FEC</th><th>典型功耗/lane</th></tr></thead>
+        <tbody>
+          <tr><td>超短距 (DR8)</td><td><100m</td><td>FFE(21t)+DFE(5t)</td><td>可选 64-St</td><td>1 段</td><td>iFEC+KP4</td><td>~1.5W</td></tr>
+          <tr><td>短距 (DR/FR)</td><td>100m~2km</td><td>FFE(21t)+DFE(5t)+MLSD(64-St)</td><td>64-St</td><td>1~2 段</td><td>iFEC+KP4</td><td>~2.5W</td></tr>
+          <tr><td>中距 (LR)</td><td>2~10km</td><td>FFE(21t)+DFE(5t)+MLSD(256-St)+CD Comp</td><td>256-St (必须)</td><td>3~5 段</td><td>iFEC+KP4</td><td>~3.5W</td></tr>
+          <tr><td>长距 (ER/ZR)</td><td>10~80km</td><td>全链路 DSP + MLSD(256-St) + CD Comp + NLC(6~8段)</td><td>256-St (必须)</td><td>6~8 段</td><td>iFEC+KP4</td><td>~4.5W</td></tr>
+          <tr><td>相干 DWDM</td><td>80km+</td><td>全链路 DSP + NLC(8~16段) + IQ Comp + 偏振解复用</td><td>256-St (必须)</td><td>8~16 段</td><td>iFEC+KP4</td><td>~5W</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 5: 核心指标 ═══════════ -->
+<section id="sec5">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">5</div><div class="icon">📊</div><h2>核心性能指标</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📌 5.1 系统级指标</h4>
+      <table>
+        <thead><tr><th>指标名称</th><th>800G 模式</th><th>1.6T 模式</th><th>单位</th><th>含义说明</th></tr></thead>
+        <tbody>
+          <tr><td>总数据速率</td><td>850</td><td>1700</td><td>Gbps</td><td>含 FEC 开销 ~20%</td></tr>
+          <tr><td>调制格式</td><td>PAM4</td><td>PAM4 / PAM6</td><td>-</td><td>PAM6 可选模式</td></tr>
+          <tr><td>Host 接口通道</td><td>8x106G</td><td>8x212G</td><td>lanes</td><td>1.6TAUI-8</td></tr>
+          <tr><td>光侧通道配置</td><td>4x212G 或 8x106G</td><td>8x212G 或 4x425G</td><td>lanes</td><td>灵活可配</td></tr>
+          <tr><td>最大功耗</td><td><14</td><td><20</td><td>W</td><td>Tcase=85C, 全通道激活</td></tr>
+          <tr><td>转发延迟</td><td><100</td><td><120</td><td>ns</td><td>含级联 FEC 编解码</td></tr>
+          <tr><td>结温范围</td><td colspan="2">-40~+125</td><td>C</td><td>工业级</td></tr>
+          <tr><td>制程</td><td colspan="2">5nm / 3nm FinFET CMOS</td><td>-</td><td>先进工艺</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.2 接收 (RX) 性能指标</h4>
+      <table>
+        <thead><tr><th>指标</th><th>800G 模式</th><th>1.6T 模式</th><th>测试条件</th></tr></thead>
+        <tbody>
+          <tr><td><strong>RX 灵敏度</strong></td><td>50mVppd</td><td>60mVppd</td><td>Pre-FEC BER=2.4e-4, 212Gbps PAM4</td></tr>
+          <tr><td><strong>CD 容忍度</strong></td><td>+/-400ps/nm</td><td>+/-200ps/nm</td><td>标准 SMF, CD 补偿开启</td></tr>
+          <tr><td><strong>DGD 容忍度</strong></td><td>20ps</td><td>15ps</td><td>最大 PMD, BER=2.4e-4</td></tr>
+          <tr><td><strong>信道补偿 @Nyquist</strong></td><td>>28dB @26.5GHz</td><td>>35dB @53GHz</td><td>21-tap FFE + 5-tap DFE 联合</td></tr>
+          <tr><td><strong>反射容忍度</strong></td><td>-8dB</td><td>-6dB</td><td>OMA=-3dBm</td></tr>
+          <tr><td><strong>ADC 有效位数</strong></td><td colspan="2">>6 ENOB @53GHz</td><td>224GS/s 采样率</td></tr>
+          <tr><td><strong>CTLE 增益范围</strong></td><td colspan="2">0~18dB, 可编程</td><td>模拟前端补偿</td></tr>
+          <tr><td><strong>Elastic Buffer</strong></td><td colspan="2">32~128 UI</td><td>跨时钟域缓冲</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.3 抖动与时序指标</h4>
+      <div class="metric-card">
+        <div class="metric-header"><h4>恢复时钟随机抖动 (RJ) -- 212Gbps 关键指标</h4><span class="metric-abbr">RJ RMS</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">规格要求</span><span><150fs RMS (相噪积分 10k~100MHz) -- 比上一代严格 ~17%</span></div>
+          <div class="metric-row"><span class="metric-label">1UI 占比</span><span>150fs / 9430fs = 1.6% UI -- 抖动仅占 1UI 的 1.6%</span></div>
+          <div class="metric-row"><span class="metric-label">SNR 影响</span><span>每增加 100fs RJ，等效 SNR 下降约 0.8~1.2dB (212Gbps 下更敏感)</span></div>
+          <div class="metric-row"><span class="metric-label">测量方法</span><span>相噪分析仪 (Keysight E5052B) 或示波器时钟输出+相噪软件</span></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>指标</th><th>800G 模式</th><th>1.6T 模式</th><th>测量方法</th></tr></thead>
+        <tbody>
+          <tr><td>DJ (确定性抖动)</td><td><0.12UI</td><td><0.15UI</td><td>DDJ 分离法</td></tr>
+          <tr><td>TJ @1e-15</td><td><0.25UI</td><td><0.25UI</td><td>浴缸曲线外推</td></tr>
+          <tr><td>SJ 容限 @10MHz</td><td>>0.3UI</td><td>>0.3UI</td><td>正弦抖动注入</td></tr>
+          <tr><td>频偏容限</td><td>+/-350ppm</td><td>+/-350ppm</td><td>频偏扫描测试</td></tr>
+          <tr><td>锁定时间</td><td><100us</td><td><120us</td><td>频率阶跃测试</td></tr>
+          <tr><td>环路带宽</td><td>15~20MHz</td><td>15~20MHz</td><td>JTF 测量</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.4 TX 发射机指标</h4>
+      <div class="metric-card">
+        <div class="metric-header"><h4>TDECQ . 发射机色散眼图闭合度 -- 212Gbps PAM4</h4><span class="metric-abbr">TDECQ</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>IEEE 802.3ck 标准，衡量理想参考接收机因发射机不理想而看到的眼图闭合程度</span></div>
+          <div class="formula">TDECQ = 10.log_10(OMA_TX / OMA_ideal)  |  212Gbps 要求: <3.0dB (比 106Gbps 更严格)</div>
+          <div class="metric-row"><span class="metric-label">212Gbps 挑战</span><span>1UI=9.43ps 下，TX FIR 5-tap 预均衡精度要求更高，DAC 非线性影响被放大</span></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>指标</th><th>规格</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td>差分输出幅度</td><td>100~1000mVppd</td><td>可编程，约 1mV 精细步进</td></tr>
+          <tr><td>RLM (电平分离度)</td><td>>0.93</td><td>PAM4 眼图 3 眼均匀度 (212G 要求更高)</td></tr>
+          <tr><td>EW5 (眼宽 @1e-5)</td><td>>0.18UI</td><td>水平张开度，1UI=9.43ps 下为约 1.7ps</td></tr>
+          <tr><td>EH5 (眼高 @1e-5)</td><td>>28mV</td><td>垂直张开度</td></tr>
+          <tr><td>上升/下降时间</td><td><5ps</td><td>20%-80%, 212Gbps 下要求约 1/2 UI</td></tr>
+          <tr><td>TX FIR Tap 数</td><td>5-tap (pre/main/post)</td><td>预均衡 FIR 滤波器</td></tr>
+          <tr><td>DAC 分辨率</td><td>8~10 bit</td><td>224GS/s 更新率</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.5 FEC 性能指标</h4>
+      <div class="metric-card">
+        <div class="metric-header"><h4>级联 FEC 净编码增益 . iFEC + KP4</h4><span class="metric-abbr">NCG</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">内码 iFEC NCG</span><span>~9.5dB @BER=1e-2 -> 2.4e-4</span></div>
+          <div class="metric-row"><span class="metric-label">外码 KP4 NCG</span><span>~6.2dB @BER=2.4e-4 -> <1e-15</span></div>
+          <div class="metric-row"><span class="metric-label">总 NCG</span><span>~11dB -- 比单一 KP4 提升 ~4.8dB</span></div>
+          <div class="metric-row"><span class="metric-label">总冗余度</span><span>~20% (iFEC ~13% + KP4 5.5%)</span></div>
+          <div class="metric-row"><span class="metric-label">关键价值</span><span>额外的 4.8dB NCG 相当于链路预算增加 ~4.8dB，可直接转化为传输距离提升或功耗降低</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 6: 影响因素 ═══════════ -->
+<section id="sec6">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">6</div><div class="icon">🔗</div><h2>指标影响因素分析 -- 800G/1.6T 专项</h2>
+    </div>
+    <div class="card-body">
+      <h4>📍 212Gbps 速率下的关键指标影响因素网络</h4>
+      <table>
+        <thead><tr><th>关键指标</th><th>被哪些因素影响 (降级)</th><th>该指标又影响哪些下游性能</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>BER / 灵敏度</strong></td>
+            <td><span class="chip chip-red">信道 ISI/损耗 (>40dB@53GHz)</span><span class="chip chip-red">CD/DGD</span><span class="chip chip-red">光纤非线性 (Kerr)</span><span class="chip chip-red">电源噪声 (PSRR下降)</span><span class="chip chip-red">时钟抖动 (150fs)</span><span class="chip chip-red">温度</span><span class="chip chip-red">ADC ENOB</span></td>
+            <td><span class="chip chip-blue">链路预算</span><span class="chip chip-blue">传输距离</span><span class="chip chip-blue">FEC 负担</span><span class="chip chip-blue">系统可用性</span></td>
+          </tr>
+          <tr>
+            <td><strong>TDECQ</strong></td>
+            <td><span class="chip chip-red">TX FIR 设置</span><span class="chip chip-red">DAC 非线性 (INL/DNL)</span><span class="chip chip-red">输出阻抗失配</span><span class="chip chip-red">带宽限制 (<53GHz)</span><span class="chip chip-red">NLC Pre-comp 精度</span></td>
+            <td><span class="chip chip-blue">光眼图质量</span><span class="chip chip-blue">链路功率预算</span><span class="chip chip-blue">模块合规性 (IEEE)</span></td>
+          </tr>
+          <tr>
+            <td><strong>CDR 抖动</strong></td>
+            <td><span class="chip chip-red">参考时钟相噪 (-145dBc/Hz@10k)</span><span class="chip chip-red">PLL 环路带宽 (15~20MHz)</span><span class="chip chip-red">电源纹波耦合</span><span class="chip chip-red">输入信号 SNR</span><span class="chip chip-red">PDN 谐振</span></td>
+            <td><span class="chip chip-blue">恢复时钟 RJ (<150fs)</span><span class="chip chip-blue">采样时钟抖动</span><span class="chip chip-blue">BER 下限</span><span class="chip chip-blue">级联抖动累积</span></td>
+          </tr>
+          <tr>
+            <td><strong>功耗 (~20W)</strong></td>
+            <td><span class="chip chip-red">通道数/速率</span><span class="chip chip-red">MLSD 256-St (~2W/lane)</span><span class="chip chip-red">NLC 分段数</span><span class="chip chip-red">PVT corner</span><span class="chip chip-red">温度 (漏电流上升)</span><span class="chip chip-red">ADC/DAC 224GS/s</span></td>
+            <td><span class="chip chip-blue">模块热设计</span><span class="chip chip-blue">散热方案 (TIM/散热片)</span><span class="chip chip-blue">系统可靠性 (MTBF)</span><span class="chip chip-blue">CPO 集成可行性</span></td>
+          </tr>
+          <tr>
+            <td><strong>NLC 效果</strong></td>
+            <td><span class="chip chip-red">分段数 (N_steps)</span><span class="chip chip-red">光纤参数精度 (gamma,beta_2,alpha)</span><span class="chip chip-red">SPM 相位估计误差</span><span class="chip chip-red">CD 补偿残差</span></td>
+            <td><span class="chip chip-blue">等效 SNR 提升</span><span class="chip chip-blue">最大传输距离</span><span class="chip chip-blue">高阶调制可行性</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="success-box" style="margin-top:16px;">
+        <strong>✅ 212Gbps 关键共同影响因素 (比上一代更严苛):</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>电源完整性 (PDN) -- 头号挑战：</strong>224GS/s ADC/DAC 对电源噪声极度敏感。DC-DC 开关纹波、PDN 谐振峰 (通常 10~100MHz) 直接耦合到时钟和模拟前端。要求 PSRR >40dB @1MHz。</li>
+          <li><strong>时钟质量 -- 决定 BER 下限：</strong>参考时钟相噪直接影响 CDR 恢复时钟质量。212Gbps 要求参考时钟相噪 <-145dBc/Hz @10kHz offset, RJ <50fs RMS (12k~20MHz)。时钟路径需独立 LDO 供电。</li>
+          <li><strong>信号完整性 (SI) -- 更高频率更脆弱：</strong>PCB trace @53GHz Nyquist 损耗可达 0.5~1dB/mm。必须使用超低损耗材料 (Megtron 6/7, Rogers 4350B)。连接器需 1.0mm 或 0.8mm 精密同轴。</li>
+          <li><strong>温度梯度 -- 芯片内部温差：</strong>20W 功耗导致芯片内部热点与冷点温差可达 15~30C -> 各 lane PVT 不一致 -> 需要 per-lane 独立校准。</li>
+          <li><strong>工艺角 (PVT) -- 5nm/3nm 新挑战：</strong>先进工艺下 SS/TT/FF corner 性能差异比 7nm 更大 (约 4dB 灵敏度差异)。需要更宽的 Adaptive 系数范围。</li>
+          <li><strong>光纤非线性 -- 212Gbps 特有：</strong>高功率密度下 Kerr 效应显著，NLC 的 DBP 模型精度直接影响补偿效果。光纤参数 (gamma, beta_2) 的测量误差会传递到 NLC 残差。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 7: 测试方法 ═══════════ -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法详解 -- 212Gbps PAM4 专项</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📐 7.1 212Gbps 接收灵敏度与 BER 测试</h4>
+      <p><strong>测试原理：</strong>212Gbps 速率下，传统 BERT 和示波器带宽已不足。必须使用 120GBaud 级 BERT + 110GHz 实时示波器。通过受控衰减测量满足 Pre-FEC BER=2.4e-4 (iFEC 入口) 和 Post-FEC BER <1e-15 所需的最小输入幅度。级联 FEC 需要分别测量两个拐点。</p>
+
+      <h4 style="margin-top:14px;">测试设备清单 (212Gbps 专用)</h4>
+      <table>
+        <thead><tr><th>设备名称</th><th>推荐型号</th><th>关键规格</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>误码仪 (BERT)</td><td>Keysight M8050A</td><td>120GBaud PAM4, RJ<100fs, 8ch</td><td>PPG 发送 212Gbps + ED 检测</td></tr>
+          <tr><td>实时示波器</td><td>Keysight UXR1104A</td><td>110GHz, 256GS/s, 10bit ADC</td><td>眼图/PAM4/PAM6 分析</td></tr>
+          <tr><td>可调衰减器</td><td>EXFO FVA-600 / Keysight N7766A</td><td>0~60dB, 0.01dB 步进, DC~67GHz</td><td>精确功率控制</td></tr>
+          <tr><td>可编程电源</td><td>Keysight N6705C + N6781A</td><td>4ch, 低噪声 <1mVrms</td><td>多轨供电 (Vcore/Vio/Vana)</td></tr>
+          <tr><td>矢量网络分析仪</td><td>Keysight PNA-X N5291A</td><td>10M~110GHz, 4-port</td><td>S 参数提取 + 去嵌入</td></tr>
+          <tr><td>温控平台</td><td>MPI Thermal TA-5000 / ERS</td><td>-60~+200C, +/-0.1C</td><td>三温测试 (-40/+25/+85C)</td></tr>
+          <tr><td>相噪分析仪</td><td>Keysight E5052B + E5053A</td><td>10M~110GHz 下变频</td><td>恢复时钟相噪/抖动测量</td></tr>
+          <tr><td>RF 电缆/连接器</td><td>1.0mm / 0.8mm 精密同轴</td><td>DC~110GHz, 低损耗</td><td>信号互连 (⚠ 极易损坏)</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">测试框图 -- 212Gbps BER 测试</h4>
+      <div class="diagram-title">图 7-1 | 800G/1.6T oDSP 接收端 BER 测试框图 (212Gbps PAM4)</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 195" width="800" height="195" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arr7" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <rect x="8" y="28" width="155" height="62" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="85" y="52" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">BERT PPG</text>
+          <text x="85" y="67" fill="#3b82f6" font-size="8" text-anchor="middle">M8050A 120GBaud</text>
+          <text x="85" y="81" fill="#3b82f6" font-size="7" text-anchor="middle">PRBS31Q, 212Gbps, 800mVppd</text>
+          <line x1="163" y1="59" x2="205" y2="59" stroke="#1a56db" stroke-width="2" marker-end="url(#arr7)"/>
+          <rect x="210" y="28" width="130" height="62" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="275" y="52" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">可调衰减器</text>
+          <text x="275" y="67" fill="#b45309" font-size="8" text-anchor="middle">EXFO FVA-600</text>
+          <text x="275" y="81" fill="#b45309" font-size="7" text-anchor="middle">0~40dB, 0.1dB步进, DC~67GHz</text>
+          <line x1="340" y1="59" x2="382" y2="59" stroke="#1a56db" stroke-width="2" marker-end="url(#arr7)"/>
+          <rect x="387" y="28" width="215" height="62" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="494" y="52" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">ISI 信道 + DUT oDSP</text>
+          <text x="494" y="67" fill="#3b82f6" font-size="8" text-anchor="middle">PCB trace / 1.0mm RF Cable</text>
+          <text x="494" y="81" fill="#3b82f6" font-size="7" text-anchor="middle">供电: Vcore(0.8V)/Vio(1.2V)/Vana(1.8V)</text>
+          <line x1="602" y1="59" x2="630" y2="59" stroke="#1a56db" stroke-width="2" marker-end="url(#arr7)"/>
+          <rect x="635" y="28" width="175" height="62" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="722" y="52" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">BERT ED / 环回</text>
+          <text x="722" y="67" fill="#16a34a" font-size="8" text-anchor="middle">PRBS Checker + FEC 统计</text>
+          <text x="722" y="81" fill="#16a34a" font-size="7" text-anchor="middle">Pre-FEC & Post-FEC BER</text>
+
+          <rect x="8" y="108" width="802" height="78" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="410" y="126" fill="#475569" font-size="9" text-anchor="middle">Phase 0: 预热30min + 全链路校准 (VNA S参数去嵌入) | 连接器检查 (1.0mm/0.8mm 精密接头, 扭矩扳手)</text>
+          <text x="410" y="142" fill="#475569" font-size="9" text-anchor="middle">Phase 1: DUT 初始化 (上电时序->CDR锁定确认->DFE收敛->MLSD训练->NLC校准->FEC同步->PRBS同步)</text>
+          <text x="410" y="158" fill="#475569" font-size="9" text-anchor="middle">Phase 2: 衰减扫描 (0->灵敏度->绘制瀑布曲线) | Phase 3: 三温重复 (-40/+25/+85C) | Phase 4: PSRR/电源噪声注入测试</text>
+          <text x="410" y="176" fill="#b45309" font-size="8" text-anchor="middle">⚠ 关键: BER 统计时间需 10~100x 更长 (vs 106Gbps), CDR BW=15~20MHz, FEC 级联瀑布曲线须测双拐点</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:18px;">📊 7.2 级联 FEC 瀑布曲线测试 (212Gbps 专项)</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>Pre-FEC 目标点设置</h5><p>靶向 Pre-FEC 点: [1e-2, 5e-3, 2e-3, 1e-3, 5e-4, 2.4e-4, 1e-4, 5e-5]。测量每个点对应的 iFEC 输出 BER 和 KP4 输出 (Post-FEC) BER。注意级联 FEC 有两个拐点：iFEC 拐点 (约 1e-2) 和 KP4 拐点 (约 2.4e-4)。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>双拐点验证</h5><p>iFEC 拐点: Pre-FEC 约 1e-2 -> Post-iFEC 约 2.4e-4 (验证 iFEC NCG 约 9.5dB)。KP4 拐点: Pre-KP4 约 2.4e-4 -> Post-FEC <1e-15 (验证总 NCG 约 11dB)。两级各自的瀑布曲线斜率不同。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>长统计时间 (比 106Gbps 更关键)</h5><p>212Gbps 下 BER 统计: Pre-FEC=1e-4 需 >10^11 bit (约 8min @212Gbps)；Post-FEC<1e-15 验证需 >10^15 bit (不实际，用外推法)。推荐每个衰减点采集 >10^12 bit。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>FEC 同步/失步测试</h5><p>信号中断 -> FEC 失步检测 -> 恢复后自动重同步。分别测试 iFEC 失步门限和 KP4 失步门限，两者不同。测量两级重同步时间 (应分别 <1ms)。</p></div></div>
+        <div class="step"><div class="step-no">5</div><div class="step-content"><h5>突发错误容忍</h5><p>注入连续错误 Burst: 5/10/15/20/25/30 符号。iFEC 可纠 15~20 符号随机错误；KP4 可纠 <=15 符号突发错误 (RS t=15)。级联后可纠更长 Burst (iFEC 先处理随机错误，KP4 处理残留 burst)。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">🔴 7.3 CDR 性能专项测试 (212Gbps)</h4>
+      <table>
+        <thead><tr><th>测试项目</th><th>测试方法</th><th>判定标准</th></tr></thead>
+        <tbody>
+          <tr><td><strong>抖动容限 (JTOL)</strong></td><td>注入不同频率/幅度的 SJ，测量 BER=2.4e-4 时的最大 SJ</td><td>满足 OIF-CEI-224G 模板 (比 112G 更严)</td></tr>
+          <tr><td><strong>频率偏移容限</strong></td><td>缓慢增加频率偏移 (10ppm/s)，监测 Lock Status 和 BER</td><td>+/-350ppm 保持锁定</td></tr>
+          <tr><td><strong>恢复时钟抖动</strong></td><td>E5052B 相噪分析仪，相噪积分 10k~100MHz</td><td>RJ <150fs RMS</td></tr>
+          <tr><td><strong>锁定时间</strong></td><td>速率阶跃: 标称->标称+200ppm，示波器测 CDR Lock 信号延迟</td><td><120us (BW 15~20MHz)</td></tr>
+          <tr><td><strong>JTF 传递函数</strong></td><td>扫频 SJ 注入 + 恢复时钟相噪测量</td><td>-40dB/dec @ f>BW</td></tr>
+          <tr><td><strong>环路带宽验证</strong></td><td>JTF -3dB 点测量</td><td>15~20MHz 可编程</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">🟢 7.4 TX 发射机 TDECQ 测试 (212Gbps)</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>示波器校准 (110GHz)</h5><p>UXR1104A: 垂直校准 (DC 精度 +/-1%)、时基校准、通道去嵌入 (110GHz S 参数)。1.0mm 接头扭矩扳手精确拧紧 (⚠ 过紧损坏接头, 扭矩 0.45N.m)。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>PAM4 参考接收机配置</h5><p>符号率 106.25 Gbaud (212Gbps)；参考接收机: CTLE Auto + FFE 5-tap + DFE 3-tap；CDR: 二阶 PLL, BW=Baud/1667 约 64MHz (IEEE 802.3ck)。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>数据采集</h5><p>采集长度 >5M UI (IEEE 最小 2M, 建议 >10M UI @212Gbps)；20 次独立采集取平均 (高频下噪声更大，需更多平均)。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>分析输出</h5><p>TDECQ (<3.0dB)、RLM (>0.93)、EW5 (>0.18UI 约等于 1.7ps)、EH5 (>28mV)、3 层眼图轮廓、PAM4 电平线性度、PAM6 可选分析。</p></div></div>
+        <div class="step"><div class="step-no">5</div><div class="step-content"><h5>TX 5-tap FIR 优化</h5><p>扫描 c_pre[-15~15], c_main[30~80], c_post[-20~20] (5-tap 搜索空间更大, 125,000 组合) -> 最小 TDECQ + RLM>0.93 + EW5>0.18UI 三目标帕累托前沿优化。</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 8: 注意事项 ═══════════ -->
+<section id="sec8">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">8</div><div class="icon">⚠️</div><h2>测试与使用注意事项 -- 212Gbps 专项</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>⚡ 通用注意事项 (与 400G/800G 通用，但更严格)</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">🔌 上电时序 (绝对关键!)</div><p>上电: Vcore(0.75-0.85V) -> 等待>15ms -> Vio(1.2V) -> 等待>15ms -> Vana(1.8V)；断电: 反向! 5nm/3nm 工艺栅氧更薄，对过压更敏感，违反时序可能永久损坏芯片。</p></div>
+        <div class="caution-item"><div class="ci-title">🕐 参考时钟质量 -- 212Gbps 更严</div><p>频率: 156.25/312.5MHz LVDS；抖动: <50fs RMS (12k~20MHz)；相噪: -145dBc/Hz @10kHz offset；精度: +/-50ppm。时钟质量是 CDR 性能的天花板。</p></div>
+        <div class="caution-item"><div class="ci-title">⚡ PDN 电源完整性 -- 212Gbps 首要挑战</div><p>224GS/s ADC/DAC 对电源噪声极度敏感。AVDD 与 DVDD 必须分开供电；每 lane 独立 LDO；PDN 目标阻抗 <10mOhm @1MHz；DC-DC 开关频率远离 PLL BW。</p></div>
+        <div class="caution-item"><div class="ci-title">📐 PCB 布局 -- 53GHz 高频</div><p>100ohm 差分阻抗 (+/-3%, 比上一代更严)；超低损耗板材 (Megtron 6/7)；等长布线 (<50um mismatch)；参考层完整不可分割；过孔 stub 背钻去除。</p></div>
+        <div class="caution-item"><div class="ci-title">🌡️ 热管理 -- 20W 功耗</div><p>theta-JC 约 1.5C/W (5nm 更优但功耗更大)；Tj_max 125C；推荐高性能 TIM (导热系数 >6W/mK) + 均热板 + 模块外壳导热；每 lane 功耗不均需热仿真。</p></div>
+        <div class="caution-item"><div class="ci-title">🛡️ ESD 防护 -- 5nm 更敏感</div><p>HBM: 1.5kV (5nm 栅氧更薄, 比 7nm 更敏感), CDM: 250V；客户 SMT 产线须 IEC 61340-5-1 管控；PCB 添加 TVS 保护；操作佩戴接地手环+防静电鞋。</p></div>
+      </div>
+
+      <h4 style="margin-top:20px;">🔵 800G/1.6T oDSP 专项注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">⏱ CDR 锁定确认 (BW 15~20MHz)</div><p>测试前务必确认 CDR Lock Status=1；未锁定时 BER 无意义；锁定后等待 >100ms 让 DFE(5-tap)+MLSD(256-St)+NLC 全部收敛。212Gbps 收敛时间比上一代长约 2x。</p></div>
+        <div class="caution-item"><div class="ci-title">📊 级联 FEC 双同步监控</div><p>需同时监控 iFEC Sync 和 KP4-FEC Sync 两个状态；任一未同步则 Post-FEC BER 虚高；每次衰减变更后等待两级 FEC 全部重新同步 (约 1~5ms)。</p></div>
+        <div class="caution-item"><div class="ci-title">🔍 110GHz 去嵌入精度</div><p>212Gbps Nyquist=53GHz，测试电缆和 PCB trace 损耗可达 20~40dB。去嵌入误差在 53GHz 处被放大 3~5x vs 26.5GHz。必须用 110GHz VNA 提取精确 S 参数。</p></div>
+        <div class="caution-item"><div class="ci-title">🧵 1.0mm/0.8mm 连接器操作</div><p>212Gbps 需 1.0mm 或 0.8mm 精密同轴连接器。中心针直径仅 0.3~0.4mm，极易弯曲损坏。必须使用扭矩扳手 (0.45N.m)，严禁手拧。寿命仅 500~1000 次插拔。</p></div>
+        <div class="caution-item"><div class="ci-title">🌊 NLC 校准 -- 新增关键步骤</div><p>NLC (DBP) 需要光纤参数 (gamma, beta_2, alpha, L_eff) 作为输入。参数测量误差会导致 NLC 补偿残差。长距测试前必须用 OTDR+CD 分析仪精确测量光纤参数。参数误差 >5% -> NLC 反而恶化性能!</p></div>
+        <div class="caution-item"><div class="ci-title">🔋 功耗/热测试 -- 20W 级</div><p>1.6T 全通道模式下功耗近 20W。测试时需确保散热路径通畅 (TIM+散热片+强制风冷)。连续运行 >30min 达到热平衡后再读数。监测各 lane 温度差异 (<5C 目标)。</p></div>
+      </div>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🚨 212Gbps 测试最常见错误 (比 106Gbps 更容易犯):</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>使用带宽不足的设备：</strong>BERT 必须 >=120GBaud PAM4、示波器必须 >=110GHz。用 70GHz 设备测 212Gbps -> 高频分量丢失 -> 眼图虚好。</li>
+          <li><strong>连接器类型错误：</strong>使用 1.85mm (67GHz) 连接器代替 1.0mm (110GHz) -> 连接器处产生严重反射 (S11 <-10dB @53GHz)。</li>
+          <li><strong>CDR BW 设置不当：</strong>沿用 400G/800G 的 BW=10MHz -> CDR 跟踪能力不足 -> 低频抖动未被抑制 -> BER 虚高。</li>
+          <li><strong>去嵌入误差放大：</strong>仅用 67GHz VNA S 参数外推到 110GHz -> 53GHz 处理论值与实际偏差 >2dB -> 测量误差。</li>
+          <li><strong>忽视 NLC 校准：</strong>未校准光纤参数 -> NLC 反而引入额外失真 -> "开了 NLC 比不开还差"。</li>
+          <li><strong>FEC 级联延误：</strong>仅看 KP4 Post-FEC 而忽略 iFEC 状态 -> Pre-FEC 1e-2 时 iFEC 已接近临界 -> 微小衰减变化导致 Post-FEC 突变。</li>
+          <li><strong>忽视温度稳定：</strong>20W 功耗下温度稳定时间 >30min；温度变化过程中测量 -> 数据持续漂移。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 9: 选型指南 ═══════════ -->
+<section id="sec9">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">9</div><div class="icon">🧭</div><h2>选型与应用指南 -- 800G vs 1.6T</h2>
+    </div>
+    <div class="card-body">
+
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>✅ 选用 800G oDSP (800G/1.6T 系列中的 800G 模式)</h3>
+          <ul>
+            <li>800GBASE-DR8 / 2xFR4 光模块设计</li>
+            <li>单通道 106Gbps PAM4 电接口 (800GAUI-8)</li>
+            <li>功耗预算 <14W</li>
+            <li>现有 400G/800G 基础设施兼容</li>
+            <li>距离覆盖 DR/FR/LR (500m~10km)</li>
+            <li>向后兼容 400G 光模块生态系统</li>
+            <li>2026 年主流量产部署推荐</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>✅ 选用 1.6T oDSP (800G/1.6T 系列中的 1.6T 模式)</h3>
+          <ul>
+            <li>AI/ML 训练集群超大规模互联 (GPU 集群)</li>
+            <li>1.6T OSFP-XD 光模块 (8x200G 或 4x400G)</li>
+            <li>需要最大端口密度和数据吞吐量</li>
+            <li>单通道 212Gbps PAM4 电接口 (1.6TAUI-8)</li>
+            <li>功耗预算 <20W (需要先进散热方案)</li>
+            <li>CPO 共封装光学集成场景 (降低功耗)</li>
+            <li>2027+ 大规模部署预期</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">均衡策略选择速查 -- 800G/1.6T</h4>
+      <table>
+        <thead><tr><th>应用距离</th><th>光纤类型</th><th>推荐均衡</th><th>MLSD 状态</th><th>NLC 分段</th><th>CD Comp</th></tr></thead>
+        <tbody>
+          <tr><td><100m (DR8)</td><td>SMF</td><td>FFE(21t)+DFE(5t)</td><td>可选 64-St</td><td>1 段</td><td>否</td></tr>
+          <tr><td>500m (DR)</td><td>SMF</td><td>FFE(21t)+DFE(5t)+MLSD(64-St)</td><td>64-St</td><td>1~2 段</td><td>可选</td></tr>
+          <tr><td>2km (FR4)</td><td>SMF</td><td>FFE(21t)+DFE(5t)+MLSD(128-St)+CD Comp</td><td>128-St (推荐)</td><td>2~3 段</td><td>推荐</td></tr>
+          <tr><td>10km (LR4)</td><td>SMF</td><td>全链路 DSP: FFE(21t)+DFE(5t)+MLSD(256-St)+CD Comp+NLC(3~5段)</td><td>256-St (必须)</td><td>3~5 段</td><td>必须</td></tr>
+          <tr><td>40km+ (ER4/ZR)</td><td>SMF</td><td>全链路 DSP + MLSD(256-St) + CD Comp + NLC(6~8段)</td><td>256-St (必须)</td><td>6~8 段</td><td>必须</td></tr>
+          <tr><td>相干 (800G~1.2T)</td><td>SMF/DWDM</td><td>全链路 DSP + NLC(8~16段) + IQ Comp + 偏振解复用</td><td>256-St (必须)</td><td>8~16 段</td><td>必须</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>💡 AE 工程直觉 -- 800G/1.6T 时代：</strong>"212Gbps 是分水岭，1UI=9.43ps 改变一切。短距靠 FFE/DFE 还能应付，中距必须 MLSD(256-St)+NLC，长距和相干是全链路 DSP 的战场。级联 FEC 不再是可选项而是必选项。PDN 和时钟是所有性能的天花板 -- 20W 功耗下的热管理决定了产品的实际可用性。CPO 集成是下一代方向。"
+      </div>
+
+      <h4 style="margin-top:18px;">系统链路预算速算示例 (800GBASE-DR8, 100m)</h4>
+      <table>
+        <thead><tr><th>环节</th><th>增益/损耗</th><th>累计功率</th></tr></thead>
+        <tbody>
+          <tr><td>TX oDSP 输出 (经 DAC)</td><td>-</td><td>-3 dBm (电域)</td></tr>
+          <tr><td>Driver + Modulator</td><td>-6 dB</td><td>-9 dBm (光纤耦合输出)</td></tr>
+          <tr><td>100m SMF + 2xConnector (1.0mm)</td><td>-0.5 dB</td><td>-9.5 dBm (光纤输入)</td></tr>
+          <tr><td>PD 响应度 + TIA 增益</td><td>等效 ~+5 dB</td><td>-4.5 dBm (电等效 @ADC入口)</td></tr>
+          <tr><td>oDSP 灵敏度 (800G 模式)</td><td>-11 dBm (50mVppd)</td><td>链路余量 >6.5 dB ✅</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">系统链路预算速算示例 (1.6T-DR8, 100m)</h4>
+      <table>
+        <thead><tr><th>环节</th><th>增益/损耗</th><th>累计功率</th></tr></thead>
+        <tbody>
+          <tr><td>TX oDSP 输出 (经 DAC, 212Gbps)</td><td>-</td><td>-4 dBm (电域)</td></tr>
+          <tr><td>Driver + Modulator (@106Gbaud)</td><td>-8 dB</td><td>-12 dBm (光纤耦合输出)</td></tr>
+          <tr><td>100m SMF + 2xConnector (1.0mm)</td><td>-0.5 dB</td><td>-12.5 dBm (光纤输入)</td></tr>
+          <tr><td>PD 响应度 + TIA 增益 (53GHz BW)</td><td>等效 ~+4 dB</td><td>-8.5 dBm (电等效 @ADC入口)</td></tr>
+          <tr><td>oDSP 灵敏度 (1.6T 模式)</td><td>-14 dBm (60mVppd)</td><td>链路余量 >5.5 dB ✅</td></tr>
+        </tbody>
+      </table>
+
+      <div class="warn-box" style="margin-top:16px;">
+        <strong>⚠️ 选型关键权衡：</strong>800G 模式功耗更低 (<14W)、生态更成熟、向后兼容性好、测试设备门槛较低；1.6T 模式吞吐量翻倍但功耗增加约 43%、需要更先进的测试设备 (120GBaud BERT, 110GHz Scope) 和 PCB 材料、连接器要求更高 (1.0mm/0.8mm)。<strong>建议路线图：</strong>2026 年优先部署 800G 模式积累经验，2027+ 视 AI 集群带宽需求迁移至 1.6T。CPO 方案可显著降低芯片到光引擎的 PCB 损耗，是 1.6T 的最佳量产路径。
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<div class="footer">
+AE 知识文档 . 800G &amp; 1.6T oDSP 光数字信号处理器<br>
+  覆盖原理、框图、指标、影响因素、测试方法与选型指南 . 面向 AI/ML 超大规模数据中心的下一代光互连核心芯片<br>
+  文档版本 v2.0 . 生成时间：2026-06-19 . 原始 MD 版本 v1.0-draft<br>
+  原始 MD 文件：<a href="../../../docs/01_光通信/02_800G_1.6T_oDSP.md">docs/01_光通信/02_800G_1.6T_oDSP.md</a>
+</div>
+
+</body>
+</html>

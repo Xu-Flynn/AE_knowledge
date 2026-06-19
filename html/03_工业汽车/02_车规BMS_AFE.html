@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>车规 BMS AFE 汽车电池管理系统模拟前端 — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #27ae60; --primary-dark: #166534; --accent: #dc2626; --accent2: #27ae60;
+    --bg: #f8f9fa; --card: #ffffff; --border: #dee2e6;
+    --text: #212529; --text-muted: #6c757d; --code-bg: #f1f3f5; --highlight: #fff3cd;
+    --optical: #1a56db; --wireless: #e74c3c; --industrial: #27ae60;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .hero { background: linear-gradient(135deg, #166534 0%, #27ae60 50%, #0891b2 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #27ae6011, #27ae6005); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #16a34a); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #d1fae5; }
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  .info-box { border-left: 4px solid var(--primary); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #166534, #27ae60); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  .chip-purple { background: #f3e8ff; color: #6b21a8; }
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #eff6ff; border: 2px solid var(--primary); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col.purple { background: #faf5ff; border: 2px solid #9333ea; }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>🚗 车规 BMS AFE</h1>
+  <div class="subtitle">汽车电池管理系统模拟前端 (Automotive BMS AFE) — 电动汽车动力电池核心安全芯片</div>
+  <div class="badge-row">
+    <span class="badge">🛡️ ASIL-D (ISO 26262)</span>
+    <span class="badge">📋 AEC-Q100 Grade 1</span>
+    <span class="badge">🔴 双冗余 ADC+基准</span>
+    <span class="badge">⚡ 18串 ±0.5mV</span>
+    <span class="badge">🌡️ −40~+125°C</span>
+    <span class="badge">📡 CISPR 25 Class 5</span>
+    <span class="badge">🔗 双 Daisy-Chain SPI</span>
+    <span class="badge">🧪 >99% 故障覆盖率</span>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 核心模块深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、核心对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ Section 1: 背景与定位 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div><div class="icon">📖</div><h2>背景与应用定位</h2>
+    </div>
+    <div class="card-body">
+      <p>车规BMS AFE 是<strong>电动汽车 (EV/HEV) 动力电池管理系统的核心安全芯片</strong>，负责对动力电池组中每串电池单元进行高精度、高可靠性的电压/温度/电流监测和均衡控制。与储能 AFE 不同，车规 AFE <strong>必须通过 ISO 26262 ASIL-D 功能安全认证</strong>，其设计从第一天就考虑功能安全。</p>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col purple">
+          <h3>📌 产品定位</h3>
+          <p><strong>产业链位置：</strong>动力电池包内部，处于电芯与 VCU/BMS 控制器之间，是安全关键链路</p>
+          <p><strong>核心价值：</strong>在 −40~+125°C 汽车全温域内保证 <span class="formula-inline">±0.5mV</span> 测量精度 + ASIL-D 功能安全</p>
+          <p><strong>本质功能：</strong>冗余测量 + 独立硬件保护 + 故障诊断 + 均衡控制（容错系统）</p>
+        </div>
+        <div class="compare-col green">
+          <h3>🎯 典型应用场景</h3>
+          <ul>
+            <li>纯电动汽车 (BEV): 400V/800V 高压平台</li>
+            <li>插电混动 (PHEV): 中大型电池包</li>
+            <li>混合动力 (HEV): 紧凑型电池包</li>
+            <li>电动商用车 (电动卡车/大巴)</li>
+            <li>48V 轻混系统 (MHEV)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🔴 功能安全是车规芯片的第一门槛：</strong>电池过充可能导致热失控/起火，过放可能导致永久损坏。ASIL-D 要求单点故障度量 (SPFM) >= 99%，潜伏故障度量 (LFM) >= 90%。这意味着芯片设计必须从架构层面保证：任何单一故障都不会导致安全目标违反。
+      </div>
+
+      <h4 style="margin-top:20px;">技术路线 — 车规级核心要求</h4>
+      <table>
+        <thead><tr><th>维度</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>功能安全等级</strong></td><td>ASIL-D (ISO 26262)</td><td>最高安全完整性等级，双冗余 + 独立保护路径</td></tr>
+          <tr><td><strong>可靠性认证</strong></td><td>AEC-Q100 Grade 1 (Grade 0 可选)</td><td>Grade 1: −40~+125°C; Grade 0: −40~+150°C</td></tr>
+          <tr><td><strong>安全目标</strong></td><td>防过充 / 防过放 / 防过温 / 防过流</td><td>每个安全目标对应独立安全机制</td></tr>
+          <tr><td><strong>冗余架构</strong></td><td>双 ADC + 双基准 + 双通信 + 双 LDO</td><td>完全独立的两条测量/保护链路</td></tr>
+          <tr><td><strong>故障诊断覆盖率</strong></td><td>>99%（单点故障）</td><td>BIST + 故障注入 + 实时交叉校验</td></tr>
+          <tr><td><strong>EMC 等级</strong></td><td>CISPR 25 Class 5</td><td>车载环境最严苛 EMC 要求</td></tr>
+          <tr><td><strong>同步测量</strong></td><td>全堆叠 <1μs 同步精度</td><td>全局 SYNC 信号触发同步采样</td></tr>
+          <tr><td><strong>寿命要求</strong></td><td>15年 / 300,000km</td><td>满足整车使用寿命</td></tr>
+          <tr><td><strong>封装</strong></td><td>HTQFP (高压安全间距)</td><td>满足 800V 平台爬电距离要求</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2: 工作原理 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div><div class="icon">⚙️</div><h2>功能安全架构与工作原理</h2>
+    </div>
+    <div class="card-body">
+      <p>车规 BMS AFE 的核心不同于工业级 AFE——它是以<strong>功能安全为第一原则</strong>设计的容错系统。ASIL-D 要求任何一个单点故障都不会导致安全目标（防过充/过放/过温/过流）的违反。</p>
+
+      <h4>🛡️ ASIL-D 安全架构总览</h4>
+      <div class="diagram-title">图 2-1 | ASIL-D 冗余架构 — 双通道独立测量</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 180" width="760" height="180" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrAG" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker><marker id="arrAR" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#dc2626"/></marker><marker id="arrAY" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/></marker></defs>
+          <rect x="15" y="55" width="90" height="42" rx="8" fill="#dcfce7" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="60" y="81" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">电池单元</text>
+          <line x1="105" y1="65" x2="145" y2="45" stroke="#27ae60" stroke-width="1.5" marker-end="url(#arrAG)"/>
+          <rect x="150" y="25" width="240" height="45" rx="6" fill="#f0fdf4" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="270" y="42" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">通道A: ADC_A + 基准_A + 比较器_A</text>
+          <text x="270" y="57" fill="#16a34a" font-size="8" text-anchor="middle">独立电源 LDO_A | 独立时钟 | 独立输入路径</text>
+          <line x1="105" y1="91" x2="145" y2="111" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrAR)"/>
+          <rect x="150" y="93" width="240" height="45" rx="6" fill="#fff5f5" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="270" y="110" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">通道B: ADC_B + 基准_B + 比较器_B</text>
+          <text x="270" y="125" fill="#b91c1c" font-size="8" text-anchor="middle">独立电源 LDO_B | 独立时钟 | 独立输入路径</text>
+          <line x1="390" y1="47" x2="440" y2="60" stroke="#27ae60" stroke-width="1.5"/>
+          <line x1="390" y1="115" x2="440" y2="96" stroke="#dc2626" stroke-width="1.5"/>
+          <rect x="445" y="55" width="130" height="45" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text x="510" y="72" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">结果比较/表决</text>
+          <text x="510" y="88" fill="#b45309" font-size="8" text-anchor="middle">|V_A - V_B| > 阈值 -> 故障</text>
+          <line x1="575" y1="77" x2="620" y2="77" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrAY)"/>
+          <rect x="625" y="55" width="95" height="45" rx="8" fill="#dcfce7" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="672" y="72" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">安全输出</text>
+          <text x="672" y="88" fill="#16a34a" font-size="8" text-anchor="middle">至 MCU/VCU</text>
+          <text x="390" y="165" fill="#6b7280" font-size="9" text-anchor="middle">两通道完全独立（电源/时钟/基准/ADC/PGA/比较器），任何单一通道故障均可被交叉校验检测</text>
+        </svg>
+      </div>
+
+      <h4>🛡️ 安全目标与安全机制映射</h4>
+      <table>
+        <thead><tr><th>安全目标 (Safety Goal)</th><th>危害</th><th>安全机制</th><th>容错时间 (FTTI)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>防止电池过充</strong></td><td>热失控 -> 起火/爆炸</td><td>双 OV 比较器 (通道A+B) + 独立 Alert 引脚</td><td><100us</td></tr>
+          <tr><td><strong>防止电池过放</strong></td><td>电池永久损坏</td><td>双 UV 比较器 + 独立 Alert 引脚</td><td><100us</td></tr>
+          <tr><td><strong>防止过温</strong></td><td>热失控</td><td>双温度传感器 + 双 OT 比较器 + 均衡自动关闭</td><td><1ms</td></tr>
+          <tr><td><strong>防止过流</strong></td><td>火灾</td><td>双过流比较器 (Shunt 电压) + 安全继电器驱动</td><td><100us</td></tr>
+        </tbody>
+      </table>
+
+      <h4>🔍 故障诊断覆盖矩阵</h4>
+      <table>
+        <thead><tr><th>被诊断模块</th><th>诊断方法</th><th>诊断覆盖</th><th>故障响应</th></tr></thead>
+        <tbody>
+          <tr><td><strong>ADC_A / ADC_B</strong></td><td>周期性测量内部已知基准电压 + 双 ADC 互比</td><td>高</td><td>标记故障通道，切换至健康通道</td></tr>
+          <tr><td><strong>基准_A / 基准_B</strong></td><td>双基准互比 + 周期性校准</td><td>高</td><td>偏差 > 阈值 -> 报警</td></tr>
+          <tr><td><strong>高压 MUX</strong></td><td>测量开路/短路检测 (注入测试电流)</td><td>高</td><td>标记故障通道</td></tr>
+          <tr><td><strong>均衡 MOS</strong></td><td>均衡使能前后检测电压/电流变化</td><td>高</td><td>关闭故障通道均衡</td></tr>
+          <tr><td><strong>通信链路</strong></td><td>CRC + 序列号 + 超时检测 + 双通道冗余</td><td>高</td><td>切换至冗余通道</td></tr>
+          <tr><td><strong>温度传感器 (NTC)</strong></td><td>注入已知电流，检测开路/短路</td><td>高</td><td>标记故障传感器</td></tr>
+          <tr><td><strong>电源 (LDO)</strong></td><td>双 LDO 互比 + 欠压/过压监测</td><td>高</td><td>切换至冗余 LDO</td></tr>
+          <tr><td><strong>看门狗</strong></td><td>独立窗口看门狗，超时复位</td><td>高</td><td>进入安全状态</td></tr>
+        </tbody>
+      </table>
+
+      <h4>⏱️ 同步测量 (Synchronized Measurement)</h4>
+      <p>所有电池单元的电压必须在同一时刻测量。异步测量会因电流变化导致 SOC 估算误差。车规 AFE 通过全局 SYNC 引脚触发所有堆叠 AFE 同时采样。</p>
+      <div class="formula">全系统同步精度 < 1us (>=20颗AFE堆叠) &nbsp;&nbsp;|&nbsp;&nbsp; SYNC 上升沿触发 -> 所有 AFE 同步执行 Sample & Hold</div>
+      <div class="info-box"><strong>💡 为何同步至关重要：</strong>动力电池组中所有电芯流过同一电流。若测量不同步，电流变化 (如加速/制动) 期间的电压差会引入 SOC 估算误差，严重时导致 OV/UV 保护误触发。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2B: 模块深度解析 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header" style="background:linear-gradient(90deg,#fef3c7,#fde68a);border-bottom:2px solid #f59e0b;">
+      <div class="section-no" style="background:#d97706;">🔬</div><div class="icon">🧠</div><h2 style="color:#92400e;">核心模块深度解析</h2>
+    </div>
+    <div class="card-body">
+
+      <h4 style="color:#92400e;">一、双冗余 Sigma-Delta ADC 架构 — 车规安全的核心</h4>
+      <p>车规 BMS AFE 采用两组完全独立的 16~18bit Sigma-Delta ADC (ADC_A + ADC_B)，配以独立的基准源 (REF_A + REF_B) 和独立的 LDO 供电。两通道同时对同一电池单元进行测量。</p>
+      <div class="formula">|V_ADC_A - V_ADC_B| < 阈值(典型 +/-1mV) -> 正常 &nbsp;&nbsp;|&nbsp;&nbsp; 超出阈值 -> 触发交叉校验故障报警</div>
+      <table>
+        <thead><tr><th>设计要素</th><th>通道A</th><th>通道B</th><th>独立性保障</th></tr></thead>
+        <tbody>
+          <tr><td>ADC 模块</td><td>Sigma-Delta ADC_A (18bit)</td><td>Sigma-Delta ADC_B (18bit)</td><td>独立版图, 独立衬底接触</td></tr>
+          <tr><td>基准源</td><td>REF_A (<5ppm/C)</td><td>REF_B (<5ppm/C)</td><td>独立 LDO, 独立温度补偿</td></tr>
+          <tr><td>PGA 前端</td><td>PGA_A (独立偏置)</td><td>PGA_B (独立偏置)</td><td>独立输入 MUX 路径</td></tr>
+          <tr><td>时钟</td><td>CLK_A (OSC_A)</td><td>CLK_B (OSC_B)</td><td>独立振荡器, 不同频率</td></tr>
+          <tr><td>电源</td><td>LDO_A</td><td>LDO_B</td><td>独立 LDO, 独立去耦</td></tr>
+          <tr><td>数字接口</td><td>寄存器 Bank A</td><td>寄存器 Bank B</td><td>SPI 不同地址空间</td></tr>
+        </tbody>
+      </table>
+      <p><strong>共因失效 (CCF) 防护：</strong>两通道使用不同版图布局、不同时钟频率、不同 LDO 拓扑，防止单一物理原因 (如衬底噪声、电源共模) 同时影响两个通道。</p>
+
+      <h4 style="color:#92400e;margin-top:20px;">二、独立硬件保护路径 — 脱离 MCU 的最后防线</h4>
+      <p>这是车规 AFE 区别于工业级 AFE 的核心设计之一。硬件保护路径<strong>完全独立于 ADC 和数字控制逻辑</strong>，即使 MCU 死机/通信中断/数字逻辑故障，保护仍然生效。</p>
+      <table>
+        <thead><tr><th>保护功能</th><th>实现方式</th><th>响应时间</th><th>输出动作</th></tr></thead>
+        <tbody>
+          <tr><td><strong>过压保护 (OV)</strong></td><td>18 个独立硬件比较器 (每串独立)，阈值由电阻分压或熔丝设定</td><td><10us</td><td>Fault 引脚拉低 -> 驱动安全继电器断开</td></tr>
+          <tr><td><strong>欠压保护 (UV)</strong></td><td>18 个独立硬件比较器</td><td><10us</td><td>Fault 引脚 + 寄存器标志</td></tr>
+          <tr><td><strong>过温保护 (OT)</strong></td><td>芯片内部温度传感器 + 独立比较器</td><td><100us</td><td>关闭所有均衡通道 + Fault 输出</td></tr>
+          <tr><td><strong>过流保护 (OC)</strong></td><td>Shunt 电压比较器 (双冗余)</td><td><5us</td><td>Fault 引脚直接驱动安全继电器</td></tr>
+        </tbody>
+      </table>
+      <div class="warn-box"><strong>⚠️ 关键设计约束：</strong>硬件保护比较器的阈值设定元件 (电阻/熔丝) 本身也是安全关键元件，其故障模式 (开路/短路/漂移) 需在 FMEA 中分析。通常采用冗余比较器 + 不同阈值设定来覆盖这一故障模式。</div>
+
+      <h4 style="color:#92400e;margin-top:20px;">三、内建自测试 (BIST) — 上电即诊断</h4>
+      <table>
+        <thead><tr><th>BIST 项目</th><th>测试内容</th><th>执行时机</th><th>通过标准</th></tr></thead>
+        <tbody>
+          <tr><td><strong>ADC BIST</strong></td><td>注入已知参考电压 -> ADC 读取 -> 与期望值比较</td><td>上电 + 周期性 (可编程)</td><td>偏差 < +/-1LSB</td></tr>
+          <tr><td><strong>基准 BIST</strong></td><td>REF_A vs REF_B 互比</td><td>上电 + 周期性</td><td>偏差 < +/-0.1%</td></tr>
+          <tr><td><strong>MUX BIST</strong></td><td>测量开路 (注入小电流 -> 检测电压超限) / 短路检测</td><td>上电 + 按需</td><td>无开路/短路标志</td></tr>
+          <tr><td><strong>均衡 MOS BIST</strong></td><td>使能均衡 -> 检测电流变化</td><td>上电 + 按需</td><td>Delta_I > 阈值</td></tr>
+          <tr><td><strong>通信 BIST</strong></td><td>内部环回测试 (Loopback)</td><td>上电</td><td>CRC 匹配</td></tr>
+          <tr><td><strong>电源 BIST</strong></td><td>LDO_A vs LDO_B 输出电压比较</td><td>上电 + 持续</td><td>偏差 < +/-5%</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="color:#92400e;margin-top:20px;">四、功能安全文档体系 — 车规交付物</h4>
+      <table>
+        <thead><tr><th>文档</th><th>内容</th><th>目标读者</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Safety Manual (安全手册)</strong></td><td>芯片安全机制说明、假设使用条件、安全状态定义、故障响应时间</td><td>系统集成商/BMS 设计者</td></tr>
+          <tr><td><strong>FMEA (失效模式与影响分析)</strong></td><td>每种引脚/模块的失效模式、失效影响、安全机制覆盖</td><td>功能安全工程师</td></tr>
+          <tr><td><strong>FMEDA (失效模式影响与诊断分析)</strong></td><td>量化分析: 失效率 lambda、SPFM、LFM、PMHF</td><td>功能安全评估师</td></tr>
+          <tr><td><strong>DFA (相关失效分析)</strong></td><td>共因失效 (CCF) 和级联失效分析</td><td>安全架构师</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 3: 电路框图 ═══════════ -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div><div class="icon">🔲</div><h2>芯片内部电路框图</h2>
+    </div>
+    <div class="card-body">
+      <div class="diagram-title">图 3-1 | 车规 BMS AFE (18串, ASIL-D) 芯片内部架构</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 680" width="780" height="650" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <rect width="820" height="680" fill="#fafafa" rx="8"/>
+
+          <rect x="15" y="10" width="790" height="45" rx="6" fill="#f0fdf4" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="410" y="30" font-size="11" fill="#166534" text-anchor="middle" font-weight="bold">电池接口 C18~C0 -> 高压差分MUX (双向) -> PGA_A / PGA_B (独立前端)</text>
+          <text x="410" y="47" font-size="8" fill="#16a34a" text-anchor="middle">支持 LFP / NMC / LTO, 共模耐受 >1000V, 差分输入阻抗 >10MOhm</text>
+
+          <rect x="15" y="63" width="385" height="170" rx="8" fill="#f0fdf4" stroke="#27ae60" stroke-width="2"/>
+          <text x="207" y="83" font-size="11" fill="#166534" text-anchor="middle" font-weight="bold">通道A (Channel A) — 独立测量链路</text>
+          <rect x="30" y="95" width="110" height="35" rx="5" fill="#dcfce7" stroke="#86efac"/><text x="85" y="111" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">ADC_A</text><text x="85" y="125" font-size="7" fill="#16a34a" text-anchor="middle">18bit Sigma-Delta</text>
+          <rect x="155" y="95" width="110" height="35" rx="5" fill="#dcfce7" stroke="#86efac"/><text x="210" y="111" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">基准_A</text><text x="210" y="125" font-size="7" fill="#16a34a" text-anchor="middle"><5ppm/C</text>
+          <rect x="280" y="95" width="105" height="35" rx="5" fill="#dcfce7" stroke="#86efac"/><text x="332" y="111" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">PGA_A</text><text x="332" y="125" font-size="7" fill="#16a34a" text-anchor="middle">G=1~8</text>
+          <rect x="30" y="140" width="110" height="35" rx="5" fill="#dcfce7" stroke="#86efac"/><text x="85" y="156" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">LDO_A</text><text x="85" y="170" font-size="7" fill="#16a34a" text-anchor="middle">独立供电</text>
+          <rect x="155" y="140" width="110" height="35" rx="5" fill="#dcfce7" stroke="#86efac"/><text x="210" y="156" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">CLK_A</text><text x="210" y="170" font-size="7" fill="#16a34a" text-anchor="middle">独立振荡器</text>
+          <rect x="280" y="140" width="105" height="35" rx="5" fill="#dcfce7" stroke="#86efac"/><text x="332" y="156" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">比较器_A x18</text><text x="332" y="170" font-size="7" fill="#16a34a" text-anchor="middle">OV/UV 冗余</text>
+
+          <rect x="420" y="63" width="385" height="170" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2"/>
+          <text x="612" y="83" font-size="11" fill="#991b1b" text-anchor="middle" font-weight="bold">通道B (Channel B) — 完全独立</text>
+          <rect x="435" y="95" width="110" height="35" rx="5" fill="#fee2e2" stroke="#fca5a5"/><text x="490" y="111" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">ADC_B</text><text x="490" y="125" font-size="7" fill="#b91c1c" text-anchor="middle">18bit Sigma-Delta</text>
+          <rect x="560" y="95" width="110" height="35" rx="5" fill="#fee2e2" stroke="#fca5a5"/><text x="615" y="111" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">基准_B</text><text x="615" y="125" font-size="7" fill="#b91c1c" text-anchor="middle"><5ppm/C</text>
+          <rect x="685" y="95" width="105" height="35" rx="5" fill="#fee2e2" stroke="#fca5a5"/><text x="737" y="111" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">PGA_B</text><text x="737" y="125" font-size="7" fill="#b91c1c" text-anchor="middle">G=1~8</text>
+          <rect x="435" y="140" width="110" height="35" rx="5" fill="#fee2e2" stroke="#fca5a5"/><text x="490" y="156" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">LDO_B</text><text x="490" y="170" font-size="7" fill="#b91c1c" text-anchor="middle">独立供电</text>
+          <rect x="560" y="140" width="110" height="35" rx="5" fill="#fee2e2" stroke="#fca5a5"/><text x="615" y="156" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">CLK_B</text><text x="615" y="170" font-size="7" fill="#b91c1c" text-anchor="middle">独立振荡器</text>
+          <rect x="685" y="140" width="105" height="35" rx="5" fill="#fee2e2" stroke="#fca5a5"/><text x="737" y="156" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">比较器_B x18</text><text x="737" y="170" font-size="7" fill="#b91c1c" text-anchor="middle">OV/UV 冗余</text>
+
+          <line x1="410" y1="148" x2="420" y2="148" stroke="#f59e0b" stroke-width="2"/>
+          <text x="415" y="140" fill="#92400e" font-size="8" text-anchor="middle">互比</text>
+
+          <rect x="15" y="240" width="790" height="35" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="410" y="262" fill="#92400e" font-size="10" text-anchor="middle" font-weight="bold">交叉校验: |V_A - V_B| < 阈值 -> 正常 | 超出 -> 故障报警 + 安全状态切换 | BIST 周期性自检</text>
+
+          <rect x="15" y="282" width="790" height="72" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+          <text x="410" y="302" font-size="11" fill="#991b1b" text-anchor="middle" font-weight="bold">硬件保护 (独立于 ADC/MCU，完全自主运行)</text>
+          <rect x="30" y="314" width="125" height="28" rx="4" fill="#fee2e2" stroke="#fca5a5"/><text x="92" y="333" font-size="8" fill="#991b1b" text-anchor="middle">OV 比较器 x18 x2</text>
+          <rect x="170" y="314" width="125" height="28" rx="4" fill="#fee2e2" stroke="#fca5a5"/><text x="232" y="333" font-size="8" fill="#991b1b" text-anchor="middle">UV 比较器 x18 x2</text>
+          <rect x="310" y="314" width="120" height="28" rx="4" fill="#fee2e2" stroke="#fca5a5"/><text x="370" y="333" font-size="8" fill="#991b1b" text-anchor="middle">OT 双温度传感器</text>
+          <rect x="445" y="314" width="120" height="28" rx="4" fill="#fee2e2" stroke="#fca5a5"/><text x="505" y="333" font-size="8" fill="#991b1b" text-anchor="middle">OC 双比较器</text>
+          <rect x="580" y="314" width="105" height="28" rx="4" fill="#dc2626" stroke="#991b1b"/><text x="632" y="333" fill="white" font-size="8" text-anchor="middle" font-weight="bold">Fault 输出引脚</text>
+          <rect x="700" y="314" width="90" height="28" rx="4" fill="#dc2626" stroke="#991b1b"/><text x="745" y="333" fill="white" font-size="8" text-anchor="middle" font-weight="bold">看门狗</text>
+          <text x="410" y="350" font-size="7" fill="#991b1b" text-anchor="middle">Fault 引脚直接驱动安全继电器，响应 < 10us</text>
+
+          <rect x="15" y="362" width="790" height="48" rx="8" fill="#f0fdf4" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="410" y="382" font-size="11" fill="#166534" text-anchor="middle" font-weight="bold">均衡电路: 18ch 被动均衡 MOS (Ron < 1.5Ohm) + 均衡电流监测 + 热保护 + 开路/短路诊断</text>
+          <text x="410" y="398" font-size="9" fill="#16a34a" text-anchor="middle">均衡电流 100~300mA (外部R设定) | 占空比控制 0~100% | 均衡MOS故障诊断: 使能前/后电流检测</text>
+
+          <rect x="15" y="420" width="790" height="80" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="410" y="440" font-size="11" fill="#92400e" text-anchor="middle" font-weight="bold">诊断 & 通信子系统</text>
+          <rect x="30" y="450" width="115" height="40" rx="4" fill="white" stroke="#fcd34d"/><text x="87" y="466" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">BIST 控制器</text><text x="87" y="481" font-size="7" fill="#b45309" text-anchor="middle">上电+周期自检</text>
+          <rect x="158" y="450" width="115" height="40" rx="4" fill="white" stroke="#fcd34d"/><text x="215" y="466" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">故障注入逻辑</text><text x="215" y="481" font-size="7" fill="#b45309" text-anchor="middle">安全验证</text>
+          <rect x="286" y="450" width="115" height="40" rx="4" fill="white" stroke="#fcd34d"/><text x="343" y="466" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">CRC/ECC 校验</text><text x="343" y="481" font-size="7" fill="#b45309" text-anchor="middle">通信+内存</text>
+          <rect x="414" y="450" width="130" height="40" rx="4" fill="white" stroke="#fcd34d"/><text x="479" y="466" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">Daisy-Chain A+B</text><text x="479" y="481" font-size="7" fill="#b45309" text-anchor="middle">双冗余通信</text>
+          <rect x="557" y="450" width="115" height="40" rx="4" fill="white" stroke="#fcd34d"/><text x="614" y="466" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">隔离 CAN-FD</text><text x="614" y="481" font-size="7" fill="#b45309" text-anchor="middle">可选冗余</text>
+          <rect x="685" y="450" width="100" height="40" rx="4" fill="white" stroke="#fcd34d"/><text x="735" y="466" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">SYNC 同步</text><text x="735" y="481" font-size="7" fill="#b45309" text-anchor="middle"><1us 精度</text>
+
+          <rect x="15" y="508" width="790" height="50" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+          <text x="410" y="526" font-size="10" fill="#166534" text-anchor="middle" font-weight="bold">电源: 从电池组取电 (双 LDO, 独立供 A/B 通道) + 反接保护 + 欠压检测</text>
+          <text x="410" y="543" font-size="9" fill="#16a34a" text-anchor="middle">工作功耗 <15mA | 休眠功耗 <50uA | 高精度双基准 <5ppm/C | HTQFP 封装 (高压安全间距)</text>
+
+          <text x="207" y="580" font-size="10" fill="#166534" text-anchor="middle" font-weight="bold">Host-Side: 双 Daisy-Chain SPI (冗余) + 隔离 CAN-FD</text>
+          <text x="612" y="580" font-size="10" fill="#991b1b" text-anchor="middle" font-weight="bold">Fail-Safe: Fault 引脚直接驱动安全继电器</text>
+          <text x="410" y="602" font-size="9" fill="#6b7280" text-anchor="middle">AEC-Q100 Grade 1 (-40~+125C) | ISO 26262 ASIL-D 认证 | CISPR 25 Class 5 | 最多 40颗 堆叠 >800V</text>
+          <text x="410" y="620" font-size="9" fill="#6b7280" text-anchor="middle">安全交付物: Safety Manual + FMEA + FMEDA + DFA | 15年/300,000km 寿命</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>说明：</strong>车规 BMS AFE 的核心是双冗余架构。通道 A 和通道 B 完全独立（独立电源/时钟/基准/ADC/PGA/比较器），测量结果交叉校验。硬件保护路径脱离 ADC 和 MCU 自主运行，Fault 引脚可直接驱动安全继电器。BIST 控制器在上电和运行中周期性执行自诊断。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 4: 核心对比 ═══════════ -->
+<section id="sec4">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">4</div><div class="icon">⚖️</div><h2>车规 vs 储能 BMS AFE 全面对比</h2>
+    </div>
+    <div class="card-body">
+      <p>车规 BMS AFE 和储能 BMS AFE 虽然共享电池监测的基本功能，但在可靠性、功能安全、环境耐受和认证要求上存在本质差异。以下从 17 个维度进行全面对比。</p>
+
+      <h4>车规与储能 BMS AFE 关键差异</h4>
+      <table>
+        <thead><tr><th>对比维度</th><th>储能 BMS AFE</th><th>车规 BMS AFE</th><th>差距说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>可靠性等级</strong></td><td>工业级</td><td><span class="chip chip-green">AEC-Q100 Grade 0/1</span></td><td>车规需通过全套应力测试 (HTOL/TC/HAST)</td></tr>
+          <tr><td><strong>功能安全</strong></td><td>ASIL-B (可选)</td><td><span class="chip chip-purple">ASIL-D (强制!)</span></td><td>车规 FTTI < 100us, SPFM >= 99%</td></tr>
+          <tr><td><strong>温度范围</strong></td><td>-40~+85C</td><td><span class="chip chip-red">-40~+125C (G1) / +150C (G0)</span></td><td>发动机舱/电池包高温环境</td></tr>
+          <tr><td><strong>电压精度 @25C</strong></td><td>+/-1.0mV</td><td><span class="chip chip-green">+/-0.5mV</span></td><td>车规 SOC 估算要求更高</td></tr>
+          <tr><td><strong>全温精度</strong></td><td>+/-3~5mV</td><td><span class="chip chip-green">+/-1.5mV (-40~+125C)</span></td><td>车规全温域精度要求严苛</td></tr>
+          <tr><td><strong>基准温漂</strong></td><td><10ppm/C</td><td><span class="chip chip-green"><5ppm/C</span></td><td>车规需更高精度基准</td></tr>
+          <tr><td><strong>EMC 要求</strong></td><td>工业标准 (IEC 61000)</td><td><span class="chip chip-red">CISPR 25 Class 5</span></td><td>车载环境 EMI 极严苛</td></tr>
+          <tr><td><strong>振动/冲击</strong></td><td>基本要求</td><td><span class="chip chip-red">ISO 16750 严苛振动</span></td><td>车辆行驶振动环境</td></tr>
+          <tr><td><strong>冗余设计</strong></td><td>可选</td><td><span class="chip chip-red">必须 (双ADC+双基准+双通信)</span></td><td>ASIL-D 架构强制要求</td></tr>
+          <tr><td><strong>故障诊断覆盖</strong></td><td>基本 (OV/UV/OT/OC)</td><td><span class="chip chip-purple">>99% (BIST+交叉校验+故障注入)</span></td><td>ISO 26262 要求的诊断覆盖率</td></tr>
+          <tr><td><strong>均衡 MOS Ron</strong></td><td><2Ohm</td><td><span class="chip chip-green"><1.5Ohm</span></td><td>降低芯片发热，提高可靠性</td></tr>
+          <tr><td><strong>热插拔</strong></td><td>不需要</td><td><span class="chip chip-red">需要</span></td><td>电池包维护更换场景</td></tr>
+          <tr><td><strong>寿命要求</strong></td><td>15年</td><td><span class="chip chip-red">15年/300,000km</span></td><td>车规需同时满足时间和里程</td></tr>
+          <tr><td><strong>安全文档</strong></td><td>无特殊要求</td><td><span class="chip chip-purple">Safety Manual + FMEA + FMEDA</span></td><td>整车厂强制交付物</td></tr>
+          <tr><td><strong>同步测量</strong></td><td>可选</td><td><span class="chip chip-green"><1us 全堆叠同步</span></td><td>动态工况下 SOC 精度的关键</td></tr>
+          <tr><td><strong>封装</strong></td><td>QFP/TQFP/LQFP</td><td><span class="chip chip-red">HTQFP (高压安全间距)</span></td><td>800V 平台爬电距离要求</td></tr>
+          <tr><td><strong>ESD 要求</strong></td><td>HBM 2kV, CDM 500V</td><td><span class="chip chip-red">HBM 4kV, CDM 750V + ISO 10605</span></td><td>车载 ESD 更高电压</td></tr>
+        </tbody>
+      </table>
+
+      <div class="compare-grid" style="margin-top:20px;">
+        <div class="compare-col green">
+          <h3>🔋 储能 AFE 适用场景</h3>
+          <ul>
+            <li>大型储能电站、工商业储能</li>
+            <li>家庭储能、通信备电</li>
+            <li>成本敏感，工业级可靠性即可</li>
+            <li>温度范围 -40~+85C 足够</li>
+            <li>无需 ASIL-D 功能安全认证</li>
+            <li>开发周期短，认证门槛低</li>
+          </ul>
+        </div>
+        <div class="compare-col purple">
+          <h3>🚗 车规 AFE 适用场景</h3>
+          <ul>
+            <li>电动汽车 (BEV/PHEV/HEV)</li>
+            <li>功能安全 ASIL-D 强制要求</li>
+            <li>-40~+125C 全温域高精度</li>
+            <li>CISPR 25 Class 5 EMC 必需</li>
+            <li>AEC-Q100 + ISO 26262 双认证</li>
+            <li>开发周期长 (含安全认证 ~2年+)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🔴 车规芯片的本质差异：</strong>车规 AFE 不是储能 AFE 的"加强版"——它是从架构设计的第一天就以 ASIL-D 功能安全为目标的全新设计。双冗余、硬件保护路径的独立性、BIST 覆盖、故障注入机制、安全文档体系——这些都是车规芯片不可妥协的硬性要求，不是"后期可以加上"的特性。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 5: 核心指标 ═══════════ -->
+<section id="sec5">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">5</div><div class="icon">📊</div><h2>核心性能指标</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📌 5.1 电压测量指标 (车规级精度)</h4>
+      <div class="metric-card">
+        <div class="metric-header"><h4>电压测量精度 · Cell Voltage Accuracy (双冗余)</h4><span class="metric-abbr">V_ERR</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">精度 @25C</span><span>+/-0.5mV（比储能 +/-1mV 更严！）</span></div>
+          <div class="metric-row"><span class="metric-label">全温精度 (-40~+125C)</span><span>+/-1.5mV（全温域校准后）</span></div>
+          <div class="metric-row"><span class="metric-label">温漂</span><span><5uV/C（基准源温漂，比储能 10uV/C 减半）</span></div>
+          <div class="metric-row"><span class="metric-label">通道间匹配</span><span>+/-0.3mV (任何两通道间差异，经校准)</span></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>参数</th><th>规格</th><th>单位</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td>测量范围</td><td>0~5</td><td>V/cell</td><td>覆盖全类型锂电池</td></tr>
+          <tr><td>精度 @25C</td><td>+/-0.5</td><td>mV</td><td>比储能严一倍！</td></tr>
+          <tr><td>全温精度 (-40~+125C)</td><td>+/-1.5</td><td>mV</td><td>全温域校准后</td></tr>
+          <tr><td>温漂</td><td><5</td><td>uV/C</td><td>双基准独立温补</td></tr>
+          <tr><td>ADC 架构</td><td>双 18bit Sigma-Delta</td><td>bit</td><td>冗余独立 ADC_A + ADC_B</td></tr>
+          <tr><td>测量速度</td><td>50us~5ms</td><td>/cell</td><td>可编程，比储能更快</td></tr>
+          <tr><td>共模电压</td><td>>1000</td><td>V</td><td>800V 平台耐受</td></tr>
+          <tr><td>同步精度</td><td><1</td><td>us</td><td>全堆叠 (最多40颗) 同步</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.2 电流测量指标</h4>
+      <table>
+        <thead><tr><th>参数</th><th>规格</th><th>单位</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>分流输入范围</td><td>+/-300</td><td>mV</td><td>双通道冗余 ADC</td></tr>
+          <tr><td>电流 ADC</td><td>18bit (双通道)</td><td>bit</td><td>ADC_A + ADC_B 冗余</td></tr>
+          <tr><td>库仑计数精度</td><td><0.3%</td><td>% FS</td><td>比储能 <0.5% 更严</td></tr>
+          <tr><td>过流检测响应</td><td><5</td><td>us</td><td>双冗余比较器</td></tr>
+          <tr><td>PGA 增益</td><td>1~64</td><td>V/V</td><td>双 PGA 独立</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.3 均衡指标</h4>
+      <table>
+        <thead><tr><th>参数</th><th>规格</th><th>单位</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>均衡通道数</td><td>18</td><td>/芯片</td><td>每通道独立控制</td></tr>
+          <tr><td>均衡电流</td><td>100~300</td><td>mA</td><td>外部电阻设定</td></tr>
+          <tr><td>均衡 MOS Ron</td><td><1.5</td><td>Ohm</td><td>比储能 <2Ohm 更低，减少发热</td></tr>
+          <tr><td>均衡诊断</td><td colspan="2">电流检测 + 开路/短路</td><td>使能前后电流对比</td></tr>
+          <tr><td>热保护</td><td colspan="2">每通道独立热关断</td><td>防止局部过热</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.4 安全 / 可靠性指标 (车规核心)</h4>
+      <table>
+        <thead><tr><th>参数</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>功能安全等级</strong></td><td>ASIL-D (ISO 26262)</td><td>最高安全完整性等级</td></tr>
+          <tr><td><strong>OV/UV 保护响应</strong></td><td><100us (硬线 Fault 引脚)</td><td>硬件比较器，不经过 ADC/MCU</td></tr>
+          <tr><td><strong>单点故障度量 (SPFM)</strong></td><td>>=99%</td><td>ISO 26262-5 要求</td></tr>
+          <tr><td><strong>潜伏故障度量 (LFM)</strong></td><td>>=90%</td><td>ISO 26262-5 要求</td></tr>
+          <tr><td><strong>故障检测覆盖率</strong></td><td>>99%</td><td>BIST + 故障注入 + 交叉校验</td></tr>
+          <tr><td><strong>AEC-Q100</strong></td><td>Grade 1 (-40~+125C)</td><td>全套应力测试认证</td></tr>
+          <tr><td><strong>EMC</strong></td><td>CISPR 25 Class 5</td><td>车载最严苛 EMC 等级</td></tr>
+          <tr><td><strong>ESD</strong></td><td>HBM 4kV / CDM 750V / ISO 10605</td><td>车载 ESD 标准</td></tr>
+          <tr><td><strong>冗余</strong></td><td>双 ADC + 双基准 + 双通信 + 双 LDO</td><td>完全独立的双通道系统</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.5 系统级指标</h4>
+      <table>
+        <thead><tr><th>参数</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>堆叠</td><td>最多40颗 (>800V, 800V平台)</td><td>Daisy-Chain x2 冗余通信</td></tr>
+          <tr><td>通信</td><td>Daisy-Chain SPI (双冗余) + 隔离 CAN-FD</td><td>冗余通信，单链路故障不影响</td></tr>
+          <tr><td>通信速率</td><td>2~8Mbps (SPI) / 5Mbps (CAN-FD)</td><td>比储能更快</td></tr>
+          <tr><td>工作功耗</td><td><15mA</td><td>含 BIST 消耗</td></tr>
+          <tr><td>休眠功耗</td><td><50uA</td><td>低功耗待机</td></tr>
+          <tr><td>温度范围</td><td>-40~+125C (G1) / +150C (G0)</td><td>车规 AEC-Q100</td></tr>
+          <tr><td>封装</td><td>HTQFP (高压安全间距)</td><td>满足 800V 爬电距离</td></tr>
+          <tr><td>寿命</td><td>15年/300,000km</td><td>满足整车使用寿命</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 6: 影响因素 ═══════════ -->
+<section id="sec6">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">6</div><div class="icon">🔗</div><h2>指标影响因素分析</h2>
+    </div>
+    <div class="card-body">
+      <h4>📍 车规 BMS AFE 关键指标影响因素网络</h4>
+      <table>
+        <thead><tr><th>关键指标</th><th>被哪些因素影响（降级）</th><th>该指标又影响哪些下游性能</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>全温电压精度</strong></td>
+            <td><span class="chip chip-red">基准温漂 (<5ppm/C)</span><span class="chip chip-red">PGA 增益温漂</span><span class="chip chip-red">PCB 漏电流 (高湿)</span><span class="chip chip-red">热电偶效应</span><span class="chip chip-red">ADC 非线性温漂</span></td>
+            <td><span class="chip chip-blue">SOC 估算精度</span><span class="chip chip-blue">OV/UV 保护阈值准确性</span><span class="chip chip-blue">均衡判断一致性</span></td>
+          </tr>
+          <tr>
+            <td><strong>冗余通道一致性</strong></td>
+            <td><span class="chip chip-red">基准_A vs 基准_B 失配</span><span class="chip chip-red">PGA_A vs PGA_B 增益差</span><span class="chip chip-red">输入路径不对称</span><span class="chip chip-red">时钟频率差异</span></td>
+            <td><span class="chip chip-blue">交叉校验误报率</span><span class="chip chip-blue">故障检测灵敏度</span><span class="chip chip-blue">安全机制有效性</span></td>
+          </tr>
+          <tr>
+            <td><strong>硬件保护响应时间</strong></td>
+            <td><span class="chip chip-red">比较器传播延迟</span><span class="chip chip-red">Fault 引脚驱动强度</span><span class="chip chip-red">PCB 布线延迟</span><span class="chip chip-red">继电器响应时间</span></td>
+            <td><span class="chip chip-blue">FTTI 容限</span><span class="chip chip-blue">热失控防护有效性</span><span class="chip chip-blue">系统安全完整性</span></td>
+          </tr>
+          <tr>
+            <td><strong>EMC 抗扰度</strong></td>
+            <td><span class="chip chip-red">BCI/DPI 测试频率</span><span class="chip chip-red">PCB 布局/层叠</span><span class="chip chip-red">去耦/滤波设计</span><span class="chip chip-red">屏蔽/接地</span></td>
+            <td><span class="chip chip-blue">测量噪声</span><span class="chip chip-blue">通信误码</span><span class="chip chip-blue">保护误触发</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="success-box" style="margin-top:16px;">
+        <strong>✅ 车规 BMS AFE 特有影响因素：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>整车 EMI 环境：</strong>牵引逆变器 IGBT/SiC 开关产生极强的 EMI（数百 V/ns 的 dv/dt），通过传导和辐射耦合到 AFE。需要完整的 EMC 设计策略。</li>
+          <li><strong>电池包内部热梯度：</strong>电池包内部温度差异可达 20~30C。双基准分别位于芯片不同位置可能导致基准温差。等温 PCB 设计至关重要。</li>
+          <li><strong>汽车振动和冲击：</strong>振动导致焊点疲劳、连接器接触不良，影响测量稳定性。需满足 ISO 16750 振动标准。</li>
+          <li><strong>生命周期老化：</strong>15年/300,000km 的生命周期内，基准漂移、MUX 漏电流增加、MOS Ron 退化等老化效应需在设计阶段考虑。</li>
+          <li><strong>800V 高压平台的共模瞬变：</strong>电机驱动/制动时电池组共模电压剧烈变化 (dv/dt)，考验通信隔离和输入共模抑制。</li>
+          <li><strong>共因失效 (CCF)：</strong>尽管有双冗余，若两通道共享衬底/封装/电源域，单一物理原因可能同时影响两通道。版图隔离、不同振荡频率、不同 LDO 拓扑是 CCF 防护手段。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 7: 测试方法 ═══════════ -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法详解</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📋 7.1 AEC-Q100 全套认证测试</h4>
+      <p>AEC-Q100 是车规集成电路的准入门槛。以下测试项目不通过则无法获得车规认证。</p>
+      <table>
+        <thead><tr><th>测试组</th><th>测试项目</th><th>条件 (Grade 1)</th><th>样本量</th><th>判定</th></tr></thead>
+        <tbody>
+          <tr><td><strong>A 组 (加速环境)</strong></td><td>PC (预处理)</td><td>3x reflow 260C</td><td>~3000</td><td>0 fail</td></tr>
+          <tr><td></td><td>HAST (高加速应力)</td><td>130C/85%RH/96h</td><td>77x3 lot</td><td>0 fail</td></tr>
+          <tr><td></td><td>TC (温度循环)</td><td>-55~+150C, 1000 cyc</td><td>77x3 lot</td><td>0 fail</td></tr>
+          <tr><td></td><td>AC (高压蒸煮)</td><td>121C/100%RH/96h</td><td>77x3 lot</td><td>0 fail</td></tr>
+          <tr><td><strong>B 组 (寿命)</strong></td><td>HTOL (高温工作寿命)</td><td>125C, 1000h</td><td>77x3 lot</td><td>0 fail</td></tr>
+          <tr><td></td><td>ELFR (早期失效率)</td><td>125C, 48h</td><td>800x3 lot</td><td>0 fail</td></tr>
+          <tr><td><strong>C 组 (封装)</strong></td><td>WBS (键合线剪切)</td><td>-</td><td>10x3 lot</td><td>规格内</td></tr>
+          <tr><td></td><td>SD (可焊性)</td><td>245C, 5s</td><td>10x3 lot</td><td>>=95% 覆盖率</td></tr>
+          <tr><td><strong>D 组 (芯片)</strong></td><td>ESD-HBM</td><td>4kV</td><td>3x3 lot</td><td>0 fail</td></tr>
+          <tr><td></td><td>ESD-CDM</td><td>750V</td><td>3x3 lot</td><td>0 fail</td></tr>
+          <tr><td></td><td>LU (闩锁)</td><td>85C, +/-100mA</td><td>3x3 lot</td><td>0 fail</td></tr>
+          <tr><td><strong>E 组 (电气)</strong></td><td>TDEB (温度漂移)</td><td>-40~+125C</td><td>30x3 lot</td><td>规格内</td></tr>
+          <tr><td></td><td>ED (电气分布)</td><td>25C</td><td>300x3 lot</td><td>规格内</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📡 7.2 EMC 测试 (CISPR 25 Class 5)</h4>
+      <table>
+        <thead><tr><th>测试项目</th><th>标准</th><th>条件</th><th>判定</th></tr></thead>
+        <tbody>
+          <tr><td><strong>辐射发射 (RE)</strong></td><td>CISPR 25</td><td>150kHz~2.5GHz, ALSE 暗室</td><td>Class 5 限值以下</td></tr>
+          <tr><td><strong>传导发射 (CE)</strong></td><td>CISPR 25</td><td>电压法 150k~108MHz; 电流法 150k~245MHz</td><td>Class 5 限值以下</td></tr>
+          <tr><td><strong>BCI (大电流注入)</strong></td><td>ISO 11452-4</td><td>400mA, 1MHz~400MHz</td><td>功能不降级 (A类)</td></tr>
+          <tr><td><strong>DPI (直接功率注入)</strong></td><td>ISO 11452-7</td><td>1MHz~1GHz, 各引脚</td><td>功能不降级 (A类)</td></tr>
+          <tr><td><strong>ESD (车载)</strong></td><td>ISO 10605</td><td>+/-8kV 接触, +/-15kV 空气 (通电)</td><td>功能不降级</td></tr>
+          <tr><td><strong>瞬态传导</strong></td><td>ISO 7637-2</td><td>Pulse 1/2a/2b/3a/3b/4/5a</td><td>功能不降级</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">🛡️ 7.3 功能安全测试 (故障注入)</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>ADC 故障注入</h5><p>模拟 ADC 卡滞 (固定输出)、偏移 (offset 超大)、噪声超大三种故障模式 -> 验证交叉校验检测到报警 + 切换至健康通道。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>基准故障注入</h5><p>模拟基准漂移 (REF_A 偏离超 +/-5%) -> 验证双基准互比检测到报警 -> 系统进入安全状态。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>MUX 故障注入</h5><p>模拟开路 (某通道无输入)、短路 (两通道间短路) -> 验证 MUX BIST 检测到故障 -> 标记故障通道。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>通信故障注入</h5><p>注入 CRC 错误、超时、丢包、序列号错误 -> 验证通信诊断检测到 -> 切换至冗余通道 -> 触发看门狗复位。</p></div></div>
+        <div class="step"><div class="step-no">5</div><div class="step-content"><h5>冗余一致性测试</h5><p>正常条件下比较通道 A 和通道 B 测量结果 -> |V_A - V_B| < 1mV (25C) / < 3mV (-40~+125C) -> 超出触发报警。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">⏱️ 7.4 同步精度测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>多 AFE 堆叠搭建</h5><p>搭建 20颗以上 AFE 堆叠系统，所有 AFE 的 SYNC 引脚连接至同一同步信号源。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>采样时刻测量</h5><p>使用高带宽示波器 (>=1GHz) 监测各 AFE 的内部采样保持信号 (如有测试引脚) 或通过电流探头监测阶梯电流变化。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>同步偏差计算</h5><p>计算最早与最晚 AFE 采样时刻的差异 -> 要求全系统同步偏差 < 1us。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">🔧 7.5 常规 BMS 功能测试</h4>
+      <p>电压精度测试、均衡功能测试、保护功能测试、库仑计数测试等方法与储能 BMS AFE 类似，但所有测试必须在 -40C, +25C, +125C (或 +150C for Grade 0) 三个温度点重复执行。</p>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🚨 车规测试的关键差异：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>样本量巨大：</strong>AEC-Q100 要求 3 个 Lot x 77 颗/测试，总样本量远超工业级测试</li>
+          <li><strong>零失效要求：</strong>多数 AEC-Q100 测试项目要求 LTPD (批允许缺陷率)，通常 0/77 或 0/800</li>
+          <li><strong>长周期：</strong>HTOL 1000h (~6周), TC 1000 cycles (~5周), 全套认证需 6~9 个月</li>
+          <li><strong>三温全覆盖：</strong>所有电气测试必须在 -40C, +25C, +125C 三个温度点完成</li>
+          <li><strong>功能安全测试不可省略：</strong>故障注入测试是 ISO 26262 认证的一部分，非可选项目</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 8: 注意事项 ═══════════ -->
+<section id="sec8">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">8</div><div class="icon">⚠️</div><h2>测试与使用注意事项</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>🛡️ 功能安全相关注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">🔴 硬件保护路径必须独立验证</div><p>测试时必须断开 MCU 通信，验证 OV/UV/OT/OC 保护在无 MCU 时仍正常工作。Fault 引脚的驱动能力必须足以驱动安全继电器线圈。</p></div>
+        <div class="caution-item"><div class="ci-title">🔄 双通道独立性验证</div><p>通过断开通道 A 电源、断开通道 B 时钟等方式，验证一个通道故障不影响另一个通道正常工作。这是 ASIL-D 架构验证的核心。</p></div>
+        <div class="caution-item"><div class="ci-title">📋 BIST 覆盖率验证</div><p>BIST 必须在上电时自动执行并报告结果。周期性 BIST 的时间间隔需满足 FTTI 要求。不能在 BIST 期间产生错误测量数据。</p></div>
+        <div class="caution-item"><div class="ci-title">🔗 双通信链路切换</div><p>Daisy-Chain A + Daisy-Chain B 双冗余通信。验证其中一条链路完全断开后，系统在 <1ms 内切换到另一条链路且数据不丢失。</p></div>
+        <div class="caution-item"><div class="ci-title">📄 安全文档交付</div><p>Safety Manual、FMEA、FMEDA 是车规芯片的强制交付物。Safety Manual 中必须明确假设使用条件 (AoU) 和安全状态定义。</p></div>
+        <div class="caution-item"><div class="ci-title">⏱️ FTTI 验证</div><p>从容错时间间隔 (FTTI) 的起点 (故障发生) 到安全状态达成，必须在 FTTI 之内。ASIL-D 通常 FTTI < 100ms (系统级)。</p></div>
+      </div>
+
+      <h4 style="margin-top:20px;">🚗 车规环境专项注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">🌡️ 电池包内部高温</div><p>电池包内部温度可达 85~105C (尤其快充期间)。AFE 热设计必须考虑这一局部环境温度，而非仅参考环境空气温度。Grade 0 (+150C) 适用于发动机舱等极端位置。</p></div>
+        <div class="caution-item"><div class="ci-title">⚡ 800V 平台爬电距离</div><p>800V 高压平台的 PCB 爬电距离需满足 IEC 60664 标准。HTQFP 封装引脚间距和 PCB Layout 需经安全间距审查。</p></div>
+        <div class="caution-item"><div class="ci-title">📡 EMI 耦合路径</div><p>牵引逆变器的 PWM 开关 (SiC 的 dv/dt 可达 50V/ns) 通过电池母排耦合到 AFE 输入。需要完整的传导 EMI 滤波策略。</p></div>
+        <div class="caution-item"><div class="ci-title">🔌 热插拔保护</div><p>车规 AFE 需支持电池包维护时的热插拔 (Hot Plug)。输入引脚需承受带电插拔时的瞬态电压而不损坏。</p></div>
+        <div class="caution-item"><div class="ci-title">🧪 ISO 26262 认证交付物</div><p>除芯片本身，需交付: Safety Manual, FMEA, FMEDA (含 lambda、SPFM、LFM、PMHF 量化分析), DFA, 安全案例报告。</p></div>
+        <div class="caution-item"><div class="ci-title">🔄 软件/硬件接口定义</div><p>HSI (Hardware-Software Interface) 文档明确定义 MCU 软件如何与 AFE 硬件交互，包括寄存器定义、故障响应流程、安全状态转换。</p></div>
+      </div>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🚨 车规 BMS AFE 最常见致命错误：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>将双通道的 LDO 连接至同一电源：</strong>破坏了电源独立性——一个 LDO 故障可能同时影响两通道</li>
+          <li><strong>未配置独立的外部看门狗：</strong>AFE 内部看门狗和外部独立看门狗必须同时使用 (ASIL-D 要求)</li>
+          <li><strong>Fault 引脚仅连接 MCU 而非安全继电器：</strong>MCU 死机时保护失效——Fault 必须直接驱动安全继电器</li>
+          <li><strong>忽略 Safety Manual 中的假设使用条件：</strong>违反 AoU 可能导致安全机制失效，整车厂不予接受</li>
+          <li><strong>在 BIST 执行期间读取测量数据：</strong>BIST 期间的测量值不可信，需等待 BIST 完成后取数</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 9: 选型指南 ═══════════ -->
+<section id="sec9">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">9</div><div class="icon">🧭</div><h2>选型与应用指南</h2>
+    </div>
+    <div class="card-body">
+
+      <div class="compare-grid">
+        <div class="compare-col purple">
+          <h3>🟣 400V 平台 (BEV/PHEV)</h3>
+          <ul>
+            <li>典型电池包: 96~108串 (LFP) / 96串 (NMC)</li>
+            <li>需 AFE: 6~7颗 (18串/AFE) 或 8~9颗 (12串/AFE)</li>
+            <li>共模电压: ~400V max</li>
+            <li>隔离要求: 中压 (1kV 耐压即可)</li>
+            <li>适用车型: 主流 BEV/大容量 PHEV</li>
+            <li>Grade 1 (-40~+125C) 通常足够</li>
+          </ul>
+        </div>
+        <div class="compare-col red">
+          <h3>🔴 800V 平台 (高性能 BEV / 商用车)</h3>
+          <ul>
+            <li>典型电池包: 192~228串 (LFP)</li>
+            <li>需 AFE: 11~13颗 (18串/AFE)</li>
+            <li>共模电压: >800V max</li>
+            <li>隔离要求: 高压 (>=2kV 耐压)</li>
+            <li>适用车型: 高端 BEV / 电动卡车/大巴</li>
+            <li>Grade 0 (-40~+150C) 推荐 (快充高温)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col green">
+          <h3>✅ 经 AEC-Q100 / ASIL 认证的 AFE</h3>
+          <ul>
+            <li>纯电动汽车/混动 (安全关键系统)</li>
+            <li>需要功能安全 ASIL-D</li>
+            <li>整车厂强制要求 ISO 26262 合规</li>
+            <li>双冗余 ADC/基准/通信</li>
+            <li>EMC CISPR 25 Class 5</li>
+            <li>完整的 Safety Manual + FMEDA</li>
+          </ul>
+        </div>
+        <div class="compare-col blue">
+          <h3>✅ 工业级 AFE (非车规)</h3>
+          <ul>
+            <li>固定式储能系统、UPS</li>
+            <li>无需 ASIL-D 功能安全</li>
+            <li>温度范围 -40~+85C 足够</li>
+            <li>单 ADC 通道即可</li>
+            <li>工业 EMC 标准即可</li>
+            <li>成本优先于功能安全</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">车规 AFE 平台选型速查</h4>
+      <table>
+        <thead><tr><th>车型/平台</th><th>电池串数</th><th>AFE 配置</th><th>通信方案</th><th>功能安全</th><th>温度等级</th></tr></thead>
+        <tbody>
+          <tr><td><strong>48V MHEV (轻混)</strong></td><td>12~14串 LFP/LTO</td><td>1颗 18串 AFE</td><td>SPI 直连 / CAN</td><td>ASIL-B</td><td>Grade 1</td></tr>
+          <tr><td><strong>HEV (混动)</strong></td><td>48~60串 NMC</td><td>3~4颗 18串 AFE</td><td>Daisy-Chain</td><td>ASIL-C/D</td><td>Grade 1</td></tr>
+          <tr><td><strong>PHEV (插混)</strong></td><td>96串 NMC</td><td>6颗 18串 AFE</td><td>Daisy-Chain x2</td><td>ASIL-D</td><td>Grade 1</td></tr>
+          <tr><td><strong>BEV 400V (纯电)</strong></td><td>96~108串 LFP</td><td>6~7颗 18串 AFE</td><td>Daisy-Chain x2</td><td>ASIL-D</td><td>Grade 1</td></tr>
+          <tr><td><strong>BEV 800V (高端纯电)</strong></td><td>192~228串 LFP</td><td>11~13颗 18串 AFE</td><td>Daisy-Chain x2 + CAN-FD</td><td>ASIL-D</td><td>Grade 0/1</td></tr>
+          <tr><td><strong>电动商用车 (卡车/大巴)</strong></td><td>180~240串 LFP</td><td>10~14颗 18串 AFE</td><td>Daisy-Chain x2 + 隔离 CAN-FD</td><td>ASIL-D</td><td>Grade 0</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">系统配置速算示例 (400V BEV, NMC 电池)</h4>
+      <table>
+        <thead><tr><th>环节</th><th>参数</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>电池类型</td><td>NMC, 3.7V 标称</td><td>96串 = 355.2V 标称 (4.2V 满充 = 403.2V)</td></tr>
+          <tr><td>每颗 AFE 覆盖</td><td>18串</td><td>18 x 4.2 = 75.6V/AFE (满充)</td></tr>
+          <tr><td>所需 AFE 数量</td><td>6颗 (96/16=6)</td><td>每颗 16串使用, 2串预留</td></tr>
+          <tr><td>冗余通道</td><td>双 ADC x6 = 12组独立测量</td><td>交叉校验所有测量点</td></tr>
+          <tr><td>同步 SYNC 布线</td><td>星形/菊花链均可</td><td>全局同步触发，偏斜 <1us</td></tr>
+          <tr><td>通信拓扑</td><td>Daisy-Chain A + Daisy-Chain B</td><td>双冗余，独立布线路径</td></tr>
+          <tr><td>Fault 安全路径</td><td>所有 AFE Fault 线 "线或" 连接</td><td>任一 AFE 拉低 -> 安全继电器断开</td></tr>
+          <tr><td>总监测点</td><td>96电压 + 24温度 (6x4 NTC) + 1电流</td><td>含双通道冗余</td></tr>
+          <tr><td>功能安全交付物</td><td>Safety Manual + FMEA + FMEDA + DFA</td><td>整车厂 PPAP 交付的一部分</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>💡 AE 工程直觉：</strong>"车规 BMS AFE 选型不看价格，先看认证。AEC-Q100 是敲门砖，ASIL-D 是护城河。双冗余不是锦上添花而是刚需。Fault 必须直驱安全继电器，不能过 MCU。安全文档是芯片的一部分，不是可选的附录。15年/300,000km 可靠性意味着每一个晶体管的选择都要考虑老化。"
+      </div>
+
+      <div class="warn-box" style="margin-top:12px;">
+        <strong>⚠️ 选型陷阱：</strong>不要被"车规级"的营销说法迷惑。真正的车规芯片必须提供：AEC-Q100 测试报告 (含样本量、lot数、0失效证明) + ISO 26262 ASIL 认证证书 (含 SPFM/LFM 量化数据)。缺任一文件均不能声称"车规级"。
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<div class="footer">
+AE 知识文档 · 车规 BMS AFE 汽车电池管理系统模拟前端<br>
+  覆盖功能安全架构、冗余设计、框图、指标、影响因素、车规测试方法与选型指南 · 文档版本 v2.0 · 生成时间：2026-06-19<br>
+  原始 MD 版本 v1.0 · 认证: AEC-Q100 Grade 1 / ISO 26262 ASIL-D · <a href="../../docs/03_工业汽车/02_车规BMS_AFE.md">查看原始 Markdown</a>
+</div>
+
+</body>
+</html>

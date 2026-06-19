@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>卫星射频收发芯片 (Satellite RF Transceiver) — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #c0392b; --primary-dark: #7b241c; --accent: #e74c3c;
+    --accent2: #d97706; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+    --optical: #1a56db; --wireless: #e74c3c; --industrial: #27ae60;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  /* HERO */
+  .hero { background: linear-gradient(135deg, #991b1b 0%, #e74c3c 50%, #d97706 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  /* NAV */
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  /* CONTAINER */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  /* CARD */
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #c0392b11, #c0392b05); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #e74c3c); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #fef5f5; }
+  /* DIAGRAM */
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  /* BOXES */
+  .info-box { border-left: 4px solid var(--primary); background: #fef5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  /* METRIC CARD */
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #7b241c, #c0392b); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  /* STEPS */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  /* CAUTION */
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  /* FORMULA */
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  /* CHIPS */
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #ffedd5; color: #9a3412; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  /* COMPARE */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #fef5f5; border: 2px solid var(--accent); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  /* FOOTER */
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  /* MISC */
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>🛰️ 卫星射频收发芯片</h1>
+  <div class="subtitle">Satellite RF Transceiver — LEO/MEO/GEO 卫星通信载荷核心芯片</div>
+  <div class="badge-row">
+    <span class="badge">🛰️ Ka/Ku/Q/V 频段</span>
+    <span class="badge">☢️ 抗辐射 TID>100krad</span>
+    <span class="badge">📡 多通道相控阵</span>
+    <span class="badge">🌡️ −55~+125°C</span>
+    <span class="badge">🚀 LEO/GEO/ISL</span>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 核心模块深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、核心对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ Section 1: 背景与定位 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div><div class="icon">📖</div><h2>背景与应用定位</h2>
+    </div>
+    <div class="card-body">
+      <p>卫星射频收发芯片是<strong>卫星通信载荷的核心芯片</strong>，部署于低轨(LEO)、中轨(MEO)和高轨(GEO)卫星平台，负责实现卫星与地面终端之间、卫星与卫星之间的射频信号收发。它决定了卫星通信链路的信号质量、抗辐射可靠性和系统寿命，是航天级模拟/射频芯片技术的集中体现。</p>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col blue">
+          <h3>📌 产品定位</h3>
+          <p><strong>产业链位置：</strong>卫星通信载荷内部，处于天线与基带处理器之间</p>
+          <p><strong>核心价值：</strong>在极端太空环境下实现高可靠、抗辐射的射频信号变频与放大</p>
+          <p><strong>本质功能：</strong>射频信号接收放大/下变频 + 发送上变频/驱动，集成多通道相控阵波束赋形</p>
+        </div>
+        <div class="compare-col green">
+          <h3>🎯 典型应用场景</h3>
+          <ul>
+            <li>低轨卫星互联网 (Starlink类, 宽带接入)</li>
+            <li>卫星物联网 (IoT-NTN, 窄带)</li>
+            <li>星间链路 (ISL, Inter-Satellite Link)</li>
+            <li>卫星测控 (TT&C, Telemetry/Tracking/Command)</li>
+            <li>VSAT 相控阵终端</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">技术路线</h4>
+      <table>
+        <thead><tr><th>维度</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>频段覆盖</strong></td><td>Ku (12-18GHz), K (18-27GHz), Ka (27-40GHz), Q/V (40-75GHz)</td><td>覆盖主流卫星通信频段</td></tr>
+          <tr><td><strong>抗辐射等级</strong></td><td>TID >100krad(Si), SEL免疫 (LET>75 MeV·cm²/mg)</td><td>满足航天级辐射环境要求</td></tr>
+          <tr><td><strong>工艺节点</strong></td><td>RF-SOI / SiGe BiCMOS / GaAs / GaN</td><td>RF-SOI 天然抗辐射优势</td></tr>
+          <tr><td><strong>系统架构</strong></td><td>超外差（主流）或直接变频（低成本LEO）</td><td>超外差镜像抑制更优</td></tr>
+          <tr><td><strong>极端温度</strong></td><td>−55°C ~ +125°C 全温工作</td><td>比工业级温度范围更宽</td></tr>
+          <tr><td><strong>真空兼容</strong></td><td>无气密封装，防 Outgassing 材料</td><td>满足太空真空环境</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2: 工作原理 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div><div class="icon">⚙️</div><h2>核心工作原理</h2>
+    </div>
+    <div class="card-body">
+      <p>卫星射频收发芯片的<strong>核心任务</strong>是将天线接收到的微弱射频信号进行低噪声放大和下变频至基带（接收链路），以及将基带信号上变频和放大后驱动天线（发送链路）。与地面通信系统不同，卫星芯片必须在极端辐射、温度和真空环境下长期可靠工作。</p>
+
+      <h4>📥 超外差接收链路 (卫星通信主流架构)</h4>
+      <div class="diagram-title">图 2-1 | RX 超外差接收链路信号流</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 120" width="760" height="120" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrRed" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#c0392b"/></marker></defs>
+          <rect x="10" y="15" width="55" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="37" y="38" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">天线</text>
+          <line x1="65" y1="33" x2="90" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="95" y="10" width="65" height="48" rx="6" fill="#fee2e2" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="127" y="30" fill="#7b241c" font-size="9" font-weight="700" text-anchor="middle">LNA</text>
+          <text x="127" y="46" fill="#991b1b" font-size="8" text-anchor="middle">NF&lt;3dB</text>
+          <line x1="160" y1="33" x2="185" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="190" y="10" width="75" height="48" rx="6" fill="#fee2e2" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="227" y="30" fill="#7b241c" font-size="9" font-weight="700" text-anchor="middle">镜像抑制</text>
+          <text x="227" y="46" fill="#991b1b" font-size="8" text-anchor="middle">滤波器</text>
+          <line x1="265" y1="33" x2="290" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="295" y="10" width="65" height="48" rx="6" fill="#fee2e2" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="327" y="30" fill="#7b241c" font-size="9" font-weight="700" text-anchor="middle">Mixer1</text>
+          <text x="327" y="46" fill="#991b1b" font-size="8" text-anchor="middle">Down</text>
+          <line x1="360" y1="33" x2="385" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="390" y="10" width="70" height="48" rx="6" fill="#fee2e2" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="425" y="30" fill="#7b241c" font-size="9" font-weight="700" text-anchor="middle">IF AMP</text>
+          <text x="425" y="46" fill="#991b1b" font-size="8" text-anchor="middle">IF放大器</text>
+          <line x1="460" y1="33" x2="485" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="490" y="10" width="75" height="48" rx="6" fill="#fee2e2" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="527" y="30" fill="#7b241c" font-size="9" font-weight="700" text-anchor="middle">IF滤波器</text>
+          <text x="527" y="46" fill="#991b1b" font-size="8" text-anchor="middle">信道选择</text>
+          <line x1="565" y1="33" x2="590" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="595" y="10" width="65" height="48" rx="6" fill="#fee2e2" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="627" y="30" fill="#7b241c" font-size="9" font-weight="700" text-anchor="middle">Mixer2</text>
+          <text x="627" y="46" fill="#991b1b" font-size="8" text-anchor="middle">IQ Demod</text>
+          <line x1="660" y1="33" x2="685" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="690" y="15" width="65" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="722" y="38" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">基带</text>
+          <!-- LO label -->
+          <text x="327" y="78" fill="#c0392b" font-size="8" text-anchor="middle">LO1 (本振1)</text>
+          <text x="627" y="78" fill="#c0392b" font-size="8" text-anchor="middle">LO2 (本振2)</text>
+        </svg>
+      </div>
+
+      <h4>📤 超外差发送链路</h4>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 120" width="760" height="120" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="15" width="65" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="42" y="38" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">基带</text>
+          <line x1="75" y1="33" x2="100" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="105" y="10" width="65" height="48" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="137" y="30" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">Mixer1</text>
+          <text x="137" y="46" fill="#b45309" font-size="8" text-anchor="middle">IQ Mod</text>
+          <line x1="170" y1="33" x2="195" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="200" y="10" width="75" height="48" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="237" y="30" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">IF滤波器</text>
+          <text x="237" y="46" fill="#b45309" font-size="8" text-anchor="middle">信道选择</text>
+          <line x1="275" y1="33" x2="300" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="305" y="10" width="70" height="48" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="340" y="30" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">IF AMP</text>
+          <text x="340" y="46" fill="#b45309" font-size="8" text-anchor="middle">IF放大器</text>
+          <line x1="375" y1="33" x2="400" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="405" y="10" width="65" height="48" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="437" y="30" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">Mixer2</text>
+          <text x="437" y="46" fill="#b45309" font-size="8" text-anchor="middle">Up</text>
+          <line x1="470" y1="33" x2="495" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="500" y="10" width="75" height="48" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="537" y="30" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">带通滤波</text>
+          <text x="537" y="46" fill="#b45309" font-size="8" text-anchor="middle">谐波抑制</text>
+          <line x1="575" y1="33" x2="600" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="605" y="10" width="65" height="48" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="637" y="30" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">PA</text>
+          <text x="637" y="46" fill="#b45309" font-size="8" text-anchor="middle">功率放大</text>
+          <line x1="670" y1="33" x2="695" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="700" y="15" width="55" height="36" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="727" y="38" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">天线</text>
+        </svg>
+      </div>
+
+      <div class="info-box"><strong>💡 架构选型说明：</strong>超外差架构通过两次变频（RF→IF→基带），镜像抑制性能优异，是GEO/MEO卫星的主流选择；直接变频（ZIF）架构简化为RF→基带，成本低、集成度高，适用于低成本LEO星座，但需额外抗辐射加固设计。</div>
+
+      <h4 style="margin-top:18px;">卫星通信特殊需求</h4>
+      <table>
+        <thead><tr><th>需求</th><th>技术要求</th><th>地面通信对比</th></tr></thead>
+        <tbody>
+          <tr><td><strong>抗辐射加固</strong></td><td>TID >100krad(Si), SEL免疫, SEU容错</td><td>地面无此需求</td></tr>
+          <tr><td><strong>极端温度</strong></td><td>−55°C ~ +125°C 全温工作</td><td>地面 −40~+85°C</td></tr>
+          <tr><td><strong>高可靠性</strong></td><td>寿命 >7-15年，无单点故障</td><td>地面 5-10年</td></tr>
+          <tr><td><strong>真空兼容</strong></td><td>无气密封装，防 Outgassing</td><td>地面无此需求</td></tr>
+          <tr><td><strong>频率稳定度</strong></td><td>Allan方差 <0.1ppm @1s</td><td>地面 ±1ppm 即可</td></tr>
+          <tr><td><strong>Doppler补偿</strong></td><td>LEO ±750kHz @Ka波段</td><td>地面几乎无Doppler</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📡 相控阵波束赋形原理</h4>
+      <p>卫星通信普遍采用<strong>有源相控阵</strong>天线系统。每个天线单元后接独立的收发通道（包含LNA/PA、移相器、衰减器），通过控制各通道的相位和幅度实现波束的电子扫描——无需机械转动即可改变波束指向。</p>
+      <div class="formula">波束指向角: θ = arcsin(Δφ · λ / (2π · d)) &nbsp;&nbsp;|&nbsp;&nbsp; Δφ: 相邻单元相位差, d: 单元间距, λ: 波长</div>
+      <p><strong>芯片集成：</strong>单片集成 4/8/16 通道 + 6bit 移相器 (360°, RMS<3°) + 5bit 衰减器 (0~31dB, RMS<0.5dB)，通道间一致性幅度 <±0.5dB、相位 <±3°。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2B: 模块深度解析 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header" style="background:linear-gradient(90deg,#fef3c7,#fde68a);border-bottom:2px solid #f59e0b;">
+      <div class="section-no" style="background:#d97706;">🔬</div><div class="icon">🧠</div><h2 style="color:#92400e;">核心模块深度解析</h2>
+    </div>
+    <div class="card-body">
+
+      <!-- TMR -->
+      <h4 style="color:#92400e;">一、抗辐射加固设计 — TMR + EDAC + 冗余</h4>
+      <p>太空环境中高能粒子（质子、重离子）会导致芯片出现多种辐射效应。抗辐射加固是卫星芯片的<strong>第一设计要求</strong>。</p>
+      <table>
+        <thead><tr><th>技术</th><th>原理</th><th>效果</th></tr></thead>
+        <tbody>
+          <tr><td><strong>TMR (三模冗余)</strong></td><td>三个相同模块并行运行，输出经多数投票表决，单模块SEU不产生错误输出</td><td>SEU容错率 >99.9%</td></tr>
+          <tr><td><strong>EDAC (纠错码)</strong></td><td>Hamming码或Reed-Solomon码对关键寄存器/存储器进行实时纠错，单错纠正、双错检测(SEC-DED)</td><td>存储SEU免疫</td></tr>
+          <tr><td><strong>冗余通道</strong></td><td>冷备份（不加电，切换ms级）或热备份（始终加电，切换μs级），自动故障检测+切换</td><td>单通道失效不影响系统</td></tr>
+          <tr><td><strong>RF-SOI工艺</strong></td><td>埋氧层(BOX)隔离有源区与衬底，天然抗SEL和降低SEU截面</td><td>SEL免疫, SEU降低10x</td></tr>
+        </tbody>
+      </table>
+      <div class="warn-box"><strong>⚠️ 关键认知：</strong>TMR 面积开销 3x，EDAC 编码开销 ~10-20%，冗余通道面积 2x。抗辐射设计是"用面积换可靠性"的典型范式。</div>
+
+      <!-- Doppler -->
+      <h4 style="color:#92400e;margin-top:20px;">二、Doppler 补偿 — LEO 卫星 ±750kHz 频偏</h4>
+      <p>LEO 卫星以约 7.8km/s 速度飞行，与地面终端相对运动产生显著的 Doppler 频移。Ka 波段 (30GHz) 的最大 Doppler 偏移：</p>
+      <div class="formula">Δf_max = f_c × v/c = 30×10⁹ × 7.8×10³ / 3×10⁸ ≈ ±750kHz</div>
+      <table>
+        <thead><tr><th>补偿方法</th><th>原理</th><th>精度</th></tr></thead>
+        <tbody>
+          <tr><td><strong>开环预测</strong></td><td>根据卫星轨道星历(TLE)预计算多普勒曲线，前馈补偿LO频率</td><td>±5kHz</td></tr>
+          <tr><td><strong>闭环跟踪</strong></td><td>接收导频信号实时估计频偏，反馈调整LO/NCO频率</td><td>±100Hz</td></tr>
+          <tr><td><strong>混合方案</strong></td><td>开环粗补偿 + 闭环精跟踪，兼顾捕获速度和跟踪精度</td><td>±200Hz</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 相控阵 -->
+      <h4 style="color:#92400e;margin-top:20px;">三、相控阵波束赋形 — 移相器 + 衰减器</h4>
+      <p>有源相控阵通过控制每个天线单元的<strong>相位</strong>（决定波束指向）和<strong>幅度</strong>（控制旁瓣电平）实现电子波束扫描。</p>
+      <table>
+        <thead><tr><th>参数</th><th>规格</th><th>物理含义</th></tr></thead>
+        <tbody>
+          <tr><td><strong>移相器分辨率</strong></td><td>6bit = 64 状态, 步进 5.625°</td><td>360°/2⁶, 决定波束指向精度</td></tr>
+          <tr><td><strong>移相器RMS误差</strong></td><td><3°</td><td>相位量化+随机误差, 影响旁瓣电平</td></tr>
+          <tr><td><strong>衰减器分辨率</strong></td><td>5bit = 32 状态, 步进 ~1dB</td><td>0~31dB范围, 控制幅度加权</td></tr>
+          <tr><td><strong>衰减器RMS误差</strong></td><td><0.5dB</td><td>幅度量化+随机误差, 影响波束形状</td></tr>
+          <tr><td><strong>通道数</strong></td><td>4/8/16 per chip</td><td>单片集成收发通道数</td></tr>
+        </tbody>
+      </table>
+      <p><strong>波束指向精度：</strong>取决于移相器bit数和通道间相位一致性。6bit移相器理论波束指向步进约 0.1°（@d=λ/2 阵列），实际受校准精度限制约 0.5°。</p>
+
+      <!-- 频率源 -->
+      <h4 style="color:#92400e;margin-top:20px;">四、超稳定频率源 — Allan 方差 & 抗辐射 PLL</h4>
+      <p>卫星通信对频率稳定度要求极高，尤其长稳（Allan方差）直接影响多普勒跟踪和相干解调性能。</p>
+      <div class="formula">Allan方差 σ_y(τ=1s) < 0.1ppm &nbsp;&nbsp;|&nbsp;&nbsp; 相噪@100kHz < −105dBc/Hz &nbsp;|&nbsp; @1MHz < −130dBc/Hz</div>
+      <p><strong>抗辐射 PLL 设计要点：</strong>采用 TMR 加固分频器和鉴相器逻辑；电荷泵和VCO采用RF-SOI工艺天然抗辐射；关键偏置电路增加冗余；参考源采用抗辐射OCXO或TCXO（外置）。</p>
+
+      <!-- 真空 -->
+      <h4 style="color:#92400e;margin-top:20px;">五、真空兼容设计 — 封装与材料</h4>
+      <p>太空高真空环境（<10⁻⁶ Torr）对芯片封装和材料提出特殊要求：</p>
+      <ul>
+        <li><strong>无气密封装：</strong>采用陶瓷封装或金属密封封装，避免塑料封装在真空中的 Outgassing（释气）</li>
+        <li><strong>防 Outgassing 材料：</strong>所有材料需满足 NASA ASTM E595 标准（TML<1.0%, CVCM<0.1%）</li>
+        <li><strong>热设计：</strong>真空无空气对流散热，仅靠辐射+传导，需特殊热设计（如导热底板、热管）</li>
+        <li><strong>锡须抑制：</strong>避免纯锡镀层，采用 SnPb 焊料或防须涂层</li>
+      </ul>
+
+      <!-- 冗余 -->
+      <h4 style="color:#92400e;margin-top:20px;">六、冗余与容错 — 冷备份 vs 热备份</h4>
+      <table>
+        <thead><tr><th>方案</th><th>冷备份 (Cold Spare)</th><th>热备份 (Hot Spare)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>工作状态</strong></td><td>不加电，完全关断</td><td>始终加电，全功能运行</td></tr>
+          <tr><td><strong>切换时间</strong></td><td>ms 级（上电+锁定）</td><td>μs 级（RF开关切换）</td></tr>
+          <tr><td><strong>功耗</strong></td><td>零额外功耗</td><td>备份通道持续消耗功率</td></tr>
+          <tr><td><strong>可靠性</strong></td><td>无长期老化风险</td><td>备份通道同步老化</td></tr>
+          <tr><td><strong>适用场景</strong></td><td>功耗敏感的小卫星</td><td>不可中断的GEO通信</td></tr>
+        </tbody>
+      </table>
+      <p><strong>故障切换逻辑：</strong>内置BIST(Build-In Self Test)持续监测各通道性能 → 检测到故障(增益异常/NF恶化) → 自动切换至备份通道 → 上报遥测告警。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 3: 电路框图 ═══════════ -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div><div class="icon">🔲</div><h2>芯片内部电路框图</h2>
+    </div>
+    <div class="card-body">
+      <div class="diagram-title">图 3-1 | Ka波段 4通道 卫星射频收发芯片 内部架构</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 540" width="780" height="520" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <rect width="820" height="540" fill="#fafafa" rx="8"/>
+          <!-- RX Channels Row -->
+          <rect x="15" y="15" width="185" height="70" rx="6" fill="#fee2e2" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="107" y="42" font-size="11" fill="#7b241c" text-anchor="middle" font-weight="bold">RX Ch1/Ch2/Ch3/Ch4</text>
+          <text x="107" y="58" font-size="9" fill="#991b1b" text-anchor="middle">LNA→镜像滤波→Mixer↓</text>
+          <text x="107" y="75" font-size="8" fill="#c0392b" text-anchor="middle">NF&lt;3dB, Gain 30-60dB</text>
+
+          <rect x="215" y="15" width="185" height="70" rx="6" fill="#fee2e2" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="307" y="42" font-size="11" fill="#7b241c" text-anchor="middle" font-weight="bold">IF Chain (4ch)</text>
+          <text x="307" y="58" font-size="9" fill="#991b1b" text-anchor="middle">IF AMP→IF滤波器→IQ Demod</text>
+          <text x="307" y="75" font-size="8" fill="#c0392b" text-anchor="middle">BW: 250/500/1000MHz</text>
+
+          <rect x="415" y="15" width="185" height="70" rx="6" fill="#fee2e2" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="507" y="42" font-size="11" fill="#7b241c" text-anchor="middle" font-weight="bold">ADC/DAC (4ch)</text>
+          <text x="507" y="58" font-size="9" fill="#991b1b" text-anchor="middle">ADC 12bit 500MS/s×4</text>
+          <text x="507" y="75" font-size="8" fill="#c0392b" text-anchor="middle">DAC 12bit 500MS/s×4</text>
+
+          <rect x="615" y="15" width="190" height="70" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="710" y="42" font-size="11" fill="#92400e" text-anchor="middle" font-weight="bold">TX PA Driver (4ch)</text>
+          <text x="710" y="58" font-size="9" fill="#b45309" text-anchor="middle">Mixer↑→带通滤波→PA驱动</text>
+          <text x="710" y="75" font-size="8" fill="#d97706" text-anchor="middle">Pout: 0~+5dBm</text>
+
+          <!-- LO/PLL Row -->
+          <rect x="15" y="100" width="390" height="80" rx="8" fill="#fef5f5" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="210" y="122" font-size="12" fill="#7b241c" text-anchor="middle" font-weight="bold">LO / PLL 频率合成器 (抗辐射设计)</text>
+          <rect x="30" y="133" width="110" height="22" rx="4" fill="white" stroke="#fca5a5"/>
+          <text x="85" y="148" font-size="9" fill="#991b1b" text-anchor="middle">参考源 OCXO/TCXO</text>
+          <rect x="150" y="133" width="110" height="22" rx="4" fill="white" stroke="#fca5a5"/>
+          <text x="205" y="148" font-size="9" fill="#991b1b" text-anchor="middle">PLL (TMR加固)</text>
+          <rect x="270" y="133" width="120" height="22" rx="4" fill="white" stroke="#fca5a5"/>
+          <text x="330" y="148" font-size="9" fill="#991b1b" text-anchor="middle">多次倍频 + 冗余备份</text>
+          <text x="210" y="170" font-size="9" fill="#991b1b" text-anchor="middle">相噪@100k&lt;-105dBc | @1M&lt;-130dBc | Allan&lt;0.1ppm</text>
+
+          <rect x="420" y="100" width="385" height="80" rx="8" fill="#fef5f5" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="612" y="122" font-size="12" fill="#7b241c" text-anchor="middle" font-weight="bold">时钟分配与偏置管理</text>
+          <rect x="435" y="133" width="110" height="22" rx="4" fill="white" stroke="#fca5a5"/>
+          <text x="490" y="148" font-size="9" fill="#991b1b" text-anchor="middle">LO 分发 Buffer×4</text>
+          <rect x="555" y="133" width="110" height="22" rx="4" fill="white" stroke="#fca5a5"/>
+          <text x="610" y="148" font-size="9" fill="#991b1b" text-anchor="middle">偏置电路 (冗余)</text>
+          <rect x="675" y="133" width="115" height="22" rx="4" fill="white" stroke="#fca5a5"/>
+          <text x="732" y="148" font-size="9" fill="#991b1b" text-anchor="middle">温度传感器 ±2°C</text>
+
+          <!-- Digital & Beamforming Row -->
+          <rect x="15" y="195" width="790" height="130" rx="8" fill="#ffedd5" stroke="#d97706" stroke-width="1.5"/>
+          <text x="410" y="215" font-size="12" fill="#92400e" text-anchor="middle" font-weight="bold">数字处理 & 波束赋形 (Digital + Beamforming)</text>
+
+          <rect x="30" y="228" width="220" height="42" rx="5" fill="white" stroke="#fcd34d"/>
+          <text x="140" y="245" font-size="10" fill="#92400e" text-anchor="middle" font-weight="bold">Doppler 补偿引擎</text>
+          <text x="140" y="260" font-size="8" fill="#b45309" text-anchor="middle">开环TLE预测 + 闭环导频跟踪 ±750kHz</text>
+
+          <rect x="265" y="228" width="170" height="42" rx="5" fill="white" stroke="#fcd34d"/>
+          <text x="350" y="245" font-size="10" fill="#92400e" text-anchor="middle" font-weight="bold">移相器 6bit ×4</text>
+          <text x="350" y="260" font-size="8" fill="#b45309" text-anchor="middle">360° / 64步, RMS&lt;3°</text>
+
+          <rect x="450" y="228" width="170" height="42" rx="5" fill="white" stroke="#fcd34d"/>
+          <text x="535" y="245" font-size="10" fill="#92400e" text-anchor="middle" font-weight="bold">衰减器 5bit ×4</text>
+          <text x="535" y="260" font-size="8" fill="#b45309" text-anchor="middle">0~31dB / 32步, RMS&lt;0.5dB</text>
+
+          <rect x="635" y="228" width="155" height="42" rx="5" fill="white" stroke="#fcd34d"/>
+          <text x="712" y="245" font-size="10" fill="#92400e" text-anchor="middle" font-weight="bold">通道校准 & 同步</text>
+          <text x="712" y="260" font-size="8" fill="#b45309" text-anchor="middle">幅度&lt;±0.5dB 相位&lt;±3°</text>
+
+          <rect x="30" y="280" width="755" height="34" rx="5" fill="white" stroke="#fcd34d"/>
+          <text x="407" y="298" font-size="10" fill="#92400e" text-anchor="middle" font-weight="bold">SPI/JTAG 配置接口 | PRBS Gen/Chk | BER Counter | 遥测数据打包</text>
+          <text x="407" y="312" font-size="8" fill="#b45309" text-anchor="middle">系统监测: 温度/电压/电流/锁定状态/LNA偏置/辐射剂量</text>
+
+          <!-- Anti-Radiation Row -->
+          <rect x="15" y="340" width="790" height="55" rx="8" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="410" y="360" font-size="11" fill="#991b1b" text-anchor="middle" font-weight="bold">抗辐射加固设计: TMR (三模冗余) 加固关键数字逻辑</text>
+          <rect x="30" y="368" width="170" height="20" rx="4" fill="white" stroke="#fca5a5"/>
+          <text x="115" y="383" font-size="9" fill="#991b1b" text-anchor="middle">EDAC (SEC-DED) 存储纠错</text>
+          <rect x="215" y="368" width="170" height="20" rx="4" fill="white" stroke="#fca5a5"/>
+          <text x="300" y="383" font-size="9" fill="#991b1b" text-anchor="middle">冷备份/热备份 冗余通道</text>
+          <rect x="400" y="368" width="190" height="20" rx="4" fill="white" stroke="#fca5a5"/>
+          <text x="495" y="383" font-size="9" fill="#991b1b" text-anchor="middle">RF-SOI 工艺 天然抗SEL</text>
+          <rect x="605" y="368" width="185" height="20" rx="4" fill="white" stroke="#fca5a5"/>
+          <text x="697" y="383" font-size="9" fill="#991b1b" text-anchor="middle">BIST 故障自检 + 自动切换</text>
+
+          <!-- Power Row -->
+          <rect x="15" y="408" width="790" height="40" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="410" y="430" font-size="10" fill="#991b1b" text-anchor="middle" font-weight="bold">电源管理: AVDD 1.8V(LNA/Mixer/IF) | DVDD 1.2V(数字) | VIO 2.5V | LDO×4(低噪声) | Power Gating</text>
+
+          <!-- Bottom labels -->
+          <text x="107" y="475" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">天线接口: 4×RX (17.7-21.2GHz)</text>
+          <text x="507" y="475" font-size="10" fill="#7b241c" text-anchor="middle" font-weight="bold">基带接口: LVDS/CMOS 并行/SerDes</text>
+          <text x="730" y="475" font-size="9" fill="#6b7280" text-anchor="middle">陶瓷气密封装</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>说明：</strong>芯片集成 4 通道收发链路，每通道含独立 LNA、Mixer、IF链和 ADC/DAC。LO/PLL 采用 TMR 抗辐射加固与冗余设计。数字处理单元实现 Doppler 补偿、波束赋形（移相器+衰减器）与通道校准。抗辐射加固设计贯穿所有关键模块。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 4: 核心对比 ═══════════ -->
+<section id="sec4">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">4</div><div class="icon">⚖️</div><h2>LEO vs GEO 卫星通信对比</h2>
+    </div>
+    <div class="card-body">
+
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>🛰️ LEO 低轨卫星</h3>
+          <ul>
+            <li><strong>轨道高度：</strong>300~2,000 km</li>
+            <li><strong>信号延迟：</strong>5~20 ms</li>
+            <li><strong>Doppler频移：</strong>±750 kHz @Ka</li>
+            <li><strong>覆盖范围：</strong>需数百~数千颗组星座</li>
+            <li><strong>在轨寿命：</strong>3~7 年</li>
+            <li><strong>抗辐射要求：</strong>TID 50~100 krad</li>
+            <li><strong>发射功率：</strong>较低（链路距离短）</li>
+            <li><strong>成本：</strong>追求低成本批量制造</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>🌍 GEO 高轨卫星</h3>
+          <ul>
+            <li><strong>轨道高度：</strong>35,786 km (地球静止)</li>
+            <li><strong>信号延迟：</strong>~250 ms</li>
+            <li><strong>Doppler频移：</strong>≈0 (相对静止)</li>
+            <li><strong>覆盖范围：</strong>3~4 颗覆盖全球</li>
+            <li><strong>在轨寿命：</strong>15 年</li>
+            <li><strong>抗辐射要求：</strong>TID >150 krad</li>
+            <li><strong>发射功率：</strong>高（链路距离远）</li>
+            <li><strong>成本：</strong>可靠性优先，成本次之</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">LEO vs GEO 关键设计差异</h4>
+      <table>
+        <thead><tr><th>设计维度</th><th>LEO 方案</th><th>GEO 方案</th><th>差异原因</th></tr></thead>
+        <tbody>
+          <tr><td><strong>架构选择</strong></td><td>直接变频/超外差</td><td>超外差为主</td><td>LEO成本优先, GEO性能优先</td></tr>
+          <tr><td><strong>抗辐射等级</strong></td><td>TID 50-100krad</td><td>TID >150krad</td><td>GEO辐射环境更恶劣(Van Allen带)</td></tr>
+          <tr><td><strong>冗余设计</strong></td><td>关键模块冗余</td><td>全通道冷/热备份</td><td>GEO不可维修, 寿命15年</td></tr>
+          <tr><td><strong>Doppler补偿</strong></td><td>必备</td><td>不需要</td><td>LEO高速运动, GEO相对静止</td></tr>
+          <tr><td><strong>输出功率</strong></td><td>0~+5dBm</td><td>+5~+10dBm</td><td>GEO链路距离远36x</td></tr>
+          <tr><td><strong>封装</strong></td><td>陶瓷/金属密封</td><td>金属密封 (更严格)</td><td>GEO在轨15年Outgassing要求更高</td></tr>
+          <tr><td><strong>功耗预算</strong></td><td>严格受限</td><td>相对宽松</td><td>LEO小卫星平台功率有限</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 5: 核心指标 ═══════════ -->
+<section id="sec5">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">5</div><div class="icon">📊</div><h2>核心性能指标</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📌 5.1 接收链路指标</h4>
+      <div class="metric-card">
+        <div class="metric-header"><h4>噪声系数 · NF</h4><span class="metric-abbr">Noise Figure</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">典型规格</span><span>&lt;3.0 dB（含LNA，Ka波段 17.7-21.2GHz）</span></div>
+          <div class="metric-row"><span class="metric-label">物理含义</span><span>NF每增加1dB，接收灵敏度下降1dB；卫星链路中NF是决定G/T(天线增益/噪声温度)的关键因子</span></div>
+          <div class="metric-row"><span class="metric-label">影响因素</span><span>LNA第一级器件(噪声匹配)、工艺(FET vs HBT)、温度(T↑→NF↑)、辐射损伤(TID↑→NF↑)</span></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>指标</th><th>规格</th><th>单位</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>频率范围</strong></td><td>17.7~21.2 (Ka下行)</td><td>GHz</td><td>可扩展到Ku/Q/V</td></tr>
+          <tr><td><strong>噪声系数</strong></td><td>&lt;3.0</td><td>dB</td><td>含LNA，25°C</td></tr>
+          <tr><td><strong>增益</strong></td><td>30 ~ 60</td><td>dB</td><td>可编程，步进0.5dB</td></tr>
+          <tr><td><strong>瞬时带宽</strong></td><td>250 / 500 / 1000</td><td>MHz</td><td>可配置信道带宽</td></tr>
+          <tr><td><strong>IIP3</strong></td><td>>0</td><td>dBm</td><td>最大增益下</td></tr>
+          <tr><td><strong>TID</strong></td><td>>100</td><td>krad(Si)</td><td>总电离剂量</td></tr>
+          <tr><td><strong>SEL免疫</strong></td><td>LET >75</td><td>MeV·cm²/mg</td><td>单粒子闩锁阈值</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.2 发送链路指标</h4>
+      <table>
+        <thead><tr><th>指标</th><th>规格</th><th>单位</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>频率范围</strong></td><td>27.5~31.0 (Ka上行)</td><td>GHz</td><td>驱动外部PA</td></tr>
+          <tr><td><strong>输出功率</strong></td><td>0 ~ +5</td><td>dBm</td><td>最大增益，可调</td></tr>
+          <tr><td><strong>ACLR</strong></td><td>< −40</td><td>dBc</td><td>邻信道泄漏比</td></tr>
+          <tr><td><strong>EVM</strong></td><td>< 1.5</td><td>%</td><td>QPSK/8PSK调制</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.3 LO 本振指标</h4>
+      <div class="metric-card">
+        <div class="metric-header"><h4>相位噪声 · Phase Noise</h4><span class="metric-abbr">PN</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">@100kHz offset</span><span>< −105 dBc/Hz</span></div>
+          <div class="metric-row"><span class="metric-label">@1MHz offset</span><span>< −130 dBc/Hz</span></div>
+          <div class="metric-row"><span class="metric-label">Allan方差 @1s</span><span>< 0.1 ppm（频率稳定度）</span></div>
+          <div class="metric-row"><span class="metric-label">影响</span><span>相噪直接决定EVM下限和邻道性能；Allan方差影响多普勒跟踪和长时间相干积累增益</span></div>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">📌 5.4 相控阵指标</h4>
+      <div class="metric-card">
+        <div class="metric-header"><h4>移相器精度 · Phase Shifter</h4><span class="metric-abbr">PS</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">分辨率</span><span>6bit = 64 状态, 步进 5.625°</span></div>
+          <div class="metric-row"><span class="metric-label">RMS相位误差</span><span>< 3°（含量化误差+随机误差）</span></div>
+          <div class="metric-row"><span class="metric-label">衰减器分辨率</span><span>5bit = 32 状态, 步进 ~1dB (0~31dB)</span></div>
+          <div class="metric-row"><span class="metric-label">衰减器RMS误差</span><span>< 0.5 dB</span></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>指标</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>通道数</strong></td><td>4 / 8 / 16 per chip</td><td>单片集成收发通道数</td></tr>
+          <tr><td><strong>幅度一致性</strong></td><td>< ±0.5 dB</td><td>通道间</td></tr>
+          <tr><td><strong>相位一致性</strong></td><td>< ±3°</td><td>通道间，校准后</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 6: 影响因素 ═══════════ -->
+<section id="sec6">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">6</div><div class="icon">🔗</div><h2>指标影响因素分析</h2>
+    </div>
+    <div class="card-body">
+      <h4>📍 关键指标影响因素网络</h4>
+      <table>
+        <thead><tr><th>关键指标</th><th>被哪些因素影响（降级）</th><th>该指标又影响哪些下游性能</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>噪声系数 NF</strong></td>
+            <td><span class="chip chip-red">辐射损伤(TID)</span><span class="chip chip-red">温度升高</span><span class="chip chip-red">工艺偏差</span><span class="chip chip-red">输入匹配</span><span class="chip chip-red">偏置漂移</span></td>
+            <td><span class="chip chip-blue">接收灵敏度</span><span class="chip chip-blue">系统G/T</span><span class="chip chip-blue">链路预算</span><span class="chip chip-blue">覆盖范围</span></td>
+          </tr>
+          <tr>
+            <td><strong>相位噪声</strong></td>
+            <td><span class="chip chip-red">参考源老化</span><span class="chip chip-red">辐射(TID)</span><span class="chip chip-red">温度变化</span><span class="chip chip-red">电源纹波</span><span class="chip chip-red">振动/冲击</span></td>
+            <td><span class="chip chip-blue">EVM/BER</span><span class="chip chip-blue">邻道泄漏ACLR</span><span class="chip chip-blue">Doppler跟踪精度</span><span class="chip chip-blue">相干解调性能</span></td>
+          </tr>
+          <tr>
+            <td><strong>移相器精度</strong></td>
+            <td><span class="chip chip-red">PVT变化</span><span class="chip chip-red">校准残差</span><span class="chip chip-red">温度梯度</span><span class="chip chip-red">辐射(TID)</span><span class="chip chip-red">通道间耦合</span></td>
+            <td><span class="chip chip-blue">波束指向精度</span><span class="chip chip-blue">旁瓣电平</span><span class="chip chip-blue">阵列增益</span><span class="chip chip-blue">抗干扰能力</span></td>
+          </tr>
+          <tr>
+            <td><strong>可靠性/寿命</strong></td>
+            <td><span class="chip chip-red">辐射累积(TID)</span><span class="chip chip-red">温度循环(−55⇌+125)</span><span class="chip chip-red">真空Outgassing</span><span class="chip chip-red">单粒子事件(SEE)</span><span class="chip chip-red">热真空应力</span></td>
+            <td><span class="chip chip-blue">在轨寿命</span><span class="chip chip-blue">任务成功率</span><span class="chip chip-blue">维护成本</span><span class="chip chip-blue">星座可用性</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="success-box" style="margin-top:16px;">
+        <strong>✅ 卫星芯片关键共同影响因素：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>辐射效应 (TID/SEU/SEL)：</strong>TID 使MOSFET阈值电压漂移、增益下降、NF恶化；SEU翻转关键配置寄存器；SEL导致大电流烧毁——三者是卫星芯片的"头号杀手"</li>
+          <li><strong>极端温度 (−55~+125°C)：</strong>全温范围内需保持增益平坦度和相位稳定性；低温下LO锁定困难，高温下NF恶化——温补电路和自适应偏置是必修课</li>
+          <li><strong>真空 Outgassing：</strong>材料释气污染光学表面（星敏感器、太阳帆板）、改变RF介电常数——封装和材料选型需满足NASA ASTM E595标准</li>
+          <li><strong>Doppler 频移 (±750kHz @Ka)：</strong>LEO卫星高速运动引入的频率偏移直接影响接收解调性能——Doppler补偿算法和LO频率跟踪范围必须覆盖最恶劣情况</li>
+          <li><strong>相控阵校准精度：</strong>通道间相位/幅度不一致 → 波束指向偏差、旁瓣升高、阵列增益下降——必须在地面完成全温校准并补偿温度漂移</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 7: 测试方法 ═══════════ -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法详解</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📐 7.1 常规 RF 性能测试</h4>
+      <p><strong>测试原理：</strong>与基站射频收发芯片测试类似，测量噪声系数(NF)、增益、线性度(IIP3)、相位噪声、ACLR和EVM等指标。但卫星芯片需在三温(−55/+25/+125°C)和真空条件下重复全部测试。</p>
+
+      <h4 style="margin-top:14px;">测试设备清单</h4>
+      <table>
+        <thead><tr><th>设备名称</th><th>推荐型号</th><th>关键规格</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>矢量网络分析仪</td><td>Keysight PNA-X N5247B</td><td>10M~67GHz, 4端口</td><td>S参数/增益/匹配</td></tr>
+          <tr><td>噪声系数分析仪</td><td>Keysight N8975B</td><td>10M~26.5GHz, NF不确定度<0.1dB</td><td>噪声系数测量 (Y因子法)</td></tr>
+          <tr><td>信号分析仪</td><td>Keysight N9042B UXA</td><td>2Hz~50GHz, DANL −174dBm/Hz</td><td>相噪/ACLR/EVM/杂散</td></tr>
+          <tr><td>矢量信号源</td><td>Keysight M9484C VXG</td><td>1M~54GHz, 2.5GHz BW</td><td>激励信号生成</td></tr>
+          <tr><td>可编程电源</td><td>Keysight N6705C</td><td>4ch, 低噪声, 10μA精度</td><td>多轨供电 + 电流监测</td></tr>
+          <tr><td>温控真空平台</td><td>真空/热真空试验箱</td><td>−65~+150°C, <10⁻⁵ Torr</td><td>三温+真空测试</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">测试框图 — 接收链路 NF & 增益测试</h4>
+      <div class="diagram-title">图 7-1 | 接收链路噪声系数测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 180" width="760" height="180" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arr7s" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#c0392b"/></marker></defs>
+          <rect x="15" y="25" width="130" height="60" rx="8" fill="#fee2e2" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="80" y="48" fill="#7b241c" font-size="10" font-weight="700" text-anchor="middle">噪声源</text>
+          <text x="80" y="63" fill="#991b1b" font-size="9" text-anchor="middle">Keysight N4002A</text>
+          <text x="80" y="78" fill="#991b1b" font-size="9" text-anchor="middle">ENR 6-15dB</text>
+          <line x1="145" y1="55" x2="195" y2="55" stroke="#c0392b" stroke-width="2" marker-end="url(#arr7s)"/>
+          <rect x="200" y="20" width="200" height="70" rx="8" fill="#fee2e2" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="300" y="40" fill="#7b241c" font-size="10" font-weight="700" text-anchor="middle">DUT (卫星收发芯片)</text>
+          <text x="300" y="55" fill="#991b1b" font-size="9" text-anchor="middle">RX通道: LNA+Mixer+IF</text>
+          <text x="300" y="70" fill="#991b1b" font-size="9" text-anchor="middle">供电: AVDD/DVDD/VIO</text>
+          <text x="300" y="83" fill="#ef4444" font-size="8" text-anchor="middle">温控真空平台: −55~+125°C</text>
+          <line x1="400" y1="55" x2="435" y2="55" stroke="#c0392b" stroke-width="2" marker-end="url(#arr7s)"/>
+          <rect x="440" y="25" width="150" height="60" rx="8" fill="#fee2e2" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="515" y="48" fill="#7b241c" font-size="10" font-weight="700" text-anchor="middle">NF分析仪</text>
+          <text x="515" y="63" fill="#991b1b" font-size="9" text-anchor="middle">N8975B 10M-26.5GHz</text>
+          <text x="515" y="78" fill="#991b1b" font-size="9" text-anchor="middle">Y因子法测NF/增益</text>
+          <rect x="15" y="108" width="750" height="55" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="390" y="128" fill="#475569" font-size="10" text-anchor="middle">Phase 0: 系统校准(噪声源ENR+电缆损耗去嵌入) | Phase 1: DUT初始化(上电时序→偏置稳定→PLL锁定)</text>
+          <text x="390" y="146" fill="#475569" font-size="10" text-anchor="middle">Phase 2: 三温测试(−55/+25/+125°C)每温度点稳定>30min | Phase 3: 辐射前后对比(TID累积) | Phase 4: 真空测试</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:18px;">☢️ 7.2 抗辐射测试</h4>
+      <p><strong>测试原理：</strong>在专业辐射设施中，对芯片施加受控辐射剂量或粒子束流，监测其电性能退化、闩锁(SEL)和翻转(SEU)事件。这是卫星芯片最关键的鉴定测试。</p>
+      <table>
+        <thead><tr><th>测试项目</th><th>辐射源/设施</th><th>测试条件</th><th>判定标准</th></tr></thead>
+        <tbody>
+          <tr><td><strong>TID (总剂量)</strong></td><td>Co-60 γ射线源</td><td>剂量率 50-300 rad/s, 累积至100krad(Si)</td><td>NF退化<0.5dB, 增益变化<2dB</td></tr>
+          <tr><td><strong>SEL (单粒子闩锁)</strong></td><td>重离子加速器 (如HIF, Cyclotron)</td><td>LET 75 MeV·cm²/mg, 通量10⁷ ions/cm²</td><td>零SEL事件 (免疫)</td></tr>
+          <tr><td><strong>SEU (单粒子翻转)</strong></td><td>质子束/中子束</td><td>能量 50-200 MeV, 通量10¹¹ p/cm²</td><td>SEU截面<10⁻⁸ cm²/bit</td></tr>
+          <tr><td><strong>位移损伤 (DD)</strong></td><td>质子/中子束</td><td>等效1MeV中子注量</td><td>LNA增益退化<1dB</td></tr>
+        </tbody>
+      </table>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>辐射前基线测试</h5><p>三温电性能全参数测量 (NF, 增益, IIP3, 相噪, 功耗)，记录基准值。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>TID 阶梯辐照</h5><p>分步辐照(10k, 20k, 50k, 100krad)，每次辐照后在1小时内完成电测试（避免退火效应）。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>重离子 SEL/SEU 测试</h5><p>芯片加电工作状态，实时监测供电电流(>阈值判SEL)和寄存器/存储器内容(判SEU)。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>数据分析</h5><p>绘制 TID 退化曲线 (NF vs Dose)，计算 SEU 截面 (σ = N_events / Fluence)，判定是否满足航天要求。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">🌡️ 7.3 极端温度与真空测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>温度循环测试</h5><p>−55°C → +125°C → −55°C，循环>100次，每次循环记录RF性能变化，检查焊点/封装的机械完整性。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>热真空测试</h5><p>真空度<10⁻⁵ Torr，温度−55~+125°C，持续>168小时，监测Outgassing引起的RF性能漂移和封装变形。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>高低温极限测试</h5><p>低温启动(−55°C浸泡>2h后上电测PLL锁定时间)、高温长期(+125°C运行>1000h监测NF退化)。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">📡 7.4 相控阵校准测试</h4>
+      <table>
+        <thead><tr><th>测试项目</th><th>测试方法</th><th>判定标准</th></tr></thead>
+        <tbody>
+          <tr><td><strong>通道一致性</strong></td><td>VNA多端口S参数测量，逐通道测量S21幅度和相位</td><td>幅度<±0.5dB, 相位<±3°</td></tr>
+          <tr><td><strong>移相器精度</strong></td><td>遍历64个相位状态，测量实际相移与理想值的偏差</td><td>RMS误差<3°</td></tr>
+          <tr><td><strong>衰减器精度</strong></td><td>遍历32个衰减状态，测量实际衰减与理想值的偏差</td><td>RMS误差<0.5dB</td></tr>
+          <tr><td><strong>波束指向</strong></td><td>暗室远场/紧缩场天线测试，对比实际波束指向与计算值</td><td>指向偏差<0.5°</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">🔄 7.5 Doppler 模拟与补偿验证</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>静态频偏扫描</h5><p>信号源输出频率偏移 ±1MHz (步进10kHz)，测试接收机BER vs 频偏曲线，验证补偿算法跟踪范围。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>动态Doppler模拟</h5><p>按LEO卫星过顶Doppler曲线(先+750kHz→0→−750kHz)动态调频，验证实时跟踪与解调性能。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>Doppler速率容限</h5><p>最大Doppler变化率 ~20kHz/s (LEO最恶劣过顶)，测试补偿环路跟踪能力和BER退化。</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 8: 注意事项 ═══════════ -->
+<section id="sec8">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">8</div><div class="icon">⚠️</div><h2>测试与使用注意事项</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>⚡ 通用注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">☢️ 抗辐射设计必修</div><p>TMR加固所有关键数字逻辑（分频器、状态机、配置寄存器）；EDAC保护所有存储器和关键寄存器；关键模拟模块必须有冗余通道。没有抗辐射设计，芯片在太空环境数周内就会失效。</p></div>
+        <div class="caution-item"><div class="ci-title">🌀 真空环境特殊考虑</div><p>Outgassing材料不得用于封装和PCB（TM<1.0%, CVCM<0.1%）；真空无对流散热——必须通过传导+辐射进行热管理；真空下介质击穿电压降低，高压偏置需降额设计。</p></div>
+        <div class="caution-item"><div class="ci-title">🌡️ 极端温度设计余量</div><p>−55°C 低温下 PLL 锁定时间可能延长 2-3x（VCO增益下降）；+125°C 高温下漏电流增大，LNA NF 恶化 0.5-1dB；建议设计目标 −60~+135°C 留有 5-10°C 余量。</p></div>
+        <div class="caution-item"><div class="ci-title">⏳ 可靠性验证</div><p>寿命测试: 高温加速老化 (HTOL) 125°C/1000h；温度循环: −55⇌+125°C, 500~1000循环；热真空: <10⁻⁵ Torr, 168h+；辐射: TID阶梯辐照 + 重离子SEL/SEU。</p></div>
+        <div class="caution-item"><div class="ci-title">📡 相控阵校准必做</div><p>每颗芯片必须在三温下进行通道相位/幅度校准；校准数据存入片上NVM或上报给波束控制器；未校准的相控阵波束指向精度不可控、旁瓣电平恶化 5-10dB。</p></div>
+        <div class="caution-item"><div class="ci-title">🛡️ ESD/EMI 防护</div><p>太空环境EMI更复杂（太阳风暴、宇宙射线诱发EMP）；HBM ESD>2kV, CDM>500V；PCB需要额外的EMI屏蔽和滤波；关键信号采用差分传输 (LVDS/SLVS)。</p></div>
+      </div>
+
+      <h4 style="margin-top:20px;">🛰️ 卫星芯片专项注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">📊 上电时序</div><p>上电: AVDD(1.8V) → 等待>10ms → DVDD(1.2V) → 等待>10ms → VIO(2.5V)；断电: 反向！严格控制时序，避免闩锁风险。卫星上电由PMU(电源管理单元)自动管理。</p></div>
+        <div class="caution-item"><div class="ci-title">🔒 PLL锁定确认</div><p>每次测试前务必确认PLL Lock Status=1；低温(−55°C)启动后建议等待>100ms让PLL充分锁定和稳定；辐射测试期间需实时监控Lock丢失事件。</p></div>
+        <div class="caution-item"><div class="ci-title">🌐 参考时钟要求</div><p>外置抗辐射OCXO/TCXO；频率稳定度: Allan方差<0.01ppm @1s (芯片要求<0.1ppm为含PLL后指标)；相噪@100Hz <−130dBc/Hz；频率精度: ±50ppm。</p></div>
+        <div class="caution-item"><div class="ci-title">🔄 备份通道验证</div><p>冷备份: 定期(每周)加电自检确认备份通道可用；热备份: 持续监测备份通道性能指标；切换逻辑: 务必验证无毛刺、无瞬时中断、切换前后相位连续。</p></div>
+      </div>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🚨 卫星芯片测试最常见错误：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>未在辐射后进行全电测试：</strong>TID辐照后退火效应(室温恢复)会掩盖真实退化，必须在辐照后1小时内完成测试</li>
+          <li><strong>忽视真空对散热的影响：</strong>常压下测试通过，真空中无对流散热 → 芯片结温升高30-50°C → 性能恶化</li>
+          <li><strong>地面测试未覆盖最恶劣Doppler：</strong>LEO卫星过顶时Doppler变化率最大(~20kHz/s)，仅测试静态频偏不够</li>
+          <li><strong>相控阵只测单通道：</strong>未测通道间耦合和一致性 → 上星后波束形状严重畸变</li>
+          <li><strong>忽视单粒子效应的随机性：</strong>SEU是概率事件，测试通量不足会导致截面估计不准确</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 9: 选型指南 ═══════════ -->
+<section id="sec9">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">9</div><div class="icon">🧭</div><h2>选型与应用指南</h2>
+    </div>
+    <div class="card-body">
+
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>🛰️ LEO 星座方案</h3>
+          <ul>
+            <li>架构: 直接变频/超外差可选</li>
+            <li>TID >50-100 krad</li>
+            <li>通道数 4-8 per chip</li>
+            <li>Doppler补偿必备 (±750kHz)</li>
+            <li>功耗严格优化 (小卫星平台)</li>
+            <li>成本敏感，适合批量制造</li>
+            <li>寿命 3-7年</li>
+            <li>冷备份为主 (功耗优先)</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>🌍 GEO 单星方案</h3>
+          <ul>
+            <li>架构: 超外差 (性能优先)</li>
+            <li>TID >150 krad</li>
+            <li>通道数 8-16 per chip</li>
+            <li>Doppler补偿不需要</li>
+            <li>功耗可适度放宽</li>
+            <li>可靠性优先，成本次之</li>
+            <li>寿命 15年</li>
+            <li>热备份为主 (不可中断)</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">应用场景三维对比</h4>
+      <table>
+        <thead><tr><th>对比维度</th><th>LEO 星座</th><th>GEO 单星</th><th>星间链路 (ISL)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>工作频段</strong></td><td>Ku/Ka</td><td>Ku/Ka/Q/V</td><td>Ka/Q/V/W (60-100GHz)</td></tr>
+          <tr><td><strong>通信距离</strong></td><td>300-2,000 km</td><td>35,786 km</td><td>数百~数千 km (星间)</td></tr>
+          <tr><td><strong>Doppler</strong></td><td>±750 kHz</td><td>≈0</td><td>±500 kHz (相对运动)</td></tr>
+          <tr><td><strong>波束赋形</strong></td><td>多波束相控阵 (地面覆盖)</td><td>多波束相控阵 (区域覆盖)</td><td>高增益窄波束 (点对点)</td></tr>
+          <tr><td><strong>抗辐射等级</strong></td><td>TID 50-100 krad</td><td>TID >150 krad</td><td>TID 50-100 krad</td></tr>
+          <tr><td><strong>典型调制</strong></td><td>QPSK/8PSK/16QAM</td><td>QPSK/8PSK/高阶QAM</td><td>QPSK/16QAM/相干光</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">频段选择指南</h4>
+      <table>
+        <thead><tr><th>频段</th><th>频率范围</th><th>典型应用</th><th>技术挑战</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Ku</strong></td><td>12-18 GHz</td><td>DTH电视、VSAT宽带</td><td>带宽有限、雨衰中等</td></tr>
+          <tr><td><strong>K</strong></td><td>18-27 GHz</td><td>卫星广播、测控</td><td>大气水汽吸收峰 (22GHz)</td></tr>
+          <tr><td><strong>Ka</strong></td><td>27-40 GHz</td><td>LEO宽带互联网 (主流)</td><td>雨衰大、PA效率低</td></tr>
+          <tr><td><strong>Q/V</strong></td><td>40-75 GHz</td><td>GEO宽带、星间馈线链路</td><td>芯片设计难度高、链路预算紧张</td></tr>
+          <tr><td><strong>W</strong></td><td>75-110 GHz</td><td>星间链路 ISL (未来)</td><td>极高频率、大气衰减严重</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>💡 AE 工程直觉（卫星芯片）：</strong>"LEO求集成度和成本——直接变频+冷备份+批量制造。GEO求可靠性——超外差+热备份+TMR全加固。星间链路求带宽和指向——高频段+窄波束+高精度移相器。频段越高，链路预算越紧张，但可用带宽越宽——永远在权衡。"
+      </div>
+
+      <h4 style="margin-top:18px;">卫星链路预算速算参考 (Ka波段, LEO 1000km)</h4>
+      <table>
+        <thead><tr><th>环节</th><th>增益/损耗</th><th>累计</th></tr></thead>
+        <tbody>
+          <tr><td>TX 芯片输出</td><td>-</td><td>+3 dBm</td></tr>
+          <tr><td>外部 PA + 天线增益</td><td>+40 dB</td><td>+43 dBm (EIRP)</td></tr>
+          <tr><td>自由空间损耗 (1000km @30GHz)</td><td>−182 dB</td><td>−139 dBm (接收天线口)</td></tr>
+          <tr><td>接收天线增益</td><td>+30 dBi</td><td>−109 dBm</td></tr>
+          <tr><td>RX 芯片 NF=3dB + BW=500MHz</td><td>等效噪声底 −84 dBm</td><td>SNR ≈ 5 dB</td></tr>
+          <tr><td>QPSK解调门限 (BER=1e-6)</td><td>SNR ~10 dB</td><td>链路余量不足 ⚠️</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:0.85rem;color:var(--text-muted);">注: 以上为简化速算示例，实际设计中需考虑大气衰减(雨衰)、天线指向误差、极化失配、干扰余量等附加损耗。链路预算紧张时需降低数据率或增加天线增益。</p>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<div class="footer">
+AE 知识文档 · 卫星射频收发芯片 (Satellite RF Transceiver)<br>
+  覆盖原理、框图、指标、影响因素、测试方法与选型指南 · 文档版本 v2.0 · 生成时间：2026-06-19<br>
+  原始 MD 版本 v1.0 · <a href="../../docs/02_无线通信/02_卫星射频收发芯片.md">查看原始 Markdown</a>
+</div>
+
+</body>
+</html>

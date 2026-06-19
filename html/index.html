@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AE 产品知识文档集</title>
+<style>
+  :root {
+    --primary: #1a56db; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --optical: #1a56db; --wireless: #e74c3c; --industrial: #27ae60;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .hero { background: linear-gradient(135deg, #0e3a8e 0%, #1a56db 40%, #0891b2 100%); color: white; padding: 60px 40px 50px; text-align: center; }
+  .hero h1 { font-size: 2.4rem; font-weight: 700; }
+  .hero .subtitle { margin-top: 12px; font-size: 1.1rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 24px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 6px 18px; border-radius: 20px; font-size: 0.85rem; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  .section-title { font-size: 1.4rem; color: var(--primary); font-weight: 700; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 3px solid var(--primary); display: flex; align-items: center; gap: 8px; }
+  .section-title.wireless { color: var(--wireless); border-color: var(--wireless); }
+  .section-title.industrial { color: var(--industrial); border-color: var(--industrial); }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  .product-card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; }
+  .product-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+  .card-top { padding: 20px 20px 12px; border-bottom: 1px solid var(--border); }
+  .card-top .icon { font-size: 2rem; margin-bottom: 8px; }
+  .card-top h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+  .card-top .eng { font-size: 0.82rem; color: var(--text-muted); }
+  .card-body { padding: 12px 20px 20px; font-size: 0.88rem; color: var(--text-muted); }
+  .card-body .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+  .tag-blue { background: #dbeafe; color: #1e40af; }
+  .tag-red { background: #fee2e2; color: #991b1b; }
+  .tag-green { background: #dcfce7; color: #166534; }
+  .tag-gray { background: #f1f5f9; color: #475569; }
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  .stat-row { display: flex; justify-content: center; gap: 40px; margin: 20px 0 0; flex-wrap: wrap; }
+  .stat-item { text-align: center; }
+  .stat-item .num { font-size: 2rem; font-weight: 700; }
+  .stat-item .label { font-size: 0.82rem; opacity: 0.7; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>📚 AE 产品知识文档集</h1>
+  <div class="subtitle">覆盖光通信 · 无线通信 · 工业&汽车 · ADC 四大产品线的完整技术培训资料</div>
+  <div class="stat-row">
+    <div class="stat-item"><div class="num">14</div><div class="label">产品文档</div></div>
+    <div class="stat-item"><div class="num">4</div><div class="label">产品线</div></div>
+    <div class="stat-item"><div class="num">9+</div><div class="label">章节/文档</div></div>
+    <div class="stat-item"><div class="num">SVG</div><div class="label">交互框图</div></div>
+  </div>
+  <div class="badge-row">
+    <span class="badge">📖 背景与定位</span>
+    <span class="badge">⚙️ 工作原理</span>
+    <span class="badge">🔬 模块深度解析</span>
+    <span class="badge">🔲 电路框图</span>
+    <span class="badge">⚖️ 核心对比</span>
+    <span class="badge">📊 核心指标</span>
+    <span class="badge">🔗 影响因素</span>
+    <span class="badge">🧪 测试方法</span>
+    <span class="badge">⚠️ 注意事项</span>
+    <span class="badge">🧭 选型指南</span>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══════════ 光通信 ═══════════ -->
+<h2 class="section-title">🔷 一、光通信产品线</h2>
+<div class="card-grid">
+
+  <a href="01_光通信/01_400G_800G_oDSP.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🔷</div>
+      <h3>400G & 800G oDSP</h3>
+      <div class="eng">Optical Digital Signal Processor</div>
+    </div>
+    <div class="card-body">
+      <p>数据中心光互连核心芯片，PAM4 调制，KP4-FEC，支持 400GBASE/800GBASE 光模块</p>
+      <div class="tags">
+        <span class="tag tag-blue">7nm/5nm FinFET</span>
+        <span class="tag tag-blue">PAM4</span>
+        <span class="tag tag-blue">800GAUI-8</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="01_光通信/02_800G_1.6T_oDSP.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🔶</div>
+      <h3>800G & 1.6T oDSP</h3>
+      <div class="eng">Next-Gen Optical DSP</div>
+    </div>
+    <div class="card-body">
+      <p>面向 AI/ML 超大规模数据中心，212Gbps PAM4，256-State MLSD，级联 FEC</p>
+      <div class="tags">
+        <span class="tag tag-blue">5nm/3nm</span>
+        <span class="tag tag-blue">212Gbps</span>
+        <span class="tag tag-blue">PAM6 可选</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="01_光通信/03_800G_1.6T_TIA_Driver.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🔌</div>
+      <h3>800G & 1.6T TIA & Driver</h3>
+      <div class="eng">Trans-Impedance Amplifier & Modulator Driver</div>
+    </div>
+    <div class="card-body">
+      <p>光模块关键模拟芯片：TIA 将光电流转电压，Driver 驱动光调制器</p>
+      <div class="tags">
+        <span class="tag tag-blue">SiGe BiCMOS</span>
+        <span class="tag tag-blue">>50GHz BW</span>
+        <span class="tag tag-blue">4/8通道</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="01_光通信/04_400G_800G_Retimer.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🔄</div>
+      <h3>400G & 800G Retimer</h3>
+      <div class="eng">Signal Retimer / Repeater</div>
+    </div>
+    <div class="card-body">
+      <p>CDR+信号再生，彻底消除累积抖动；支持背板/线缆/光模块多场景</p>
+      <div class="tags">
+        <span class="tag tag-blue">CDR重定时</span>
+        <span class="tag tag-blue">JTF抑制</span>
+        <span class="tag tag-blue">8通道</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="01_光通信/05_高性能SerDes.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">⚡</div>
+      <h3>高性能 SerDes IP</h3>
+      <div class="eng">Serializer / Deserializer</div>
+    </div>
+    <div class="card-body">
+      <p>高速互联物理层基础 IP，112G/224G PAM4，应用于交换芯片/AI加速器/Die-to-Die</p>
+      <div class="tags">
+        <span class="tag tag-blue">112G/224G</span>
+        <span class="tag tag-blue">PAM4</span>
+        <span class="tag tag-blue">UCIe</span>
+      </div>
+    </div>
+  </a>
+</div>
+
+<!-- ═══════════ 无线通信 ═══════════ -->
+<h2 class="section-title wireless">🔴 二、无线通信产品线</h2>
+<div class="card-grid">
+
+  <a href="02_无线通信/01_基站射频收发芯片.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">📡</div>
+      <h3>基站射频收发芯片</h3>
+      <div class="eng">Base Station RF Transceiver</div>
+    </div>
+    <div class="card-body">
+      <p>5G NR Massive MIMO AAU 核心芯片，零中频架构，Sub-6GHz，400MHz 瞬时带宽</p>
+      <div class="tags">
+        <span class="tag tag-red">5G NR</span>
+        <span class="tag tag-red">n77/n78/n79</span>
+        <span class="tag tag-red">2T2R~8T8R</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="02_无线通信/02_卫星射频收发芯片.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🛰️</div>
+      <h3>卫星射频收发芯片</h3>
+      <div class="eng">Satellite RF Transceiver</div>
+    </div>
+    <div class="card-body">
+      <p>LEO/MEO/GEO 卫星通信载荷，抗辐射加固，Ka 波段，相控阵波束赋形</p>
+      <div class="tags">
+        <span class="tag tag-red">抗辐射 TID>100krad</span>
+        <span class="tag tag-red">Ka波段</span>
+        <span class="tag tag-red">相控阵</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="02_无线通信/03_WIFI射频收发芯片.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">📶</div>
+      <h3>WiFi 射频收发芯片</h3>
+      <div class="eng">WiFi RF Transceiver</div>
+    </div>
+    <div class="card-body">
+      <p>WiFi 7 (802.11be) 三频收发器，4096QAM，320MHz 带宽，MLO 多链路操作</p>
+      <div class="tags">
+        <span class="tag tag-red">WiFi 7</span>
+        <span class="tag tag-red">4096QAM</span>
+        <span class="tag tag-red">320MHz</span>
+      </div>
+    </div>
+  </a>
+</div>
+
+<!-- ═══════════ 工业&汽车 ═══════════ -->
+<h2 class="section-title industrial">🟢 三、工业 & 汽车产品线</h2>
+<div class="card-grid">
+
+  <a href="03_工业汽车/01_储能BMS_AFE.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🔋</div>
+      <h3>储能 BMS AFE</h3>
+      <div class="eng">Energy Storage BMS Analog Front-End</div>
+    </div>
+    <div class="card-body">
+      <p>大规模储能电池管理系统核心芯片，18串电压监测，±1mV 精度，被动均衡</p>
+      <div class="tags">
+        <span class="tag tag-green">Σ-Δ ADC 18bit</span>
+        <span class="tag tag-green">±1mV精度</span>
+        <span class="tag tag-green">可堆叠>1000V</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="03_工业汽车/02_车规BMS_AFE.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🚗</div>
+      <h3>车规 BMS AFE</h3>
+      <div class="eng">Automotive BMS Analog Front-End</div>
+    </div>
+    <div class="card-body">
+      <p>电动汽车动力电池管理，ASIL-D 功能安全，双冗余架构，AEC-Q100 Grade 1</p>
+      <div class="tags">
+        <span class="tag tag-green">ASIL-D</span>
+        <span class="tag tag-green">ISO 26262</span>
+        <span class="tag tag-green">双ADC冗余</span>
+      </div>
+    </div>
+  </a>
+</div>
+
+<!-- ═══════════ ADC ═══════════ -->
+<h2 class="section-title industrial">🟢 四、ADC 模数转换器</h2>
+<div class="card-grid">
+
+  <a href="04_ADC/01_SAR_ADC.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🔄</div>
+      <h3>SAR ADC</h3>
+      <div class="eng">Successive Approximation Register ADC</div>
+    </div>
+    <div class="card-body">
+      <p>逐次逼近寄存器 ADC — 中高精度、超低功耗通用方案，二分搜索 CDAC 架构，IoT/工业/医疗首选</p>
+      <div class="tags">
+        <span class="tag tag-green">8~18 bit</span>
+        <span class="tag tag-green">DC~10 MSPS</span>
+        <span class="tag tag-green">nW~mW 功耗</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="04_ADC/02_SigmaDelta_ADC.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🔢</div>
+      <h3>Sigma-Delta ADC</h3>
+      <div class="eng">Σ-Δ Analog-to-Digital Converter</div>
+    </div>
+    <div class="card-body">
+      <p>过采样 + 噪声整形 + 数字抽取滤波，实现最高精度 (16~32 bit)，音频/测量/地震监测专用</p>
+      <div class="tags">
+        <span class="tag tag-green">16~32 bit</span>
+        <span class="tag tag-green">DC~100 kHz</span>
+        <span class="tag tag-green">>120 dB DR</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="04_ADC/03_Pipeline_ADC.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🏭</div>
+      <h3>Pipeline ADC</h3>
+      <div class="eng">Pipelined Analog-to-Digital Converter</div>
+    </div>
+    <div class="card-body">
+      <p>多级流水线并行架构，1.5-bit/级 + 数字纠错，中高速中高精度的最佳平衡，无线/视频/雷达应用</p>
+      <div class="tags">
+        <span class="tag tag-green">8~16 bit</span>
+        <span class="tag tag-green">10M~1 GSPS</span>
+        <span class="tag tag-green">MDAC 级间增益</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="04_ADC/04_TimeInterleaved_ADC.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🎛️</div>
+      <h3>Time-Interleaved ADC</h3>
+      <div class="eng">Time-Interleaved ADC</div>
+    </div>
+    <div class="card-body">
+      <p>M 通道时间交错并行采样，突破单通道速度极限，飞秒级时序偏斜校准，光通信/雷达/示波器专用</p>
+      <div class="tags">
+        <span class="tag tag-green">8~14 bit</span>
+        <span class="tag tag-green">100M~100+ GSPS</span>
+        <span class="tag tag-green">偏斜 &lt;50fs</span>
+      </div>
+    </div>
+  </a>
+</div>
+
+<!-- ═══════════ 附录 ═══════════ -->
+<h2 class="section-title" style="color:#6c757d;border-color:#6c757d;">📋 附录</h2>
+<div class="card-grid">
+  <a href="附录/测试设备与通用方法.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🔧</div>
+      <h3>测试设备与通用方法</h3>
+      <div class="eng">Test Equipment & General Methodology</div>
+    </div>
+    <div class="card-body">
+      <p>通用测试设备清单、测试方法论、测量不确定度分析、自动化框架、仪器校准维护</p>
+      <div class="tags">
+        <span class="tag tag-gray">Keysight</span>
+        <span class="tag tag-gray">测试流程</span>
+        <span class="tag tag-gray">校准</span>
+      </div>
+    </div>
+  </a>
+</div>
+
+</div>
+
+<div class="footer">
+  AE 知识文档集 · HTML 可视化版本<br>
+  基于原始 Markdown 文档重构，新增 SVG 框图、影响因素分析、选型指南等章节<br>
+  文档版本 v2.0 · 生成时间：2026-06-19
+</div>
+
+</body>
+</html>

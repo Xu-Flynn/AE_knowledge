@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>测试设备与通用方法 — AE 知识文档</title>
+<style>
+  :root { --primary: #475569; --primary-dark: #334155; --bg: #f8f9fa; --card: #ffffff; --border: #dee2e6; --text: #212529; --text-muted: #6c757d; --code-bg: #f1f3f5; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .hero { background: linear-gradient(135deg, #334155 0%, #475569 50%, #64748b 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #f1f5f9, #e2e8f0); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #64748b); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #e8f0fe; }
+  .info-box { border-left: 4px solid var(--primary); background: #f1f5f9; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid #e74c3c; background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid #27ae60; background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-gray { background: #f1f5f9; color: #475569; }
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  @media (max-width: 700px) { .caution-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>🔧 测试设备与通用方法</h1>
+  <div class="subtitle">AE 测试知识附录 — 覆盖光通信 · 无线通信 · BMS 三大领域的测试设备、方法论与最佳实践</div>
+</div>
+
+<nav class="nav">
+  <a href="#sec1">一、通用测试设备</a>
+  <a href="#sec2">二、通用测试方法论</a>
+  <a href="#sec3">三、测试自动化</a>
+  <a href="#sec4">四、产品测试快速参考</a>
+  <a href="#sec5">五、仪器校准与维护</a>
+  <a href="#sec6">六、安全注意事项</a>
+</nav>
+
+<div class="container">
+
+<!-- Section 1: 通用测试设备 -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header"><div class="section-no">1</div><h2>通用测试设备清单</h2></div>
+    <div class="card-body">
+
+      <h4>📡 高速数字/光通信测试设备</h4>
+      <table>
+        <thead><tr><th>设备类别</th><th>推荐型号</th><th>关键规格</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>BERT</td><td>Keysight M8040A</td><td>64GBaud PAM4, RJ&lt;150fs</td><td>高速 BER 测试</td></tr>
+          <tr><td>BERT</td><td>Anritsu MP1900A</td><td>64GBaud PAM4, 4ch</td><td>多通道 BER</td></tr>
+          <tr><td>实时示波器</td><td>Keysight UXR1104A</td><td>110GHz, 256GS/s</td><td>眼图/PAM4 分析</td></tr>
+          <tr><td>VNA</td><td>Keysight PNA-X N5247B</td><td>10M~67GHz, 4端口</td><td>S 参数提取</td></tr>
+          <tr><td>相噪分析仪</td><td>Keysight E5052B</td><td>10M~26.5G</td><td>相噪/抖动测量</td></tr>
+          <tr><td>可编程电源</td><td>Keysight N6705C</td><td>4ch, 低噪声</td><td>多轨供电</td></tr>
+          <tr><td>高精度 DMM</td><td>Keysight 34470A</td><td>7.5位</td><td>电压/电流监测</td></tr>
+          <tr><td>温控平台</td><td>MPI Thermal TA-5000</td><td>−60~+200°C</td><td>三温测试</td></tr>
+          <tr><td>RF 稳相电缆</td><td>Gore PhaseFlex</td><td>DC~50GHz</td><td>低损耗互连</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📶 射频/无线通信测试设备</h4>
+      <table>
+        <thead><tr><th>设备类别</th><th>推荐型号</th><th>关键规格</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>矢量信号发生器</td><td>Keysight M9384B</td><td>up to 44GHz</td><td>5G/WiFi 信号生成</td></tr>
+          <tr><td>矢量信号分析仪</td><td>Keysight 89600 VSA</td><td>软件</td><td>调制分析</td></tr>
+          <tr><td>频谱分析仪</td><td>Keysight N9042B</td><td>2Hz~50GHz</td><td>频谱测量</td></tr>
+          <tr><td>噪声系数分析仪</td><td>Keysight N8976B</td><td>+N4002A 噪声源</td><td>NF 测量</td></tr>
+          <tr><td>WiFi 综测仪</td><td>LitePoint IQxel-MW</td><td>802.11be</td><td>WiFi 一键测试</td></tr>
+          <tr><td>5G 综测仪</td><td>Rohde CMX500</td><td>5G NR</td><td>蜂窝综测</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">🔋 BMS/模拟测试设备</h4>
+      <table>
+        <thead><tr><th>设备类别</th><th>推荐型号</th><th>关键规格</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>高精度电压源</td><td>Fluke 5730A</td><td>6.5位</td><td>模拟电池电压</td></tr>
+          <tr><td>8.5位 DMM</td><td>Keysight 3458A</td><td>8.5位</td><td>精密电压测量</td></tr>
+          <tr><td>电池模拟器</td><td>Chroma 87001</td><td>多通道</td><td>模拟电池组</td></tr>
+          <tr><td>电子负载</td><td>Chroma 63200</td><td>高功率</td><td>充放电测试</td></tr>
+          <tr><td>精密电流源</td><td>Keithley 6221</td><td>AC/DC</td><td>电流测试</td></tr>
+          <tr><td>数据采集</td><td>Keysight 34970A</td><td>多通道扫描</td><td>温度/电压记录</td></tr>
+          <tr><td>绝缘测试仪</td><td>Fluke 1555</td><td>10kV</td><td>高压绝缘测试</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Section 2: 通用测试方法论 -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header"><div class="section-no">2</div><h2>通用测试方法论</h2></div>
+    <div class="card-body">
+
+      <h4>测试流程 (V-Model)</h4>
+      <p>需求分析 → 测试计划 → 测试用例设计 → 执行测试 → 数据分析 → 报告</p>
+
+      <h4 style="margin-top:14px;">关键测试维度</h4>
+      <table>
+        <thead><tr><th>维度</th><th>内容</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>功能测试</strong></td><td>验证芯片功能是否符合 spec</td><td>基本功能正确性</td></tr>
+          <tr><td><strong>性能测试</strong></td><td>测量关键指标（BER/NF/EVM/精度等）</td><td>核心指标合规</td></tr>
+          <tr><td><strong>极限测试</strong></td><td>找到性能边界（灵敏度下限/最高速率等）</td><td>设计裕量评估</td></tr>
+          <tr><td><strong>可靠性测试</strong></td><td>HTOL, TC, HAST, ESD, Latch-up</td><td>长期可靠性</td></tr>
+          <tr><td><strong>环境测试</strong></td><td>三温 (−40/+25/+85°C 或更宽)</td><td>温度特性</td></tr>
+          <tr><td><strong>PVT</strong></td><td>Process(SS/TT/FF) × Voltage × Temperature</td><td>工艺角覆盖</td></tr>
+          <tr><td><strong>EMC</strong></td><td>辐射/传导发射和抗扰度</td><td>电磁兼容</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">测试环境搭建原则</h4>
+      <div class="success-box">
+        <ol>
+          <li><strong>信号完整性：</strong>全程阻抗控制，高品质电缆和连接器</li>
+          <li><strong>电源完整性：</strong>低噪声电源，充分去耦，PDN 仿真验证</li>
+          <li><strong>接地：</strong>单点接地（低频）/ 多点接地（高频），避免地环路</li>
+          <li><strong>屏蔽：</strong>关键信号同轴/屏蔽，防止 EMI 干扰</li>
+          <li><strong>散热：</strong>大功耗芯片需强制风冷或液冷</li>
+          <li><strong>安全：</strong>高压测试需安全联锁和隔离保护</li>
+        </ol>
+      </div>
+
+      <h4 style="margin-top:14px;">测量不确定度分析</h4>
+      <p>不确定度来源：仪器精度 + 校准误差 + 电缆/连接器损耗和失配 + 温度漂移 + 重复性</p>
+      <div class="formula" style="background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:10px 18px;font-family:monospace;text-align:center;margin:10px 0;">
+        U<sub>total</sub> = √(U₁² + U₂² + U₃² + ...) &nbsp;&nbsp;|&nbsp;&nbsp; 报告格式: X ± U (k=2, 95%置信度)
+      </div>
+
+      <h4 style="margin-top:14px;">常见测量陷阱</h4>
+      <table>
+        <thead><tr><th>陷阱</th><th>现象</th><th>避免方法</th></tr></thead>
+        <tbody>
+          <tr><td>接地环路</td><td>50/60Hz 工频干扰</td><td>单点接地，隔离变压器</td></tr>
+          <tr><td>探头负载效应</td><td>高频测量幅值偏低</td><td>使用有源探头，正确补偿</td></tr>
+          <tr><td>电缆损耗</td><td>高频信号衰减</td><td>稳相电缆，去嵌入补偿</td></tr>
+          <tr><td>阻抗失配</td><td>反射、振铃</td><td>全程阻抗匹配</td></tr>
+          <tr><td>温度漂移</td><td>测量值随时间变化</td><td>充分温度稳定，记录温度</td></tr>
+          <tr><td>连接器磨损</td><td>重复性差</td><td>定期检查，扭矩扳手</td></tr>
+          <tr><td>电源噪声</td><td>BER 波动，眼图差</td><td>改善 PDN，充分去耦</td></tr>
+          <tr><td>ESD 损伤</td><td>芯片损坏</td><td>ESD 防护，接地手环</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Section 3: 测试自动化 -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header"><div class="section-no">3</div><h2>测试自动化与数据管理</h2></div>
+    <div class="card-body">
+      <h4>自动化框架</h4>
+      <p><strong>推荐技术栈：</strong>Python + PyVISA（仪器控制）+ 自定义测试类库</p>
+      <table>
+        <thead><tr><th>核心组件</th><th>功能</th></tr></thead>
+        <tbody>
+          <tr><td>仪器管理</td><td>连接/配置/断开；支持 GPIB/USB/LAN 多种接口</td></tr>
+          <tr><td>测试用例</td><td>标准化测试方法模板；参数化配置</td></tr>
+          <tr><td>数据采集</td><td>仪器读数 + 自动存储 (CSV/HDF5)</td></tr>
+          <tr><td>结果分析</td><td>统计分析 / 图表生成 / 自动报告 (PDF)</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">数据管理最佳实践</h4>
+      <div class="info-box">
+        <ul>
+          <li><strong>每次测试记录：</strong>时间戳、操作者、环境条件（温湿度）、仪器设置、原始数据</li>
+          <li><strong>数据格式：</strong>CSV/HDF5（原始数据）+ PDF（报告）</li>
+          <li><strong>版本控制：</strong>测试脚本和配置用 Git 管理</li>
+          <li><strong>可追溯性：</strong>记录仪器校准证书编号</li>
+          <li><strong>自动备份：</strong>定时备份到服务器/云端</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 4: 产品测试快速参考 -->
+<section id="sec4">
+  <div class="card">
+    <div class="card-header"><div class="section-no">4</div><h2>产品测试快速参考</h2></div>
+    <div class="card-body">
+
+      <h4>光通信产品</h4>
+      <table>
+        <thead><tr><th>产品</th><th>核心测试</th><th>关键设备</th></tr></thead>
+        <tbody>
+          <tr><td>oDSP</td><td>BER / TDECQ / CDR / FEC</td><td>BERT + 示波器 + VNA</td></tr>
+          <tr><td>TIA</td><td>S参数 / 噪声 / 眼图</td><td>VNA + 频谱仪 + 示波器</td></tr>
+          <tr><td>Driver</td><td>S参数 / 眼图 / 线性度</td><td>VNA + 示波器 + 频谱仪</td></tr>
+          <tr><td>Retimer</td><td>JTF / BER / 延迟</td><td>BERT + 示波器</td></tr>
+          <tr><td>SerDes</td><td>BER / 抖动 / JTOL</td><td>BERT + 示波器</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">无线通信产品</h4>
+      <table>
+        <thead><tr><th>产品</th><th>核心测试</th><th>关键设备</th></tr></thead>
+        <tbody>
+          <tr><td>基站收发</td><td>NF / ACLR / EVM / 相噪</td><td>VNA + 频谱仪 + VSA</td></tr>
+          <tr><td>卫星收发</td><td>RF + 抗辐射 + 相控阵</td><td>同基站 + 辐射设备</td></tr>
+          <tr><td>WiFi 收发</td><td>EVM / 灵敏度 / 频谱 Mask</td><td>WiFi 综测仪</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">BMS 产品</h4>
+      <table>
+        <thead><tr><th>产品</th><th>核心测试</th><th>关键设备</th></tr></thead>
+        <tbody>
+          <tr><td>储能 AFE</td><td>电压精度 / 均衡 / 堆叠通信</td><td>电池模拟器 + 8.5位 DMM</td></tr>
+          <tr><td>车规 AFE</td><td>同上 + 功能安全 + EMC</td><td>同上 + EMC 设备</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Section 5: 仪器校准与维护 -->
+<section id="sec5">
+  <div class="card">
+    <div class="card-header"><div class="section-no">5</div><h2>仪器校准与维护</h2></div>
+    <div class="card-body">
+      <h4>校准周期</h4>
+      <table>
+        <thead><tr><th>设备</th><th>推荐周期</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td>BERT / 示波器 / VNA / 频谱仪 / 电源</td><td>12 个月</td><td>或按厂家建议</td></tr>
+          <tr><td>DMM (8.5位)</td><td>12~24 个月</td><td>高精度需更频繁</td></tr>
+          <tr><td>温度传感器</td><td>6~12 个月</td><td>漂移较快</td></tr>
+          <tr><td>VNA 校准件</td><td>12 个月</td><td>含在校准范围内</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">日常维护清单</h4>
+      <div class="info-box">
+        <ul>
+          <li>连接器清洁（专用清洁工具，禁止酒精棉签）</li>
+          <li>扭矩检查（SMA 8 in-lb, 1.0mm 4 in-lb）</li>
+          <li>ESD 防护检查（接地手环 1MΩ 串联、台垫、离子风机）</li>
+          <li>固件/软件定期更新</li>
+          <li>维护日志记录（每次维护时间、内容、发现的问题）</li>
+          <li>备件管理（校准件、电缆、连接器、适配器）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 6: 安全注意事项 -->
+<section id="sec6">
+  <div class="card">
+    <div class="card-header"><div class="section-no">6</div><h2>安全注意事项</h2></div>
+    <div class="card-body">
+
+      <h4>⚡ 高压安全 (BMS 测试)</h4>
+      <div class="danger-box">
+        <ul>
+          <li>&gt;60V DC 即为危险电压！储能/车规电池组可达 800~1000V+</li>
+          <li>高压测试必须使用隔离变压器和绝缘手套 (Class 0 以上)</li>
+          <li>测试台必须安装紧急断电按钮 (E-Stop)</li>
+          <li>电容放电：断电后等待 &gt;5 分钟，用万用表确认电压 &lt;5V</li>
+          <li>至少 2 人同时操作高压测试</li>
+          <li>高压区域设置明显的警告标识和安全围栏</li>
+        </ul>
+      </div>
+
+      <h4 style="margin-top:14px;">📡 高速信号/光安全</h4>
+      <div class="warn-box">
+        <ul>
+          <li>高功率 RF 信号 (&gt;+30dBm) 可能造成灼伤</li>
+          <li>激光安全：光模块含 Class 1/1M 激光，禁止直视光纤端面</li>
+          <li>光纤端面检查前确认激光已关闭</li>
+          <li>高速 RF 连接器插拔时佩戴防静电手环</li>
+        </ul>
+      </div>
+
+      <h4 style="margin-top:14px;">🛡️ ESD 安全（所有测试通用）</h4>
+      <div class="info-box">
+        <ul>
+          <li>始终佩戴接地手环（1MΩ 串联电阻，每日检查导通性）</li>
+          <li>使用 ESD 安全台垫（表面电阻 10⁶~10⁹ Ω）</li>
+          <li>芯片存储在防静电容器中（黑色导电泡沫/屏蔽袋）</li>
+          <li>离子风机用于中和绝缘体表面电荷</li>
+          <li>相对湿度保持 30%~70%（过干易产生静电）</li>
+          <li>定期检查接地系统（至少每季度一次）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div class="footer">
+AE 知识文档 · 测试设备与通用方法<br>
+  覆盖光通信、无线通信、BMS 三大领域的测试设备清单、方法论与安全规范<br>
+  文档版本 v2.0 · 生成时间：2026-06-19
+</div>
+
+</body>
+</html>

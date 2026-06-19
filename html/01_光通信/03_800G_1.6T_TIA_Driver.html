@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>800G/1.6T TIA & Driver 跨阻放大器与调制器驱动芯片 — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #1a56db; --primary-dark: #0e3a8e; --accent: #e74c3c;
+    --accent2: #27ae60; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+    --optical: #1a56db; --wireless: #e74c3c; --industrial: #27ae60;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .hero { background: linear-gradient(135deg, #0e3a8e 0%, #1a56db 50%, #0891b2 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #1a56db11, #1a56db05); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #2563eb); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #e8f0fe; }
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  .info-box { border-left: 4px solid var(--primary); background: #eff6ff; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #1e40af, #1a56db); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #eff6ff; border: 2px solid var(--primary); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>🔷 800G & 1.6T TIA & Driver</h1>
+  <div class="subtitle">跨阻放大器 & 调制器驱动芯片 — 光模块模拟前端核心</div>
+  <div class="badge-row">
+    <span class="badge">📡 SiGe BiCMOS</span>
+    <span class="badge">⚡ >50GHz BW</span>
+    <span class="badge">🔗 4ch/8ch</span>
+    <span class="badge">📊 超低噪声 TIA</span>
+    <span class="badge">🧪 大摆幅 Driver</span>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <a href="#sec1">一、产品概述</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 核心模块深度解析</a>
+  <a href="#sec3">三、芯片框图</a>
+  <a href="#sec4">四、TIA vs Driver 对比</a>
+  <a href="#sec5">五、关键指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ Section 1: 产品概述 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div><div class="icon">📖</div><h2>产品概述与定位</h2>
+    </div>
+    <div class="card-body">
+      <p>800G/1.6T <strong>TIA (跨阻放大器, Trans-Impedance Amplifier)</strong> 和 <strong>Driver (调制器驱动芯片)</strong> 是光模块中位于 oDSP 与光学器件之间的<strong>关键模拟前端芯片</strong>。它们共同完成光电/电光转换的信号调理，是决定光模块带宽、噪声和输出质量的核心器件。</p>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col blue">
+          <h3>📌 TIA — 接收端核心</h3>
+          <p><strong>功能：</strong>将 PD (光电二极管) 输出的微弱光电流转换为差分电压信号</p>
+          <p><strong>产业链位置：</strong>PD → TIA → oDSP ADC 之间</p>
+          <p><strong>核心挑战：</strong>带宽>50GHz，输入参考噪声<15pA/√Hz，跨阻增益 2k~8k ohm，功耗<0.3W/ch，相位裕度>45°</p>
+        </div>
+        <div class="compare-col green">
+          <h3>🎯 Driver — 发射端核心</h3>
+          <p><strong>功能：</strong>接收 oDSP DAC 输出，大摆幅驱动 MZM/EML 调制器</p>
+          <p><strong>产业链位置：</strong>oDSP DAC → Driver → MZM/EML 之间</p>
+          <p><strong>核心挑战：</strong>差分>4Vpp，带宽>50GHz，THD<-25dB，功耗<0.5W/ch</p>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">技术路线与工艺</h4>
+      <table>
+        <thead><tr><th>维度</th><th>TIA</th><th>Driver</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>工艺节点</strong></td><td>SiGe BiCMOS 130nm/90nm</td><td>SiGe BiCMOS 130nm/90nm</td><td>SiGe HBT 提供超高 fT/fmax (>300GHz)</td></tr>
+          <tr><td><strong>通道数</strong></td><td>4ch (800G) / 8ch (1.6T)</td><td>4ch (800G) / 8ch (1.6T)</td><td>与光口通道对应</td></tr>
+          <tr><td><strong>封装形式</strong></td><td>Flip-chip BGA / 裸片 COB</td><td>Flip-chip BGA / 裸片 COB</td><td>最小化寄生电感</td></tr>
+          <tr><td><strong>单通道速率</strong></td><td>53.125 / 106.25 Gbaud</td><td>53.125 / 106.25 Gbaud</td><td>对应 100G/200G PAM4</td></tr>
+          <tr><td><strong>输入/输出接口</strong></td><td>PD 输入 (单端电流) / 差分电压输出</td><td>差分电压输入 / 差分大摆幅输出</td><td>50 ohm 差分匹配</td></tr>
+          <tr><td><strong>功耗预算</strong></td><td><0.25W/ch (800G) / <0.3W/ch (1.6T)</td><td><0.4W/ch (800G) / <0.5W/ch (1.6T)</td><td>光模块总功耗约束</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box"><strong>💡 关键认知：</strong>TIA 和 Driver 是光模块中<strong>唯二的宽带模拟芯片</strong>，其性能直接决定了光模块的"天花板"——TIA 的噪声决定接收灵敏度下限，Driver 的摆幅和线性度决定发射眼图质量。两者必须配对设计以满足链路预算。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2: 工作原理 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div><div class="icon">⚙️</div><h2>核心工作原理</h2>
+    </div>
+    <div class="card-body">
+      <p>TIA 和 Driver 分别位于光模块接收链路和发送链路的关键位置，完成光电/电光信号转换的模拟调理。理解其信号链对于系统设计和调试至关重要。</p>
+
+      <h4>📥 接收方向 (RX Path) — TIA 在信号链中的位置</h4>
+      <div class="diagram-title">图 2-1 | RX 接收链路 — TIA 信号流</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 100" width="800" height="100" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrBlue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <rect x="10" y="25" width="60" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="40" y="50" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">Fiber</text>
+          <line x1="70" y1="45" x2="100" y2="45" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="105" y="25" width="75" height="40" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="142" y="50" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">PD</text>
+          <line x1="180" y1="45" x2="215" y2="45" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="220" y="20" width="120" height="50" rx="8" fill="#1a56db" stroke="#0e3a8e" stroke-width="2"/>
+          <text x="280" y="43" fill="white" font-size="12" font-weight="700" text-anchor="middle">TIA</text>
+          <text x="280" y="58" fill="#bfdbfe" font-size="8" text-anchor="middle">I→V 跨阻放大</text>
+          <line x1="340" y1="45" x2="375" y2="45" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="380" y="25" width="70" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="415" y="50" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">ADC</text>
+          <line x1="450" y1="45" x2="480" y2="45" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="485" y="25" width="80" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="525" y="50" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">oDSP RX</text>
+          <line x1="565" y1="45" x2="585" y2="45" stroke="#1a56db" stroke-width="2"/>
+          <text x="590" y="50" fill="#1e40af" font-size="10" font-weight="700">Host</text>
+          <text x="280" y="85" fill="#6b7280" font-size="9" text-anchor="middle">微弱光电流 (μA) → 差分电压 (mVppd)</text>
+        </svg>
+      </div>
+      <p><strong>TIA 本质：</strong>将 PD 在光照下产生的微弱光电流（典型 10μA~2mA pp）转换为差分电压信号（典型 300~800mVppd），同时保持足够带宽和低噪声。核心公式：<span class="formula-inline">Vout = Iin × Z_T</span>，其中 <span class="formula-inline">Z_T</span> 为跨阻增益（单位 ohm）。</p>
+
+      <h4>📤 发送方向 (TX Path) — Driver 在信号链中的位置</h4>
+      <div class="diagram-title">图 2-2 | TX 发送链路 — Driver 信号流</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 100" width="800" height="100" xmlns="http://www.w3.org/2000/svg">
+          <text x="10" y="50" fill="#1e40af" font-size="10" font-weight="700">Host</text>
+          <line x1="40" y1="45" x2="65" y2="45" stroke="#1a56db" stroke-width="2"/>
+          <rect x="70" y="25" width="80" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="110" y="50" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">oDSP TX</text>
+          <line x1="150" y1="45" x2="180" y2="45" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="185" y="25" width="70" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="220" y="50" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">DAC</text>
+          <line x1="255" y1="45" x2="290" y2="45" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="295" y="20" width="140" height="50" rx="8" fill="#1a56db" stroke="#0e3a8e" stroke-width="2"/>
+          <text x="365" y="43" fill="white" font-size="12" font-weight="700" text-anchor="middle">Driver</text>
+          <text x="365" y="58" fill="#bfdbfe" font-size="8" text-anchor="middle">电压放大 + 大摆幅驱动</text>
+          <line x1="435" y1="45" x2="470" y2="45" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="475" y="25" width="100" height="40" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="525" y="50" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">MZM/EML</text>
+          <line x1="575" y1="45" x2="600" y2="45" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="605" y="25" width="60" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="635" y="50" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">Fiber</text>
+          <text x="365" y="85" fill="#6b7280" font-size="9" text-anchor="middle">小差分电压 (~500mVppd) → 大摆幅驱动 (2~5Vpp)</text>
+        </svg>
+      </div>
+      <p><strong>Driver 本质：</strong>接收 oDSP DAC 输出的小幅度差分信号（典型 300~600mVppd），放大并驱动 MZM/EML 调制器所需的大摆幅电压（2~5Vpp）。MZM 为容性负载（典型 0.5~2pF），需要 Driver 提供足够电流驱动能力以维持带宽。</p>
+
+      <div class="info-box"><strong>💡 系统级认知：</strong>完整光链路信号流为：<strong>oDSP DAC → Driver → MZM/EML → Fiber → PD → TIA → ADC → oDSP</strong>。TIA 和 Driver 是这一闭环中唯二的高性能宽带模拟芯片，它们的带宽、噪声和线性度共同决定了光模块的链路预算。任何一环的性能短板都会成为系统瓶颈。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2B: 核心模块深度解析 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header" style="background:linear-gradient(90deg,#fef3c7,#fde68a);border-bottom:2px solid #f59e0b;">
+      <div class="section-no" style="background:#d97706;">🔬</div><div class="icon">🧠</div><h2 style="color:#92400e;">核心模块深度解析</h2>
+    </div>
+    <div class="card-body">
+
+      <h4 style="color:#92400e;">一、TIA 核心架构 — Shunt-Feedback TIA</h4>
+      <p>Shunt-Feedback TIA 是最广泛使用的 TIA 架构，由一个高增益反相放大器与反馈电阻 <span class="formula-inline">R_f</span> 并联构成。其跨阻增益近似为 <span class="formula-inline">Z_T ≈ −R_f</span>（理想放大器），带宽由反馈环路决定。</p>
+      <div class="formula">Z_T(jω) ≈ −R_f / (1 + jω·R_f·C_in/A_0) &nbsp;&nbsp;|&nbsp;&nbsp; BW ≈ sqrt(GBW / (2π·R_f·C_pd))</div>
+      <table>
+        <thead><tr><th>参数</th><th>典型值 (800G)</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>反馈电阻 R_f</td><td>500~2000 ohm</td><td>决定跨阻增益和噪声贡献 (4kT/R_f)</td></tr>
+          <tr><td>开环增益 A_0</td><td>>30dB</td><td>越高，Z_T 越接近理想值，线性度越好</td></tr>
+          <tr><td>输入电容 C_pd</td><td>20~80 fF</td><td>PD 结电容 + 绑定线 + ESD，直接限制带宽</td></tr>
+          <tr><td>增益带宽积 GBW</td><td>>300GHz</td><td>SiGe HBT 提供，决定可实现的最大 BW</td></tr>
+        </tbody>
+      </table>
+      <p><strong>设计权衡：</strong>增大 R_f → 提高增益但降低带宽、增大噪声（热噪声 4kT/R_f 减小但带宽效应）；减小 R_f → 提高带宽但降低增益、增大输入参考噪声（R_f 热噪声本身增大）。这是 TIA 设计最核心的<strong>增益-带宽-噪声三角权衡</strong>。</p>
+
+      <h4 style="color:#92400e;margin-top:20px;">二、Regulated Cascode TIA (RGC-TIA)</h4>
+      <p>RGC-TIA 在输入级使用有源反馈降低输入阻抗，将 PD 电容与 TIA 带宽解耦，从而突破传统 Shunt-Feedback TIA 的带宽限制。</p>
+      <div class="formula">Z_in ≈ 1 / (g_m1 · g_m2 · R_B) &nbsp;&nbsp;|&nbsp;&nbsp; 典型 Z_in < 10 ohm → 输入极点 f_p ≈ 1/(2π·Z_in·C_pd) ≫ BW</div>
+      <table>
+        <thead><tr><th>特性</th><th>Shunt-Feedback TIA</th><th>RGC-TIA</th></tr></thead>
+        <tbody>
+          <tr><td>输入阻抗</td><td>~50 ohm</td><td style="color:#1a56db;font-weight:600;"><10 ohm</td></tr>
+          <tr><td>带宽受限于</td><td>R_f × C_pd</td><td>放大器自身 BW</td></tr>
+          <tr><td>噪声</td><td>较低</td><td>略高 (有源反馈引入额外噪声)</td></tr>
+          <tr><td>功耗</td><td>较低</td><td>较高 (多个放大级)</td></tr>
+          <tr><td>适用速率</td><td>≤56GBaud</td><td>≥56GBaud, 1.6T</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="color:#92400e;margin-top:20px;">三、Differential TIA 架构</h4>
+      <p>差分 TIA 通过将单端 PD 电流转换为差分输出，天然抑制共模噪声和电源噪声耦合，是现代高速 TIA 的主流选择。</p>
+      <p><strong>实现方式：</strong>PD 接单端输入 → 内部 Balun 或伪差分结构 → 差分输出，共模抑制比 (CMRR) > 30dB。PD 偏置（Vbias 2~5V）通过 Bias Tee 注入，需注意 Bias Tee 的电感自谐振频率 (SRF) 必须高于工作频率范围。</p>
+
+      <h4 style="color:#92400e;margin-top:20px;">四、TIA 关键子模块</h4>
+      <table>
+        <thead><tr><th>子模块</th><th>功能</th><th>关键设计参数</th></tr></thead>
+        <tbody>
+          <tr><td><strong>输入级</strong></td><td>接收 PD 电流，提供第一级跨阻增益</td><td>等效输入噪声电流密度, 输入阻抗, 输入过载能力</td></tr>
+          <tr><td><strong>增益级</strong></td><td>进一步放大，提供主要跨阻增益</td><td>带宽, 群延迟平坦度, 线性度</td></tr>
+          <tr><td><strong>输出缓冲</strong></td><td>驱动 50 ohm 传输线 / ADC 输入</td><td>输出阻抗匹配 (S22<-10dB), 输出摆幅, 反向隔离 S12</td></tr>
+          <tr><td><strong>AGC (自动增益控制)</strong></td><td>根据输入光功率自动调节增益，防止大信号饱和</td><td>动态范围 >20dB, 响应时间 <1μs</td></tr>
+          <tr><td><strong>DC Offset Cancel</strong></td><td>消除输入直流分量（PD 暗电流、偏置失调）</td><td>低频截止 <100kHz, 建立时间 <10μs</td></tr>
+          <tr><td><strong>PD 偏置 (Vbias)</strong></td><td>为 PD 提供反向偏压 2~5V</td><td>噪声 <100μV RMS, 电流能力 >5mA</td></tr>
+          <tr><td><strong>RSSI (接收信号强度指示)</strong></td><td>输出与平均光功率成正比的模拟电压</td><td>线性度 <±1dB, 动态范围 >25dB</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="color:#92400e;margin-top:20px;">五、Driver 核心架构 — Distributed Amplifier (行波放大器)</h4>
+      <p>Distributed Amplifier (DA) 通过将多个增益单元沿传输线分布，利用传输线电感与晶体管寄生电容形成人工传输线，从而突破单级放大器的增益-带宽积限制。这是实现 >50GHz 宽带 Driver 的核心架构。</p>
+      <div class="formula">BW_DA ≈ 1 / (π · sqrt(L_section · C_section)) &nbsp;&nbsp;|&nbsp;&nbsp; Gain = N · g_m · Z_0 / 2 (N=级数)</div>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>级数 N</td><td>4~8 级</td><td>更多级 → 更高增益，但功耗和面积增大</td></tr>
+          <tr><td>截止频率 f_c</td><td>>60GHz</td><td>人工传输线 Bragg 截止频率</td></tr>
+          <tr><td>特征阻抗 Z_0</td><td>50 ohm</td><td>与系统阻抗匹配，最小化反射</td></tr>
+          <tr><td>每级增益</td><td>2~4dB</td><td>总增益 = 级数 × 每级增益 − 传输线损耗</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="color:#92400e;margin-top:20px;">六、Driver 替代架构 — Lumped + Cherry-Hooper</h4>
+      <p>对于中等带宽需求（<40GHz），可采用集总放大器 + Cherry-Hooper 级联架构，通过局部反馈扩展带宽，功耗和面积优于 DA。</p>
+      <div class="formula">Cherry-Hooper BW 扩展: ω_3dB ≈ sqrt(ω_T1 · ω_T2) / sqrt(A_v) &nbsp;&nbsp;|&nbsp;&nbsp; 以增益换带宽</div>
+
+      <h4 style="color:#92400e;margin-top:20px;">七、Driver 输出级架构</h4>
+      <table>
+        <thead><tr><th>输出级类型</th><th>输出摆幅</th><th>功耗</th><th>适用场景</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Push-Pull (推挽)</strong></td><td>最大 (可 rail-to-rail)</td><td>中</td><td>MZM 驱动 (需大摆幅)</td></tr>
+          <tr><td><strong>CML (电流模逻辑)</strong></td><td>中 (受尾电流限制)</td><td>低</td><td>EML 驱动 (摆幅要求较小)</td></tr>
+          <tr><td><strong>Open-Drain (开漏)</strong></td><td>大 (外部偏置决定)</td><td>由外部偏置决定</td><td>特殊调制器接口</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="color:#92400e;margin-top:20px;">八、Driver 关键子模块</h4>
+      <table>
+        <thead><tr><th>子模块</th><th>功能</th><th>关键设计参数</th></tr></thead>
+        <tbody>
+          <tr><td><strong>输入缓冲</strong></td><td>接收 DAC 输出，提供 50 ohm 终端匹配</td><td>S11<-10dB, 带宽, 共模电压范围</td></tr>
+          <tr><td><strong>前级放大</strong></td><td>提供主要电压增益</td><td>增益平坦度, 群延迟, 线性度 (THD)</td></tr>
+          <tr><td><strong>输出驱动级</strong></td><td>大摆幅驱动 MZM/EML 负载</td><td>输出摆幅, 驱动能力, S22, 效率</td></tr>
+          <tr><td><strong>偏置网络 (Bias Tee)</strong></td><td>AC 耦合 + DC 偏置注入 MZM</td><td>带宽, 插入损耗, 偏置电流能力</td></tr>
+          <tr><td><strong>眼图交叉点调节</strong></td><td>调节输出眼图交叉点百分比</td><td>调节范围 40~60%, 步进 <2%</td></tr>
+          <tr><td><strong>输出幅度控制</strong></td><td>数字/模拟可编程调节输出摆幅</td><td>调节范围 >6dB, 步进 <0.5dB</td></tr>
+        </tbody>
+      </table>
+
+      <div class="success-box" style="margin-top:16px;">
+        <strong>✅ 架构选型速记：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>TIA ≤56GBaud：</strong>Shunt-Feedback TIA（简单、低功耗、噪声优）</li>
+          <li><strong>TIA ≥56GBaud / 1.6T：</strong>RGC-TIA 或 Differential TIA with RGC input（突破带宽瓶颈）</li>
+          <li><strong>Driver >50GHz：</strong>Distributed Amplifier（唯一能同时满足增益和带宽的方案）</li>
+          <li><strong>Driver <40GHz 且成本敏感：</strong>Lumped + Cherry-Hooper（面积功耗更优）</li>
+          <li><strong>MZM 驱动：</strong>Push-Pull 输出级（需要大摆幅）</li>
+          <li><strong>EML 驱动：</strong>CML 输出级即可（摆幅要求较小）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 3: 芯片内部框图 ═══════════ -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div><div class="icon">🔲</div><h2>芯片内部电路框图</h2>
+    </div>
+    <div class="card-body">
+
+      <!-- TIA block diagram -->
+      <div class="diagram-title">图 3-1 | TIA 芯片内部架构 (单通道展开)</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 340" width="790" height="340" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <rect width="820" height="340" fill="#fafafa" rx="8"/>
+          <defs><marker id="arrTIA" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <!-- PD Input -->
+          <rect x="15" y="25" width="90" height="50" rx="8" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="60" y="48" fill="#991b1b" font-size="11" font-weight="700" text-anchor="middle">PD Input</text>
+          <text x="60" y="64" fill="#b91c1c" font-size="8" text-anchor="middle">I_in: 10μA~2mA</text>
+          <!-- Input Stage -->
+          <rect x="130" y="15" width="140" height="70" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="200" y="38" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">输入级</text>
+          <text x="200" y="54" fill="#3b82f6" font-size="8" text-anchor="middle">RGC / Shunt-FB</text>
+          <text x="200" y="68" fill="#60a5fa" font-size="8" text-anchor="middle">Z_in <10Ω, 低噪声</text>
+          <text x="200" y="80" fill="#60a5fa" font-size="8" text-anchor="middle">Vbias 2~5V 注入</text>
+          <!-- Gain Stage -->
+          <rect x="295" y="15" width="140" height="70" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="365" y="38" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">增益级</text>
+          <text x="365" y="54" fill="#3b82f6" font-size="8" text-anchor="middle">可变增益 2k~8kΩ</text>
+          <text x="365" y="68" fill="#60a5fa" font-size="8" text-anchor="middle">Cherry-Hooper BW扩</text>
+          <text x="365" y="80" fill="#60a5fa" font-size="8" text-anchor="middle">DC Offset Cancel</text>
+          <!-- Output Buffer -->
+          <rect x="460" y="15" width="140" height="70" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="530" y="38" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">输出缓冲</text>
+          <text x="530" y="54" fill="#3b82f6" font-size="8" text-anchor="middle">50Ω 差分驱动</text>
+          <text x="530" y="68" fill="#60a5fa" font-size="8" text-anchor="middle">S22 < −10dB</text>
+          <text x="530" y="80" fill="#60a5fa" font-size="8" text-anchor="middle">Vout: 300~800mVppd</text>
+          <!-- Output -->
+          <rect x="625" y="25" width="90" height="50" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="670" y="48" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">Vout±</text>
+          <text x="670" y="64" fill="#15803d" font-size="8" text-anchor="middle">To ADC</text>
+          <!-- Arrows -->
+          <line x1="105" y1="50" x2="125" y2="50" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrTIA)"/>
+          <line x1="270" y1="50" x2="290" y2="50" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrTIA)"/>
+          <line x1="435" y1="50" x2="455" y2="50" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrTIA)"/>
+          <line x1="600" y1="50" x2="620" y2="50" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrTIA)"/>
+          <!-- AGC + Control Row -->
+          <rect x="130" y="100" width="470" height="55" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="365" y="120" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">AGC 自动增益控制 + RSSI 接收信号强度指示</text>
+          <text x="365" y="138" fill="#b45309" font-size="8" text-anchor="middle">AGC 动态范围 >20dB | RSSI 线性度 <±1dB | 响应时间 <1μs | SPI/I²C 数字接口</text>
+          <!-- Monitor Row -->
+          <rect x="130" y="168" width="470" height="45" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="365" y="188" fill="#475569" font-size="9" font-weight="700" text-anchor="middle">监测与保护: 温度传感器 (±2°C) | PD 电流监测 | 过载保护 | LOS 信号丢失检测</text>
+          <text x="365" y="203" fill="#6b7280" font-size="8" text-anchor="middle">SPI Slave | MDIO C45 | JTAG</text>
+          <!-- Power -->
+          <rect x="130" y="226" width="470" height="35" rx="6" fill="#fef2f2" stroke="#fca5a5"/>
+          <text x="365" y="248" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">电源管理: VDD_A 3.3V | VDD_D 1.8V | LDO 片上集成 | 功耗 <0.3W/ch</text>
+          <!-- Labels -->
+          <text x="60" y="290" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">Optical In (λ)</text>
+          <text x="365" y="290" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">SiGe BiCMOS Die</text>
+          <text x="670" y="290" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">Electrical Out</text>
+        </svg>
+      </div>
+
+      <!-- Driver block diagram -->
+      <div class="diagram-title" style="margin-top:20px;">图 3-2 | Driver 芯片内部架构 (单通道展开)</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 340" width="790" height="340" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <rect width="820" height="340" fill="#fafafa" rx="8"/>
+          <defs><marker id="arrDRV" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <!-- Input -->
+          <rect x="15" y="25" width="90" height="50" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="60" y="48" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">Vin±</text>
+          <text x="60" y="64" fill="#15803d" font-size="8" text-anchor="middle">From DAC</text>
+          <!-- Input Buffer -->
+          <rect x="130" y="15" width="140" height="70" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="200" y="38" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">输入缓冲</text>
+          <text x="200" y="54" fill="#3b82f6" font-size="8" text-anchor="middle">50Ω 终端匹配</text>
+          <text x="200" y="68" fill="#60a5fa" font-size="8" text-anchor="middle">S11 < −10dB</text>
+          <text x="200" y="80" fill="#60a5fa" font-size="8" text-anchor="middle">CM 电压适配</text>
+          <!-- Pre-amplifier -->
+          <rect x="295" y="15" width="140" height="70" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="365" y="38" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">前级放大</text>
+          <text x="365" y="54" fill="#3b82f6" font-size="8" text-anchor="middle">增益 10~20dB</text>
+          <text x="365" y="68" fill="#60a5fa" font-size="8" text-anchor="middle">Distributed / Lumped</text>
+          <text x="365" y="80" fill="#60a5fa" font-size="8" text-anchor="middle">群延迟平坦化</text>
+          <!-- Output Driver -->
+          <rect x="460" y="15" width="140" height="70" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="530" y="38" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">输出驱动级</text>
+          <text x="530" y="54" fill="#3b82f6" font-size="8" text-anchor="middle">Push-Pull / CML</text>
+          <text x="530" y="68" fill="#60a5fa" font-size="8" text-anchor="middle">Vout: 2~5Vpp</text>
+          <text x="530" y="80" fill="#60a5fa" font-size="8" text-anchor="middle">S22 < −10dB</text>
+          <!-- Output -->
+          <rect x="625" y="25" width="90" height="50" rx="8" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="670" y="48" fill="#991b1b" font-size="11" font-weight="700" text-anchor="middle">Vout±</text>
+          <text x="670" y="64" fill="#b91c1c" font-size="8" text-anchor="middle">To MZM/EML</text>
+          <!-- Arrows -->
+          <line x1="105" y1="50" x2="125" y2="50" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrDRV)"/>
+          <line x1="270" y1="50" x2="290" y2="50" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrDRV)"/>
+          <line x1="435" y1="50" x2="455" y2="50" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrDRV)"/>
+          <line x1="600" y1="50" x2="620" y2="50" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrDRV)"/>
+          <!-- Control Row -->
+          <rect x="130" y="100" width="470" height="55" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="365" y="120" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">输出幅度控制 + 眼图交叉点调节 + Bias Tee 偏置网络</text>
+          <text x="365" y="138" fill="#b45309" font-size="8" text-anchor="middle">幅度范围 >6dB 可编程 | 交叉点 40~60% | Bias Tee L > 100nH | SPI/I²C 接口</text>
+          <!-- Monitor Row -->
+          <rect x="130" y="168" width="470" height="45" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="365" y="188" fill="#475569" font-size="9" font-weight="700" text-anchor="middle">监测与诊断: 温度传感器 | 输出幅度监测 (Peak Detector) | 偏置电流监测 | OCP 过流保护</text>
+          <text x="365" y="203" fill="#6b7280" font-size="8" text-anchor="middle">SPI Slave | MDIO</text>
+          <!-- Power -->
+          <rect x="130" y="226" width="470" height="35" rx="6" fill="#fef2f2" stroke="#fca5a5"/>
+          <text x="365" y="248" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">电源管理: VDD_Driver 3.3~5V | VDD_D 1.8V | 片上 LDO | 功耗 <0.5W/ch</text>
+          <!-- Labels -->
+          <text x="60" y="290" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">Electrical In</text>
+          <text x="365" y="290" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">SiGe BiCMOS Die</text>
+          <text x="670" y="290" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">Electrical Out (High-Swing)</text>
+        </svg>
+      </div>
+
+      <!-- System-level signal chain -->
+      <div class="diagram-title" style="margin-top:20px;">图 3-3 | 完整系统级信号链 — oDSP ↔ TIA/Driver ↔ Optics</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 180" width="800" height="180" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <rect width="820" height="180" fill="#fafafa" rx="8"/>
+          <defs><marker id="arrSys" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <!-- TX Path (top) -->
+          <text x="30" y="35" fill="#1e40af" font-size="11" font-weight="700">TX 发送路径</text>
+          <rect x="130" y="18" width="80" height="34" rx="5" fill="#dbeafe" stroke="#1a56db" stroke-width="1"/>
+          <text x="170" y="39" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">oDSP TX</text>
+          <line x1="210" y1="35" x2="230" y2="35" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrSys)"/>
+          <rect x="235" y="18" width="70" height="34" rx="5" fill="#dbeafe" stroke="#1a56db" stroke-width="1"/>
+          <text x="270" y="39" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">DAC</text>
+          <line x1="305" y1="35" x2="325" y2="35" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrSys)"/>
+          <rect x="330" y="15" width="100" height="40" rx="6" fill="#1a56db" stroke="#0e3a8e" stroke-width="1.5"/>
+          <text x="380" y="34" fill="white" font-size="10" font-weight="700" text-anchor="middle">Driver</text>
+          <text x="380" y="47" fill="#bfdbfe" font-size="7" text-anchor="middle">2~5Vpp 大摆幅</text>
+          <line x1="430" y1="35" x2="455" y2="35" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrSys)"/>
+          <rect x="460" y="18" width="90" height="34" rx="5" fill="#fee2e2" stroke="#e74c3c" stroke-width="1"/>
+          <text x="505" y="39" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">MZM/EML</text>
+          <line x1="550" y1="35" x2="575" y2="35" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrSys)"/>
+          <text x="590" y="39" fill="#6b7280" font-size="9">→ Fiber →</text>
+
+          <!-- Fiber in middle -->
+          <rect x="130" y="70" width="560" height="22" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+          <text x="410" y="85" fill="#64748b" font-size="9" font-weight="700" text-anchor="middle">单模光纤 (SMF): 500m~10km+ | 色散 | 损耗 | 非线性</text>
+
+          <!-- RX Path (bottom) -->
+          <text x="30" y="120" fill="#1e40af" font-size="11" font-weight="700">RX 接收路径</text>
+          <text x="130" y="124" fill="#6b7280" font-size="9">Fiber →</text>
+          <rect x="185" y="108" width="50" height="34" rx="5" fill="#fee2e2" stroke="#e74c3c" stroke-width="1"/>
+          <text x="210" y="129" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">PD</text>
+          <line x1="235" y1="125" x2="255" y2="125" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrSys)"/>
+          <rect x="260" y="105" width="100" height="40" rx="6" fill="#1a56db" stroke="#0e3a8e" stroke-width="1.5"/>
+          <text x="310" y="124" fill="white" font-size="10" font-weight="700" text-anchor="middle">TIA</text>
+          <text x="310" y="137" fill="#bfdbfe" font-size="7" text-anchor="middle">I→V, Z_T: 2~8kΩ</text>
+          <line x1="360" y1="125" x2="380" y2="125" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrSys)"/>
+          <rect x="385" y="108" width="70" height="34" rx="5" fill="#dbeafe" stroke="#1a56db" stroke-width="1"/>
+          <text x="420" y="129" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">ADC</text>
+          <line x1="455" y1="125" x2="475" y2="125" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrSys)"/>
+          <rect x="480" y="108" width="80" height="34" rx="5" fill="#dbeafe" stroke="#1a56db" stroke-width="1"/>
+          <text x="520" y="129" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">oDSP RX</text>
+
+          <!-- Key parameters annotation -->
+          <rect x="620" y="18" width="185" height="45" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+          <text x="712" y="37" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">Driver 关键参数</text>
+          <text x="712" y="53" fill="#15803d" font-size="8" text-anchor="middle">BW>50G, Vout>4Vpp, THD<−25dB</text>
+          <rect x="620" y="108" width="185" height="45" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+          <text x="712" y="127" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">TIA 关键参数</text>
+          <text x="712" y="143" fill="#15803d" font-size="8" text-anchor="middle">BW>50G, I_noise<15pA, Z_T>2kΩ</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>说明：</strong>TIA 位于接收侧 PD 之后、ADC 之前，完成光电流→差分电压转换；Driver 位于发送侧 DAC 之后、MZM/EML 之前，完成小信号→大摆幅驱动。两者均采用 SiGe BiCMOS 工艺，集成 AGC、RSSI、偏置网络和数字控制接口。完整系统信号链为 oDSP DAC → Driver → MZM/EML → Fiber → PD → TIA → ADC → oDSP。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 4: TIA vs Driver 对比 ═══════════ -->
+<section id="sec4">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">4</div><div class="icon">⚖️</div><h2>TIA vs Driver 核心对比</h2>
+    </div>
+    <div class="card-body">
+      <p>TIA 和 Driver 虽然同属光模块模拟前端，但它们的功能定位、核心挑战和设计哲学截然不同。以下从多个维度进行系统对比。</p>
+
+      <h4>功能与信号链位置对比</h4>
+      <table>
+        <thead><tr><th>对比维度</th><th>TIA (跨阻放大器)</th><th>Driver (调制器驱动)</th><th>对比要点</th></tr></thead>
+        <tbody>
+          <tr><td><strong>位置</strong></td><td>接收侧: PD → TIA → ADC</td><td>发送侧: DAC → Driver → MZM/EML</td><td>一收一发，互补配对</td></tr>
+          <tr><td><strong>核心功能</strong></td><td>光电流 → 差分电压 (I→V)</td><td>小电压 → 大摆幅电压 (V→V 放大)</td><td>TIA 跨阻增益 (Ω), Driver 电压增益 (dB)</td></tr>
+          <tr><td><strong>输入信号</strong></td><td>微弱光电流: 10μA~2mA pp</td><td>差分电压: 300~600mVppd</td><td>TIA 信号弱约 3 个量级</td></tr>
+          <tr><td><strong>输出信号</strong></td><td>差分电压: 300~800mVppd</td><td>大摆幅电压: 2~5Vpp</td><td>Driver 输出大 ~5~10×</td></tr>
+          <tr><td><strong>负载</strong></td><td>50Ω 传输线 + ADC 输入</td><td>MZM (容性 0.5~2pF) / EML (阻性 50Ω)</td><td>Driver 驱动容性负载更具挑战</td></tr>
+          <tr><td><strong>最核心挑战</strong></td><td>噪声！输入参考噪声 <15pA/√Hz</td><td>摆幅×带宽！同时满足 >4Vpp 和 >50GHz</td><td>本质不同: 噪声 vs 功率</td></tr>
+          <tr><td><strong>线性度要求</strong></td><td>中等 (通常不直接产生 PAM4 眼图)</td><td>高！THD < −25dB (PAM4 需要良好线性)</td><td>Driver 对线性度要求更严</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">设计哲学对比</h4>
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>🔵 TIA 设计哲学</h3>
+          <ul>
+            <li><strong>首要目标：最小化输入参考噪声</strong> — 噪声决定接收灵敏度</li>
+            <li>以跨阻增益 (Z_T) 而非电压增益为设计目标</li>
+            <li>输入级设计决定一切：输入阻抗、噪声、带宽</li>
+            <li>反馈电阻 R_f 是核心设计变量 (噪声-增益-带宽三角)</li>
+            <li>经常需要 DC Offset Cancel 消除 PD 暗电流</li>
+            <li>AGC 适应大动态范围光功率 (−20~0dBm)</li>
+          </ul>
+        </div>
+        <div class="compare-col red">
+          <h3>🔴 Driver 设计哲学</h3>
+          <ul>
+            <li><strong>首要目标：同时最大化带宽和输出摆幅</strong> — 这是根本矛盾</li>
+            <li>输出级是大信号设计，需考虑 slew rate 限制</li>
+            <li>输出级效率 (PAE) 至关重要：2~5Vpp 需要大电流</li>
+            <li>对 MZM 的容性负载需特殊处理 (Bias Tee、阻尼)</li>
+            <li>眼图交叉点调节保证 PAM4 电平均匀性</li>
+            <li>线性度 (THD) 决定 PAM4 电平分离度 (RLM)</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">800G vs 1.6T 代际对比</h4>
+      <table>
+        <thead><tr><th>参数</th><th>TIA 800G</th><th>TIA 1.6T</th><th>Driver 800G</th><th>Driver 1.6T</th></tr></thead>
+        <tbody>
+          <tr><td><strong>通道数</strong></td><td>4ch</td><td>8ch</td><td>4ch</td><td>8ch</td></tr>
+          <tr><td><strong>每通道速率</strong></td><td>106.25Gbps PAM4</td><td>212.5Gbps PAM4</td><td>106.25Gbps PAM4</td><td>212.5Gbps PAM4</td></tr>
+          <tr><td><strong>带宽需求</strong></td><td>>35GHz</td><td>>55GHz</td><td>>35GHz</td><td>>55GHz</td></tr>
+          <tr><td><strong>跨阻增益</strong></td><td>4k~8k ohm</td><td>2k~5k ohm</td><td>-</td><td>-</td></tr>
+          <tr><td><strong>输出摆幅</strong></td><td>-</td><td>-</td><td>2~5Vpp</td><td>2~4Vpp</td></tr>
+          <tr><td><strong>输入噪声</strong></td><td><18 pA/√Hz</td><td><20 pA/√Hz</td><td>-</td><td>-</td></tr>
+          <tr><td><strong>功耗/通道</strong></td><td><0.25W</td><td><0.3W</td><td><0.4W</td><td><0.5W</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>💡 AE 关键认知：</strong>"TIA 看噪声，Driver 看摆幅。TIA 是弱信号放大器 (小信号)，Driver 是功率放大器 (大信号)。TIA 设计重心在输入级，Driver 设计重心在输出级。两者必须配对考虑 — 链路预算是 TIA+Driver 的联合优化问题。"
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 5: 关键指标 ═══════════ -->
+<section id="sec5">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">5</div><div class="icon">📊</div><h2>关键性能指标</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📌 5.1 TIA 关键指标 (800G / 1.6T)</h4>
+      <table>
+        <thead><tr><th>指标名称</th><th>800G 规格</th><th>1.6T 规格</th><th>单位</th><th>含义说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>3dB 带宽</strong></td><td>>35</td><td>>55</td><td>GHz</td><td>跨阻增益 −3dB 频率，决定可处理的最高速率</td></tr>
+          <tr><td><strong>跨阻增益 (Z_T)</strong></td><td>4k~8k</td><td>2k~5k</td><td>ohm</td><td>Vout/Iin，越高输出幅度越大但带宽越受限</td></tr>
+          <tr><td><strong>输入参考噪声密度</strong></td><td><18</td><td><20</td><td>pA/√Hz</td><td>折合到输入端的等效噪声电流谱密度</td></tr>
+          <tr><td><strong>总输入噪声 (RMS)</strong></td><td><2.5</td><td><3.5</td><td>μA RMS</td><td>全带宽积分噪声，直接决定灵敏度</td></tr>
+          <tr><td><strong>最大输入电流</strong></td><td>>2</td><td>>2.5</td><td>mA pp</td><td>线性工作范围上限，超过则饱和失真</td></tr>
+          <tr><td><strong>差分输出幅度</strong></td><td>400~800</td><td>300~600</td><td>mVppd</td><td>匹配 ADC 输入满量程</td></tr>
+          <tr><td><strong>功耗</strong></td><td><0.25</td><td><0.3</td><td>W/ch</td><td>光模块总功耗约束下的重要贡献</td></tr>
+          <tr><td><strong>群延迟变化</strong></td><td><±5</td><td><±8</td><td>ps</td><td>通带内群延迟平坦度，影响信号保真度</td></tr>
+          <tr><td><strong>输出回损 S22</strong></td><td><−10</td><td><−8</td><td>dB</td><td>DC~f_max 范围内</td></tr>
+          <tr><td><strong>串扰</strong></td><td><−30</td><td><−25</td><td>dB</td><td>多通道间的电/磁耦合干扰</td></tr>
+        </tbody>
+      </table>
+
+      <!-- TIA Metric Cards -->
+      <div class="metric-card" style="margin-top:16px;">
+        <div class="metric-header"><h4>跨阻增益 · Z_T</h4><span class="metric-abbr">Z_T</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>Z_T = Vout / Iin (单位: ohm)，TIA 输出差分电压与输入光电流之比</span></div>
+          <div class="formula">Z_T(jω) ≈ −R_f / (1 + jω·τ_amp) &nbsp;&nbsp;|&nbsp;&nbsp; 800G: 4k~8kΩ | 1.6T: 2k~5kΩ</div>
+          <div class="metric-row"><span class="metric-label">带宽-增益权衡</span><span>Z_T × BW ≈ 常数 (增益带宽积限制)，1.6T 因带宽翻倍导致增益下降</span></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header"><h4>输入参考噪声电流密度 · I_n,in</h4><span class="metric-abbr">I_n,in</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>将 TIA 所有内部噪声源折合到输入端，等效为一个与 PD 并联的噪声电流源</span></div>
+          <div class="formula">I²_n,in ≈ 4kT/R_f + e²_n,amp·(ω·C_pd)² + i²_n,amp &nbsp;&nbsp;|&nbsp;&nbsp; 三大噪声源: R_f热噪声 + 放大器电压噪声×C_pd + 放大器电流噪声</div>
+          <div class="metric-row"><span class="metric-label">对系统影响</span><span>I_n,in 直接决定 RX 灵敏度: Sensitivity (dBm) ∝ 10·log₁₀(I_n,in × BW^0.5)</span></div>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">📌 5.2 Driver 关键指标 (800G / 1.6T)</h4>
+      <table>
+        <thead><tr><th>指标名称</th><th>800G 规格</th><th>1.6T 规格</th><th>单位</th><th>含义说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>3dB 带宽</strong></td><td>>35</td><td>>55</td><td>GHz</td><td>电压增益 −3dB 频率，决定信号边沿速率</td></tr>
+          <tr><td><strong>差分输出摆幅</strong></td><td>2~5</td><td>2~4</td><td>Vpp</td><td>驱动 MZM/EML 所需电压，受 Vpi 约束</td></tr>
+          <tr><td><strong>上升/下降时间</strong></td><td><7</td><td><6</td><td>ps</td><td>20%~80%，要求 <0.35/BW 以保证眼图张开</td></tr>
+          <tr><td><strong>电压增益</strong></td><td>10~20</td><td>8~15</td><td>dB</td><td>20·log₁₀(Vout/Vin)，1.6T 因带宽增加而降低</td></tr>
+          <tr><td><strong>THD (总谐波失真)</strong></td><td><−25</td><td><−22</td><td>dB</td><td>@基频 10GHz，影响 PAM4 RLM</td></tr>
+          <tr><td><strong>功耗</strong></td><td><0.4</td><td><0.5</td><td>W/ch</td><td>含输出级直流偏置功耗</td></tr>
+          <tr><td><strong>输出回损 S22</strong></td><td><−10</td><td><−8</td><td>dB</td><td>DC~f_max 范围内</td></tr>
+          <tr><td><strong>眼图交叉点</strong></td><td>45~55</td><td>45~55</td><td>%</td><td>可编程调节，保证 PAM4 眼图对称</td></tr>
+          <tr><td><strong>共模噪声</strong></td><td><20</td><td><25</td><td>mV RMS</td><td>差分输出的共模分量，影响 MZM 偏置稳定性</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Driver Metric Cards -->
+      <div class="metric-card" style="margin-top:16px;">
+        <div class="metric-header"><h4>输出摆幅 · Vout_pp</h4><span class="metric-abbr">Vout</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>Driver 能提供的最大差分峰-峰输出电压（在线性工作范围内）</span></div>
+          <div class="formula">Vout_max ≈ V_DD − V_headroom &nbsp;&nbsp;|&nbsp;&nbsp; 受限于电源电压和输出晶体管过驱动电压</div>
+          <div class="metric-row"><span class="metric-label">与 MZM Vpi 关系</span><span>Vout ≥ 2 × Vpi 才能实现满眼图调制；PAM4 需要更严格线性范围</span></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header"><h4>总谐波失真 · THD</h4><span class="metric-abbr">THD</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>THD = 10·log₁₀(ΣP_harm / P_fund)，衡量输出信号的非线性程度</span></div>
+          <div class="formula">THD [dB] = 10·log₁₀( (V²_HD2 + V²_HD3 + ...) / V²_fund ) &nbsp;&nbsp;|&nbsp;&nbsp; 800G: <−25dB | 1.6T: <−22dB</div>
+          <div class="metric-row"><span class="metric-label">对 PAM4 影响</span><span>THD 恶化 → 电平非线性 → RLM 下降 → 眼图闭合 → BER 增加</span></div>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">📌 5.3 共用/系统级指标</h4>
+      <table>
+        <thead><tr><th>指标</th><th>TIA 800G</th><th>TIA 1.6T</th><th>Driver 800G</th><th>Driver 1.6T</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>电源电压</strong></td><td>3.3V</td><td>3.3V</td><td>3.3~5V</td><td>3.3~5V</td><td>模拟供电，需低噪声 LDO</td></tr>
+          <tr><td><strong>结温范围</strong></td><td colspan="4" style="text-align:center;">−40~+125°C</td><td>工业级温度范围</td></tr>
+          <tr><td><strong>PSRR @10MHz</strong></td><td>>20dB</td><td>>15dB</td><td>>15dB</td><td>>10dB</td><td>电源纹波抑制，高频 PSRR 是挑战</td></tr>
+          <tr><td><strong>封装</strong></td><td colspan="4" style="text-align:center;">Flip-chip BGA / 裸片 COB</td><td>最小化寄生</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 6: 影响因素 ═══════════ -->
+<section id="sec6">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">6</div><div class="icon">🔗</div><h2>指标影响因素分析</h2>
+    </div>
+    <div class="card-body">
+      <h4>📍 TIA 性能影响因素网络</h4>
+      <table>
+        <thead><tr><th>关键指标</th><th>被哪些因素影响（降级）</th><th>该指标又影响哪些下游性能</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>TIA 带宽</strong></td>
+            <td><span class="chip chip-red">PD 电容大</span><span class="chip chip-red">绑定线电感</span><span class="chip chip-red">R_f 过大</span><span class="chip chip-red">PCB 寄生</span><span class="chip chip-red">温度</span></td>
+            <td><span class="chip chip-blue">信号边沿</span><span class="chip chip-blue">眼图张开</span><span class="chip chip-blue">ISI</span></td>
+          </tr>
+          <tr>
+            <td><strong>TIA 噪声</strong></td>
+            <td><span class="chip chip-red">R_f 热噪声</span><span class="chip chip-red">电源噪声耦合</span><span class="chip chip-red">PD 偏置噪声</span><span class="chip chip-red">温度升高</span><span class="chip chip-red">HBT shot noise</span></td>
+            <td><span class="chip chip-blue">RX 灵敏度</span><span class="chip chip-blue">OSNR 容限</span><span class="chip chip-blue">链路预算</span></td>
+          </tr>
+          <tr>
+            <td><strong>TIA 振荡</strong></td>
+            <td><span class="chip chip-red">相位裕度 <45°</span><span class="chip chip-red">PCB 布局反馈</span><span class="chip chip-red">输入阻抗不匹配</span><span class="chip chip-red">绑定线形成谐振</span></td>
+            <td><span class="chip chip-blue">完全无法工作</span><span class="chip chip-blue">输出异常</span></td>
+          </tr>
+          <tr>
+            <td><strong>Driver 输出摆幅</strong></td>
+            <td><span class="chip chip-red">电源电压不足</span><span class="chip chip-red">输出级压缩</span><span class="chip chip-red">温度/工艺角</span><span class="chip chip-red">负载阻抗偏低</span></td>
+            <td><span class="chip chip-blue">MZM 调制深度</span><span class="chip chip-blue">眼图幅度</span><span class="chip chip-blue">OMA</span></td>
+          </tr>
+          <tr>
+            <td><strong>Driver 非线性 (THD)</strong></td>
+            <td><span class="chip chip-red">偏置点偏离</span><span class="chip chip-red">输出级饱和</span><span class="chip chip-red">电源纹波</span><span class="chip chip-red">输入幅度过大</span></td>
+            <td><span class="chip chip-blue">PAM4 RLM</span><span class="chip chip-blue">眼图闭合</span><span class="chip chip-blue">BER 恶化</span></td>
+          </tr>
+          <tr>
+            <td><strong>通道间串扰</strong></td>
+            <td><span class="chip chip-red">PCB 布线间距</span><span class="chip chip-red">封装耦合</span><span class="chip chip-red">电源/地共用</span><span class="chip chip-red">衬底耦合</span></td>
+            <td><span class="chip chip-blue">多通道一致性</span><span class="chip chip-blue">有效 SNR</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="success-box" style="margin-top:16px;">
+        <strong>✅ 共同影响因素（所有高速模拟芯片均适用）：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>电源完整性 (PDN)：</strong>DC-DC 开关纹波、LDO 噪声、PDN 谐振 → 电源噪声直接耦合到信号路径。TIA 对电源噪声尤其敏感（μV 级耦合即可恶化噪声）。</li>
+          <li><strong>信号完整性 (SI)：</strong>PCB trace 损耗、阻抗失配（偏离 50Ω 差分 100Ω 差分）、过孔 stub → 反射和 ISI。</li>
+          <li><strong>绑定线 (Bondwire)：</strong>感值 ~0.5~1nH/mm，与 PD 或 Driver 输出电容形成 LC 谐振 → 带内 ripple 甚至振荡。这是多芯片模块 (MCM) 中最被低估的寄生。</li>
+          <li><strong>温度：</strong>SiGe HBT 的 β 和 fT 随温度下降 → 高温下带宽降低、噪声上升。85°C 下的性能通常比室温差 10~20%。</li>
+          <li><strong>ESD 残留损伤：</strong>即使未完全失效，ESD 事件可导致 HBT 噪声恶化、增益退化。</li>
+          <li><strong>PD 偏置噪声：</strong>Vbias (2~5V) 上的噪声通过 PD 结电容直接耦合到 TIA 输入端。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 7: 测试方法 ═══════════ -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法详解</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📐 7.1 TIA S 参数测试 — 跨阻增益与带宽</h4>
+      <p><strong>测试原理：</strong>TIA 的输入是电流而非电压，标准 50Ω VNA 无法直接测量。需要特殊校准方法将 VNA S 参数转换为跨阻增益 Z_T。</p>
+
+      <h4 style="margin-top:14px;">测试设备清单</h4>
+      <table>
+        <thead><tr><th>设备名称</th><th>推荐型号</th><th>关键规格</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>矢量网络分析仪</td><td>Keysight PNA-X N5247B</td><td>10M~67GHz, 4端口</td><td>S 参数测量</td></tr>
+          <tr><td>Bias Tee</td><td>SHF BT65B</td><td>50k~67GHz, 500mA DC</td><td>PD 偏置注入 + AC 耦合</td></tr>
+          <tr><td>光波元器件分析仪</td><td>Keysight N4373E</td><td>67GHz LCA</td><td>E/O, O/E 校准件</td></tr>
+          <tr><td>微波探针台</td><td>MPI TS150</td><td>DC~110GHz</td><td>片上探测</td></tr>
+          <tr><td>可编程电源</td><td>Keysight N6705C</td><td>4ch 低噪声</td><td>多轨供电 + PD 偏置</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">测量框图</h4>
+      <div class="diagram-title">图 7-1 | TIA S 参数 / 跨阻增益测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 130" width="760" height="130" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arr7" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <rect x="15" y="25" width="150" height="55" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="90" y="48" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle">VNA Port 1</text>
+          <text x="90" y="64" fill="#3b82f6" font-size="9" text-anchor="middle">PNA-X N5247B</text>
+          <line x1="165" y1="52" x2="205" y2="52" stroke="#1a56db" stroke-width="2" marker-end="url(#arr7)"/>
+          <rect x="210" y="25" width="120" height="55" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="270" y="48" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">Bias Tee + 校准件</text>
+          <text x="270" y="64" fill="#b45309" font-size="9" text-anchor="middle">SHF BT65B</text>
+          <line x1="330" y1="52" x2="365" y2="52" stroke="#1a56db" stroke-width="2" marker-end="url(#arr7)"/>
+          <rect x="370" y="25" width="110" height="55" rx="8" fill="#1a56db" stroke="#0e3a8e" stroke-width="2"/>
+          <text x="425" y="48" fill="white" font-size="11" font-weight="700" text-anchor="middle">DUT: TIA</text>
+          <text x="425" y="64" fill="#bfdbfe" font-size="8" text-anchor="middle">Vbias=3V, C_sim=50fF</text>
+          <line x1="480" y1="52" x2="520" y2="52" stroke="#1a56db" stroke-width="2" marker-end="url(#arr7)"/>
+          <rect x="525" y="25" width="140" height="55" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="595" y="48" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">VNA Port 2</text>
+          <text x="595" y="64" fill="#16a34a" font-size="9" text-anchor="middle">接收 S21/S11/S22</text>
+          <rect x="15" y="95" width="650" height="25" rx="5" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="340" y="112" fill="#475569" font-size="10" text-anchor="middle">校准: Z_T(dBΩ) = S21(dB) + 34dB (50Ω→1Ω 归一化) | 需特殊电流端口去嵌入</text>
+        </svg>
+      </div>
+
+      <div class="warn-box"><strong>⚠️ 关键：</strong>TIA 输入为电流端口（非 50Ω），直接使用标准 VNA 校准会得到错误结果。必须进行 <strong>阻抗变换去嵌入</strong>或使用光波 LCA 进行光电混合 S 参数测试。跨阻增益与 S21 的转换关系：<span class="formula-inline">Z_T [dBΩ] = |S21| [dB] + 20·log₁₀(50Ω) ≈ |S21| + 34dB</span>。</div>
+
+      <h4 style="margin-top:18px;">📐 7.2 TIA 噪声测试</h4>
+      <p><strong>测试原理：</strong>TIA 输入端接等效 PD 电容（不接真实 PD 以排除光噪声），输出接低噪声放大器 (LNA) 再送入频谱分析仪，测量输出噪声谱密度，反推输入参考噪声电流。</p>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>输入条件模拟</h5><p>在 TIA 输入端焊接等效 PD 电容 (C_pd=50~80fF) 模拟真实 PD，确保电学环境一致。暗环境下屏蔽，排除光干扰。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>输出信号放大</h5><p>TIA 输出经低噪声放大器 (LNA, NF<3dB, BW>50GHz) 提升信号幅度，匹配频谱仪输入灵敏度。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>频谱分析</h5><p>频谱分析仪 (如 Keysight N9042B) 测量输出噪声功率谱密度 N_out(f)，RBW=100kHz，平均 >100次。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>反推计算</h5><p>I_in_noise(f) = sqrt(N_out(f)) / |Z_T(f)| / G_LNA，积分全带宽得总输入噪声 (μA RMS)。排除 LNA 自身噪声贡献 (Y-factor 法)。</p></div></div>
+        <div class="step"><div class="step-no">5</div><div class="step-content"><h5>多偏置扫描</h5><p>改变 Vbias (2~5V)、VDD (3.0~3.6V)、温度 (−40/+25/+85°C)，评估噪声对工作条件的敏感度。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">📐 7.3 TIA 眼图测试</h4>
+      <p><strong>测试原理：</strong>完整光链路眼图测试，BERT 发送电信号 → Driver → MZM → VOA (可调光衰减) → PD → TIA(DUT) → 实时示波器。</p>
+      <div class="diagram-title">图 7-2 | TIA 眼图测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 110" width="760" height="110" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="22" width="120" height="50" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="70" y="44" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">BERT PPG</text>
+          <text x="70" y="58" fill="#3b82f6" font-size="8" text-anchor="middle">PRBS31Q 106.25G</text>
+          <line x1="130" y1="47" x2="150" y2="47" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arr7)"/>
+          <rect x="155" y="22" width="70" height="50" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="190" y="44" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">Driver</text>
+          <text x="190" y="58" fill="#b45309" font-size="8" text-anchor="middle">(参考)</text>
+          <line x1="225" y1="47" x2="245" y2="47" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arr7)"/>
+          <rect x="250" y="22" width="55" height="50" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="277" y="44" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">MZM</text>
+          <line x1="305" y1="47" x2="325" y2="47" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arr7)"/>
+          <rect x="330" y="22" width="55" height="50" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="357" y="44" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">VOA</text>
+          <line x1="385" y1="47" x2="405" y2="47" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arr7)"/>
+          <rect x="410" y="22" width="45" height="50" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="432" y="44" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">PD</text>
+          <line x1="455" y1="47" x2="475" y2="47" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arr7)"/>
+          <rect x="480" y="18" width="95" height="58" rx="8" fill="#1a56db" stroke="#0e3a8e" stroke-width="2"/>
+          <text x="527" y="47" fill="white" font-size="11" font-weight="700" text-anchor="middle">TIA(DUT)</text>
+          <line x1="575" y1="47" x2="595" y2="47" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arr7)"/>
+          <rect x="600" y="22" width="170" height="50" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="685" y="44" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">实时示波器 UXR1104A</text>
+          <text x="685" y="58" fill="#16a34a" font-size="8" text-anchor="middle">110GHz, 256GS/s</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:18px;">📐 7.4 TIA RSSI 线性度测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>光功率扫描</h5><p>可变光功率源扫描 −20~0dBm，步进 0.5dB；记录每个光功率下的 RSSI 输出电压。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>线性拟合</h5><p>V_RSSI [mV] = a × P_opt [dBm] + b；计算实际值与拟合线的偏差 (dB)。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>判定</h5><p>线性度误差 <±1dB 合格；超出则需检查 AGC 设置或 TIA 饱和。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">📐 7.5 Driver S 参数测试</h4>
+      <div class="diagram-title">图 7-3 | Driver S 参数测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 100" width="760" height="100" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="22" width="130" height="50" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="75" y="44" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">VNA Port 1</text>
+          <text x="75" y="58" fill="#3b82f6" font-size="8" text-anchor="middle">PNA-X 67GHz</text>
+          <line x1="140" y1="47" x2="165" y2="47" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arr7)"/>
+          <rect x="170" y="18" width="100" height="58" rx="8" fill="#1a56db" stroke="#0e3a8e" stroke-width="2"/>
+          <text x="220" y="47" fill="white" font-size="11" font-weight="700" text-anchor="middle">Driver(DUT)</text>
+          <line x1="270" y1="47" x2="300" y2="47" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arr7)"/>
+          <rect x="305" y="22" width="100" height="50" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="355" y="42" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">衰减器 20dB</text>
+          <text x="355" y="56" fill="#b45309" font-size="8" text-anchor="middle">DC~67GHz</text>
+          <text x="355" y="68" fill="#b45309" font-size="8" text-anchor="middle">保护 VNA 输入</text>
+          <line x1="405" y1="47" x2="435" y2="47" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arr7)"/>
+          <rect x="440" y="22" width="180" height="50" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="530" y="42" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">VNA Port 2 + 示波器</text>
+          <text x="530" y="56" fill="#16a34a" font-size="8" text-anchor="middle">S21/S11/S22提取 + 去嵌入</text>
+          <text x="530" y="68" fill="#16a34a" font-size="8" text-anchor="middle">UXR1104A 监测波形</text>
+        </svg>
+      </div>
+      <div class="warn-box"><strong>⚠️ 关键：</strong>Driver 输出摆幅可达 5Vpp，可能损坏 VNA 输入端 (典型最大输入 +30dBm≈1W)。<strong>必须在 Driver 输出和 VNA Port 2 之间接入 20~30dB 衰减器</strong>，并在后处理中去嵌入衰减器的 S 参数。</div>
+
+      <h4 style="margin-top:18px;">📐 7.6 Driver 眼图测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>信号源设置</h5><p>BERT PPG (Keysight M8040A) 输出 PRBS31Q PAM4, 106.25Gbps, 400~600mVppd 差分，经高质量 RF cable 接入 Driver 输入。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>衰减保护</h5><p>Driver 输出经 10~20dB 宽带衰减器后接入实时示波器 (UXR1104A, 110GHz)，保护示波器前端。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>眼图采集</h5><p>PAM4 分析软件: 符号率 53.125Gbaud; CDR 二阶 PLL BW=10MHz; 采集长度 >2M UI。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>分析输出</h5><p>眼高 (EH5)、眼宽 (EW5)、RLM、上升/下降时间 (20%~80%)、交叉点百分比。去嵌入衰减器和 cable 的 S 参数。</p></div></div>
+        <div class="step"><div class="step-no">5</div><div class="step-content"><h5>交叉点/幅度扫描</h5><p>通过 SPI/I²C 调节 Driver 交叉点和输出幅度寄存器，找到最优眼图设置 (最大 EH5×EW5)。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">📐 7.7 Driver 线性度测试 (THD / IMD3)</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>单音 THD 测试</h5><p>信号源 (Keysight M8199A AWG) 输出纯净正弦波 @5~10GHz → Driver → 衰减器 → 频谱分析仪 (N9042B)。测量基频 P_fund 和各次谐波 P_HD2, P_HD3...，THD = 10·log₁₀(ΣP_harm / P_fund)。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>双音 IMD3 测试</h5><p>两个间隔 100MHz~1GHz 的正弦波 (f1, f2) 同时注入 Driver → 频谱仪显示 2f1−f2 和 2f2−f1 的 IMD3 产物。IMD3 更靠近基频，比 THD 更能反映 PAM4 场景的线性度。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>功率扫描</h5><p>从 −10dBm 递增输入功率至 1dB 压缩点 P1dB，观察 THD/IMD3 随功率恶化的趋势。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>判断</h5><p>在指定输出摆幅下 (如 4Vpp) THD<−25dB (800G) / <−22dB (1.6T)；否则需降低输出幅度或优化偏置设置。</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 8: 注意事项 ═══════════ -->
+<section id="sec8">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">8</div><div class="icon">⚠️</div><h2>测试与使用注意事项</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>⚡ 通用注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">🔌 上电时序（TIA 和 Driver 通用）</div><p>TIA: 先 VDD_D (1.8V) → 等待 >5ms → VDD_A (3.3V) → 等待 >5ms → Vbias (2~5V)。Driver: 先 VDD_D (1.8V) → 等待 >5ms → VDD_Driver (3.3~5V)。断电反向！违反时序可能永久损坏芯片！</p></div>
+        <div class="caution-item"><div class="ci-title">🛡️ ESD 防护 — TIA 尤其敏感</div><p>TIA 输入直接连接到 PD，没有片上 ESD 保护（否则会引入寄生电容恶化带宽）。HBM 仅 250V！操作时务必佩戴接地手环，烙铁接地，工作台使用离子风机。</p></div>
+        <div class="caution-item"><div class="ci-title">📐 PCB 布局 — 模拟信号完整性</div><p>高速信号线 100Ω 差分阻抗 (±5%)；等长布线 (<2mil skew)；避免 90° 转角；敏感输入端 (TIA) 周围用地保护环 (Guard Ring) 包围；高速线远离 DC-DC 开关节点。</p></div>
+        <div class="caution-item"><div class="ci-title">⚡ 电源完整性 (PDN)</div><p>TIA 对电源噪声极度敏感！必须使用超低噪声 LDO (噪声 <10μV RMS)；VDD_A 与 VDD_D 分开供电；每电源引脚就近放 100nF+10μF+100pF 三级去耦；模拟地 (GND_A) 与数字地 (GND_D) 单点连接。</p></div>
+        <div class="caution-item"><div class="ci-title">🔗 绑定线电感 — 高频杀手</div><p>绑定线感值 ~0.5~1nH/mm。TIA 输入绑定线过长 → 与 PD 电容谐振 ~30~50GHz → 带内增益 ripple。Driver 输出绑定线过长 → 与 MZM 电容谐振 → 带宽下降。目标: 绑定线 <0.3mm，尽量多根并联。</p></div>
+        <div class="caution-item"><div class="ci-title">🌡️ 散热设计</div><p>SiGe BiCMOS 芯片结温 max 125°C。Driver 功耗 ~0.5W/ch × 4/8ch = 2~4W 总功耗。推荐: 芯片背金直接焊接到模块基板 (COB) 或散热片 + TIM 材料。高温下 fT 下降 ~15%@85°C。</p></div>
+      </div>
+
+      <h4 style="margin-top:20px;">🔵 TIA 专项注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">📡 TIA 输入阻抗匹配</div><p>TIA 输入阻抗 ~10~50Ω（非标准 50Ω），直接连接 50Ω VNA 会失配。测试必须使用特殊校准件或光波 LCA。设计时 PD-TIA 之间不可插入 50Ω 传输线 — 越短越好。</p></div>
+        <div class="caution-item"><div class="ci-title">🔋 PD 偏置噪声</div><p>Vbias (2~5V) 的任何噪声通过 PD 结电容 (C_pd≈50fF) 耦合到 TIA 输入端。Vbias 必须由独立超低噪声 LDO 提供，PCB 走线加 RC 滤波 (R=100Ω, C=1μF, f_c≈1.6kHz)。</p></div>
+        <div class="caution-item"><div class="ci-title">⚡ TIA 振荡排查</div><p>若输出频谱出现非预期尖峰（通常 10~30GHz），检查: (1) 相位裕度是否 >45°；(2) 绑定线是否与 PD 电容形成谐振；(3) 电源去耦是否充足；(4) 输入/输出之间是否有 PCB 布局反馈路径。</p></div>
+        <div class="caution-item"><div class="ci-title">📊 AGC 设置与过载</div><p>AGC 设置不当会导致: 增益过高→输出饱和削波→眼图闭合；增益过低→输出幅度不足→ADC 量化噪声恶化 SNR。需根据链路光功率预算正确设置 AGC 阈值和增益范围。</p></div>
+      </div>
+
+      <h4 style="margin-top:20px;">🔴 Driver 专项注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">🔌 Vpi 匹配 — 输出摆幅关键</div><p>Driver 输出摆幅必须 ≥ MZM 的 Vpi (半波电压，典型 3~4V)。Vout < Vpi → 眼图幅度不足；Vout ≫ Vpi → 功耗浪费 + 非线性加剧。建议 Vout_pp ≈ 1.2~1.5 × Vpi。</p></div>
+        <div class="caution-item"><div class="ci-title">📊 Bias Tee 设计</div><p>Driver 输出 Bias Tee 的电感自谐振频率 (SRF) 必须 > 最高工作频率。推荐: 空心线圈 (Air-core) > 锥形电感 (Conical) > 绕线电感。电容: 宽带 DC block (10pF~100nF 并联)。</p></div>
+        <div class="caution-item"><div class="ci-title">⚡ 眼图交叉点调节</div><p>交叉点偏离 50% 过大→ PAM4 眼图不对称→ 某电平 BER 恶化。通过 DAC 或数字寄存器调节输出级偏置电流实现。目标: 交叉点 48%~52%。</p></div>
+        <div class="caution-item"><div class="ci-title">🔗 MZM 终端匹配</div><p>MZM 行波电极常用 50Ω 终端电阻，Driver 输出也设计为 50Ω 差分。失配会导致反射→ ISI→ 眼图闭合。PCB 设计需精确控制 100Ω 差分阻抗，使用 VNA TDR 验证。</p></div>
+        <div class="caution-item"><div class="ci-title">🧪 输出衰减器保护</div><p>Driver 输出 5Vpp → 功率 ≈ +28dBm (630mW)。绝对不可直接连接 VNA 或示波器！必须在输出端先接 20~30dB 高质量衰减器 (BW>67GHz, 功率>1W)。</p></div>
+        <div class="caution-item"><div class="ci-title">📡 热稳定性</div><p>Driver 在高温下（85°C）增益下降 ~1~2dB，输出摆幅降低。需在设计阶段预留 ~20% 的摆幅余量，或使用片上温度补偿偏置电路。</p></div>
+      </div>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🚨 TIA/Driver 测试最常见致命错误：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>TIA 输入直接接 50Ω VNA：</strong>阻抗严重失配，测得 S 参数完全错误，无法反映真实跨阻增益和带宽</li>
+          <li><strong>Driver 输出未接衰减器直接连仪表：</strong>5Vpp 大功率烧毁 VNA/示波器前端 — 维修成本 >$10,000</li>
+          <li><strong>TIA 未加 ESD 保护操作：</strong>输入晶体管 250V HBM 极脆弱，人体静电足以造成不可逆损伤</li>
+          <li><strong>绑定线过长：</strong>额外 0.5nH 的电感可使 50GHz 带宽下降到 35GHz，性能下降 30%</li>
+          <li><strong>忽视 Vbias 噪声：</strong>用普通 DC-DC 或噪声大的 LDO 提供 PD 偏置，噪声直接恶化 TIA 灵敏度 3~5dB</li>
+          <li><strong>Driver 输出级偏置设置错误：</strong>交叉点严重偏移 → PAM4 某电平闭合 → 误以为芯片不良</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 9: 选型指南 ═══════════ -->
+<section id="sec9">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">9</div><div class="icon">🧭</div><h2>选型与应用指南</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>TIA 选型决策流程</h4>
+      <table>
+        <thead><tr><th>应用场景</th><th>推荐 TIA 架构</th><th>关键规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>400G DR4/FR4 (<2km)</strong></td><td>Shunt-Feedback Diff TIA</td><td>BW>35GHz, Z_T>4kΩ, I_noise<18pA</td><td>成本/功耗最优，适合中短距</td></tr>
+          <tr><td><strong>800G DR4/FR4 (2km)</strong></td><td>Differential TIA w/ RGC input</td><td>BW>40GHz, Z_T>3kΩ, I_noise<18pA</td><td>需要较低噪声支持更高速率</td></tr>
+          <tr><td><strong>800G LR4 (10km)</strong></td><td>RGC-TIA + AGC 大动态范围</td><td>BW>40GHz, Z_T>5kΩ, I_noise<15pA</td><td>长距需要更低噪声和更大动态范围</td></tr>
+          <tr><td><strong>1.6T (8×200G)</strong></td><td>RGC-TIA, 8ch 集成</td><td>BW>55GHz, Z_T>2kΩ, I_noise<20pA</td><td>带宽优先，通道间串扰控制关键</td></tr>
+          <tr><td><strong>相干接收 (400G/600G/800G)</strong></td><td>Quad Diff TIA (ICR 集成)</td><td>BW>40GHz, 4ch 相位匹配 <±2°</td><td>相干需要严格 IQ 通道匹配</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">Driver 选型决策流程</h4>
+      <table>
+        <thead><tr><th>应用场景</th><th>推荐 Driver 架构</th><th>关键规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>400G FR4 EML 驱动</strong></td><td>Lumped + CML 输出</td><td>BW>35GHz, Vout>2Vpp</td><td>EML 摆幅需求较小，CML 功耗更低</td></tr>
+          <tr><td><strong>800G FR4 MZM 驱动</strong></td><td>Distributed Amp + Push-Pull</td><td>BW>40GHz, Vout>4Vpp, THD<−25dB</td><td>MZM 需要大摆幅，DA+PP 是标准方案</td></tr>
+          <tr><td><strong>800G LR4 (10km) MZM</strong></td><td>DA + Push-Pull + NLC</td><td>BW>40GHz, Vout>5Vpp, THD<−27dB</td><td>长距需要更高线性度以支持高阶调制</td></tr>
+          <tr><td><strong>1.6T (8×200G) MZM</strong></td><td>DA 8ch 集成, Push-Pull</td><td>BW>55GHz, Vout>3Vpp</td><td>1.6T 带宽挑战大，DA 级数需增加</td></tr>
+          <tr><td><strong>400G/800G 硅光 MZM</strong></td><td>DA + Push-Pull, Vpi 匹配</td><td>BW>40GHz, Vout 匹配 SiPho Vpi</td><td>硅光 MZM Vpi 较低 (~2~3V)，Driver 可降低功耗</td></tr>
+        </tbody>
+      </table>
+
+      <div class="compare-grid" style="margin-top:18px;">
+        <div class="compare-col blue">
+          <h3>✅ TIA 选型关键考量</h3>
+          <ul>
+            <li><strong>带宽与速率匹配：</strong>BW [GHz] ≥ 0.7 × Baud_Rate [GBaud]</li>
+            <li><strong>噪声预算：</strong>I_noise × √BW < 链路噪声容限</li>
+            <li><strong>跨阻增益：</strong>Vout = I_pd × Z_T，输出需匹配 ADC 满量程</li>
+            <li><strong>动态范围：</strong>AGC 范围需覆盖光功率变化 (−20~0dBm)</li>
+            <li><strong>PD 兼容性：</strong>输入电容/偏置电压/电流范围匹配</li>
+            <li><strong>封装形式：</strong>裸片 COB 最佳 (最小寄生)，BGA 次之</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>✅ Driver 选型关键考量</h3>
+          <ul>
+            <li><strong>摆幅 vs Vpi：</strong>Vout_pp ≥ 1.2 × Vpi (MZM) / Vout_pp ≥ 2Vpp (EML)</li>
+            <li><strong>带宽与速率匹配：</strong>BW [GHz] ≥ 0.7 × Baud_Rate</li>
+            <li><strong>线性度：</strong>THD < −25dB 保证 PAM4 RLM > 0.92</li>
+            <li><strong>功耗预算：</strong>Driver 通常占模块总功耗 20~30%</li>
+            <li><strong>输出级类型：</strong>MZM→Push-Pull; EML→CML/Open-Drain</li>
+            <li><strong>数字控制：</strong>SPI/I²C 调节输出幅度和交叉点</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">链路预算速算示例 (800GBASE-FR4, 2km)</h4>
+      <table>
+        <thead><tr><th>环节</th><th>增益/损耗</th><th>累计</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td>oDSP DAC 输出</td><td>-</td><td>−5 dBm (电)</td><td>400mVppd @100Ω diff</td></tr>
+          <tr><td>Driver 增益</td><td>+16 dB</td><td>+11 dBm (电)</td><td>Vout=4Vpp, 增益 20dB 标称</td></tr>
+          <tr><td>MZM 插入损耗</td><td>−6 dB</td><td>+5 dBm (光)</td><td>含调制损耗和耦合损耗</td></tr>
+          <tr><td>2km SMF + 连接器</td><td>−3 dB</td><td>+2 dBm (光)</td><td>@1310nm, ~0.4dB/km + 连接器</td></tr>
+          <tr><td>PD 响应度</td><td>等效 +4 dB</td><td>−8 dBm (电等效)</td><td>R=0.8A/W, 50Ω 负载</td></tr>
+          <tr><td>TIA 跨阻增益</td><td>等效 +26 dB</td><td>+18 dBm (电等效)</td><td>Z_T=5kΩ → ~74dBΩ</td></tr>
+          <tr><td>oDSP RX 灵敏度</td><td>−10 dBm</td><td>链路余量 >10 dB ✅</td><td>Pre-FEC BER=2.4e-4</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>💡 AE 工程直觉：</strong>"TIA 选型先看噪声和带宽，Driver 选型先看摆幅和线性度。TIA 的带宽-噪声-增益是三角权衡，没有三者兼得的方案。Driver 的输出摆幅和带宽是根本矛盾，DA 架构是目前唯一解。TIA 和 Driver 必须配对考虑系统链路预算 — 任何一环的短板都会吃掉全部余量。绑定线是最被低估的寄生 — 0.5mm 的绑定线可能吃掉 10GHz 带宽。"
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<div class="footer">
+AE 知识文档 · 800G/1.6T TIA & Driver 跨阻放大器与调制器驱动芯片<br>
+  覆盖原理、框图、指标、影响因素、测试方法与选型指南 · 文档版本 v2.0 · 生成时间：2026-06-19<br>
+  原始 MD 版本 v1.0 · <a href="../../../docs/01_光通信/03_800G_1.6T_TIA_Driver.md">查看原始 Markdown</a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time-Interleaved ADC 时间交织模数转换器 — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #27ae60; --primary-dark: #166534; --accent: #e74c3c;
+    --accent2: #0891b2; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  /* HERO */
+  .hero { background: linear-gradient(135deg, #166534 0%, #27ae60 50%, #0891b2 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  /* NAV */
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  /* CONTAINER */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  /* CARD */
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #27ae6011, #27ae6005); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #16a34a); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #dcfce7; }
+  /* DIAGRAM */
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  /* BOXES */
+  .info-box { border-left: 4px solid var(--primary); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #ecfeff; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  /* METRIC CARD */
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #166534, #27ae60); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  /* STEPS */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  /* CAUTION */
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  /* FORMULA */
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  /* CHIPS */
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  /* COMPARE */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #eff6ff; border: 2px solid var(--primary); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  /* FOOTER */
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  /* MISC */
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>&#x1F39B; Time-Interleaved ADC</h1>
+  <div class="subtitle">时间交织模数转换器 — 超高速、中高分辨率的并行多通道 ADC</div>
+  <div class="badge-row"><span class="badge">&#x1F3AF; 8~14 bit</span><span class="badge">&#x26A1; 100M~100+ GSPS</span><span class="badge">&#x1F504; 多通道时间交织</span><span class="badge">&#x23F0; 飞秒级时序偏斜</span><span class="badge">&#x1F9E0; 全数字校准</span></div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 核心模块深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、核心对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ Section 1: 背景与定位 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div><div class="icon">📖</div><h2>背景与应用定位</h2>
+    </div>
+    <div class="card-body">
+
+<p>Time-Interleaved (TI) ADC 是<strong>突破单通道 ADC 速度极限的核心架构</strong>，通过 M 个并行通道以时间交错方式工作，每个通道以 f<sub>s</sub>/M 速率采样，总体实现 f<sub>s</sub> 的等效采样率。TI 架构可以将 SAR、Pipeline 等成熟 ADC 的速度提升 M 倍，是实现 >1 GSPS 中高分辨率转换的关键技术。广泛应用于高速通信、光网络接收机、宽带雷达和高速仪器仪表。</p>
+
+<div class="compare-grid" style="margin-top:16px;">
+  <div class="compare-col blue">
+    <h3>&#x1F4CC; 产品定位</h3>
+    <p><strong>产业链位置：</strong>超高速模拟前端与数字处理器之间，突破 ADC 单通道速度上限</p>
+    <p><strong>核心价值：</strong>以面积和功耗线性增长换取 M 倍速度提升，可在先进工艺下实现 10+ GSPS @ 8~14 bit</p>
+    <p><strong>本质功能：</strong>M 个并行子 ADC + M 相时钟分配 + 多路复用数字输出 + 校准 (增益/失调/时序偏斜)</p>
+  </div>
+  <div class="compare-col green">
+    <h3>&#x1F3AF; 典型应用场景</h3>
+    <ul>
+      <li>相干光通信接收机 (>64 GBaud, >128 GSPS)</li>
+      <li>宽带雷达/电子战数字接收机 (瞬时带宽 > 2 GHz)</li>
+      <li>高速示波器 (>10 GSPS 实时采样)</li>
+      <li>5G/6G 毫米波直接采样接收机</li>
+      <li>高速 SerDes/背板接收器</li>
+      <li>粒子物理探测器读出电子学</li>
+    </ul>
+  </div>
+</div>
+
+<h4 style="margin-top:20px;">技术路线</h4>
+<table>
+  <thead><tr><th>维度</th><th>规格</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><strong>分辨率</strong></td><td>8~14 bit</td><td>由子 ADC 架构和校准精度综合决定</td></tr>
+    <tr><td><strong>采样率</strong></td><td>100 MSPS~100+ GSPS</td><td>f<sub>s</sub> = M &times; f<sub>s,ch</sub>，M = 2~256</td></tr>
+    <tr><td><strong>子 ADC 架构</strong></td><td>SAR / Pipeline / Flash</td><td>SAR 最常见 (低功耗)；Pipeline 适合更高每通道速率</td></tr>
+    <tr><td><strong>通道数 M</strong></td><td>2~256</td><td>M 翻倍 &rarr; 采样率翻倍 &rarr; 面积/功耗近似翻倍</td></tr>
+    <tr><td><strong>时钟架构</strong></td><td>多相时钟发生器 (DLL/PLL)</td><td>M 相等间距相位，相位噪声/偏斜决定 SNR 极限</td></tr>
+    <tr><td><strong>校准</strong></td><td>增益/失调/时序偏斜</td><td>三大失配校准是 TI-ADC 设计的核心挑战</td></tr>
+    <tr><td><strong>输入缓冲</strong></td><td>宽带缓冲器/T&H</td><td>驱动 M 个并行通道，带宽需 > f<sub>s</sub>/2</td></tr>
+    <tr><td><strong>工艺</strong></td><td>CMOS (28nm~5nm)</td><td>先进工艺开关速度和数字校准能力是关键使能因素</td></tr>
+  </tbody>
+</table>
+</div>
+</section>
+
+<!-- ═══════════ Section 2: 工作原理 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div><div class="icon">⚙️</div><h2>时间交错与通道失配校准原理</h2>
+    </div>
+    <div class="card-body">
+
+<p>Time-Interleaved ADC 的核心是将 M 个独立子 ADC 以<strong>时间交错</strong>方式并行工作：每个子 ADC 以 f<sub>s</sub>/M 的速率采样，M 个通道的采样时刻均匀分布在 T<sub>s</sub>=1/f<sub>s</sub> 周期内，交错后等效于单个 f<sub>s</sub> 速率的 ADC。</p>
+
+      <div class="diagram-title">图 2-1 | M 通道 Time-Interleaved ADC 系统级信号流向</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 220" width="800" height="220" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <defs><marker id="arrTG" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker>
+          <marker id="arrTB" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <rect width="820" height="220" fill="#fafafa" rx="8"/>
+
+          <text x="15" y="40" font-size="9" fill="#475569" font-weight="bold">VIN</text>
+          <line x1="35" y1="36" x2="55" y2="36" stroke="#27ae60" stroke-width="1.5" marker-end="url(#arrTG)"/>
+
+          <!-- Input Buffer -->
+          <rect x="60" y="15" width="80" height="42" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="100" y="33" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">输入缓冲</text>
+          <text x="100" y="48" font-size="7" fill="#ef4444" text-anchor="middle">BW&gt;fs/2</text>
+
+          <line x1="140" y1="36" x2="160" y2="36" stroke="#27ae60" stroke-width="1.5" marker-end="url(#arrTG)"/>
+
+          <!-- Parallel Sub-ADCs -->
+          <rect x="165" y="8" width="340" height="95" rx="8" fill="none" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="6,3"/>
+          <text x="335" y="24" font-size="9" fill="#e74c3c" text-anchor="middle" font-weight="bold">M 个并行子 ADC (时间交错)</text>
+
+          <rect x="175" y="38" width="72" height="50" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1"/>
+          <text x="211" y="58" font-size="8" fill="#991b1b" text-anchor="middle" font-weight="bold">子ADC₀</text>
+          <text x="211" y="72" font-size="7" fill="#ef4444" text-anchor="middle">@Φ₀</text>
+          <text x="211" y="84" font-size="7" fill="#ef4444" text-anchor="middle">fs/M</text>
+
+          <rect x="260" y="38" width="72" height="50" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1"/>
+          <text x="296" y="58" font-size="8" fill="#991b1b" text-anchor="middle" font-weight="bold">子ADC₁</text>
+          <text x="296" y="72" font-size="7" fill="#ef4444" text-anchor="middle">@Φ₁</text>
+          <text x="296" y="84" font-size="7" fill="#ef4444" text-anchor="middle">fs/M</text>
+
+          <text x="360" y="68" font-size="9" fill="#ef4444">...</text>
+
+          <rect x="390" y="38" width="95" height="50" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1"/>
+          <text x="437" y="58" font-size="8" fill="#991b1b" text-anchor="middle" font-weight="bold">子ADCM-1</text>
+          <text x="437" y="72" font-size="7" fill="#ef4444" text-anchor="middle">@ΦM-1</text>
+          <text x="437" y="84" font-size="7" fill="#ef4444" text-anchor="middle">fs/M</text>
+
+          <!-- Distribute signal to all sub-ADCs -->
+          <path d="M160,36 L160,65 L173,65" fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+          <path d="M160,65 L258,65" fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+          <path d="M258,65 L258,38" fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+          <path d="M258,65 L388,65" fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+          <path d="M388,65 L388,38" fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+          <path d="M245,65 L260,65" fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+          <path d="M388,65 L437,65" fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+          <path d="M437,65 L437,88" fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+
+          <line x1="505" y1="36" x2="525" y2="36" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrTB)"/>
+
+          <!-- Calibration + MUX -->
+          <rect x="530" y="8" width="145" height="55" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="602" y="28" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">数字校准 + MUX</text>
+          <text x="602" y="44" font-size="7" fill="#3b82f6" text-anchor="middle">增益/失调/偏斜校正</text>
+          <text x="602" y="58" font-size="7" fill="#3b82f6" text-anchor="middle">M:1 拼接 → fs 速率</text>
+
+          <!-- Digital output from all sub-ADCs to calibration -->
+          <path d="M211,88 L211,105 L602,105 L602,63" fill="none" stroke="#1a56db" stroke-width="0.8"/>
+          <path d="M296,88 L296,100 L602,100" fill="none" stroke="#1a56db" stroke-width="0.8"/>
+          <path d="M437,88 L437,110 L602,110" fill="none" stroke="#1a56db" stroke-width="0.8"/>
+
+          <line x1="675" y1="36" x2="695" y2="36" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrTB)"/>
+
+          <text x="715" y="40" font-size="10" fill="#166534" font-weight="bold">DOUT</text>
+
+          <!-- Clock distribution -->
+          <rect x="175" y="120" width="340" height="35" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="345" y="135" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">多相时钟生成 (DLL/PLL) → M相等间距相位移: Δt=Ts/M</text>
+          <text x="345" y="150" font-size="7" fill="#b45309" text-anchor="middle">偏斜 &lt; 50 fs RMS (校准后) | 时钟抖动直接影响 SNR</text>
+
+          <text x="410" y="210" font-size="9" fill="#475569" text-anchor="middle">fs = M × fs,ch | 吞吐率 = fs | 延迟 = 子ADC延迟 + 校准延迟</text>
+        </svg>
+      </div>
+
+<h4>1. 时间交错原理</h4>
+<p>M 相时钟 (&#x3A6;<sub>0</sub>, &#x3A6;<sub>1</sub>, ..., &#x3A6;<sub>M&minus;1</sub>) 等间距分布在 1/f<sub>s</sub> 周期：&#x3A6;<sub>k</sub> 的采样时刻 = k &times; T<sub>s</sub>/M。子 ADC<sub>k</sub> 在 &#x3A6;<sub>k</sub> 采样，最终输出按 &#x3A6;<sub>0</sub>, &#x3A6;<sub>1</sub>, ..., &#x3A6;<sub>M&minus;1</sub>, &#x3A6;<sub>0</sub>, ... 顺序拼接。</p>
+<div class="formula">f<sub>s</sub> = M &times; f<sub>s,ch</sub> &nbsp; | &nbsp; T<sub>s,ch</sub> = M &times; T<sub>s</sub> &nbsp; | &nbsp; 相位步进 = T<sub>s</sub>/M</div>
+
+<h4>2. 三大失配及其影响</h4>
+<p>理想 TI-ADC 要求所有子 ADC 完全相同，但实际存在三大失配：</p>
+<table>
+  <thead><tr><th>失配类型</th><th>时域表现</th><th>频域影响</th><th>典型值</th></tr></thead>
+  <tbody>
+    <tr><td><strong>失调失配 (Offset)</strong></td><td>各通道输出存在不同 DC 偏移</td><td>在 f<sub>s</sub>/M 整数倍处产生固定杂散 (与信号无关)</td><td>1~10 mV</td></tr>
+    <tr><td><strong>增益失配 (Gain)</strong></td><td>各通道对同一信号幅度响应不同</td><td>在 k&middot;f<sub>s</sub>/M &plusmn; f<sub>in</sub> 处产生调制杂散 (与信号相关)</td><td>0.1~2%</td></tr>
+    <tr><td><strong>时序偏斜 (Timing Skew)</strong></td><td>各通道实际采样时刻偏离理想相位</td><td>在 k&middot;f<sub>s</sub>/M &plusmn; f<sub>in</sub> 处产生杂散，且幅度随 f<sub>in</sub> 增大而恶化</td><td>0.1~5 ps</td></tr>
+  </tbody>
+</table>
+
+<h4>3. 时序偏斜 &mdash; 最关键的失配</h4>
+<p>时序偏斜 (也可视为带宽失配的频率域表现) 是 TI-ADC 性能的主要限制因素，其产生的杂散幅度随输入频率线性增长，在高频 (near-Nyquist) 输入时尤为严重：</p>
+<div class="formula">SFDR<sub>skew</sub> &asymp; 20log<sub>10</sub>(1/(M&middot;&pi;&middot;f<sub>in</sub>&middot;&sigma;<sub>skew</sub>)) dB &nbsp; | &nbsp; &#x3C3;<sub>skew</sub> = 偏斜标准差</div>
+<p>例如：4 通道 TI-ADC @ f<sub>in</sub>=10 GHz，若要 SFDR>60 dBc，需 &#x3C3;<sub>skew</sub> &lt; 50 fs。这要求时钟分配网络和版图达到飞秒级精度。</p>
+
+<h4>4. 带宽失配</h4>
+<p>各通道输入带宽不同 (由采样开关 R<sub>on</sub>、输入电容 C<sub>s</sub> 和版图寄生差异导致) &rarr; 高频输入时不同通道呈现不同的衰减和相移。带宽失配可等效为频率相关的增益和时序误差：</p>
+<div class="formula">H<sub>k</sub>(j&#x3C9;) &asymp; (1 + &#x394;g<sub>k</sub>) &middot; e<sup>j&#x3C9;&middot;&#x394;t<sub>k</sub></sup></div>
+
+<div class="info-box"><strong>&#x1F4A1; AE 核心认知：</strong>TI-ADC 的 SNR 由子 ADC 性能和失配校准共同决定。4 通道 8-bit TI-ADC 未经校准时 SFDR 可能仅 30~40 dBc；经全数字后台校准后可达 55~65 dBc。时序偏斜校准是 >10 GSPS TI-ADC 的核心技术壁垒。</div>
+</div>
+</section>
+
+<!-- ═══════════ Section 2B: 模块深度解析 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header" style="background:linear-gradient(90deg,#fef3c7,#fde68a);border-bottom:2px solid #f59e0b;">
+      <div class="section-no" style="background:#d97706;">🔬</div><div class="icon">🧠</div><h2 style="color:#92400e;">核心模块深度解析</h2>
+    </div>
+    <div class="card-body">
+
+<h4 style="color:#92400e;">一、子 ADC 架构选择</h4>
+<p>子 ADC 架构决定 TI-ADC 的基准精度和每通道功耗。不同架构在速度、精度、面积和功耗之间的权衡：</p>
+<table>
+  <thead><tr><th>子 ADC 类型</th><th>每通道 f<sub>s,ch</sub></th><th>每通道分辨率</th><th>功耗/ch</th><th>适用场景</th></tr></thead>
+  <tbody>
+    <tr><td>SAR ADC</td><td>100k~200M</td><td>8~14b</td><td>低 (&lt;5 mW)</td><td>中高速中高精度，最常用</td></tr>
+    <tr><td>Pipeline ADC</td><td>50M~500M</td><td>10~14b</td><td>中高 (10~100 mW)</td><td>每通道高速，减少 M</td></tr>
+    <tr><td>Flash ADC</td><td>500M~5G</td><td>4~8b</td><td>极高 (W)</td><td>超高速低精度，光通信</td></tr>
+    <tr><td>Folding/Interpolating</td><td>200M~2G</td><td>6~8b</td><td>高</td><td>高速中低精度</td></tr>
+  </tbody>
+</table>
+
+<h4 style="color:#92400e;margin-top:20px;">二、多相时钟生成 &mdash; 飞秒级精度</h4>
+<p>M 相精确等间距时钟是 TI-ADC 的基石。DLL (Delay-Locked Loop) 和 PLL 是两种主流方案：</p>
+<div class="formula">&#x3A6;<sub>k</sub> 相位 = 2&pi;k/M &plusmn; &#x394;&#x3C6;<sub>k</sub> &nbsp; | &nbsp; &#x394;&#x3C6;<sub>k</sub> = 偏斜误差 &rarr; 导致杂散</div>
+<table>
+  <thead><tr><th>方案</th><th>优点</th><th>缺点</th><th>偏斜典型值</th></tr></thead>
+  <tbody>
+    <tr><td>DLL + 相位插值</td><td>低抖动，对电源噪声不敏感</td><td>锁定范围有限，需参考时钟</td><td>0.5~5 ps</td></tr>
+    <tr><td>PLL (多相 VCO)</td><td>频率灵活，可倍频</td><td>VCO 相位噪声积累，功耗高</td><td>1~10 ps</td></tr>
+    <tr><td>注入锁定振荡器</td><td>极低抖动，高频率</td><td>锁定范围窄，PVT 敏感</td><td>0.1~2 ps</td></tr>
+    <tr><td>数字相位校准</td><td>可编程补偿，灵活</td><td>受限于检测精度和调整步进</td><td>经校准 &lt;0.1 ps</td></tr>
+  </tbody>
+</table>
+
+<h4 style="color:#92400e;margin-top:20px;">三、增益与失调失配校准</h4>
+<p>增益和失调失配在频域产生确定性杂散，可通过数字域校准消除：</p>
+<div class="compare-grid">
+  <div class="compare-col blue"><h3>前台校准</h3><p>&#x2705; 精度高 (可 &lt;0.01%)<br>&#x2705; 实现简单<br>&#x274C; 需中断正常工作<br>&#x274C; 无法跟踪温度漂移<br>方法：注入已知 DC/正弦参考 &rarr; 测量各通道输出 &rarr; 存储校正系数</p></div>
+  <div class="compare-col green"><h3>后台校准</h3><p>&#x2705; 连续工作，跟踪 PVT 漂移<br>&#x2705; 不需中断正常转换<br>&#x274C; 算法复杂，收敛慢<br>&#x274C; 对信号统计特性有假设<br>方法：相关性检测 / PN 注入 / 参考通道 / LMS 自适应</p></div>
+</div>
+
+<h4 style="color:#92400e;margin-top:20px;">四、时序偏斜校准 &mdash; 核心技术壁垒</h4>
+<p>时序偏斜校准分为检测和校正两个环节：</p>
+<p><strong>检测方法：</strong></p>
+<ul>
+  <li><strong>相关法：</strong>相邻通道输出相关性 &rarr; 偏斜符号和幅度估计。简单但对信号频谱有要求</li>
+  <li><strong>参考 ADC 法：</strong>额外增加一个低速高精度参考 ADC，分时与各子 ADC 采样同一信号 &rarr; 比较各通道与参考的差异 &rarr; 最精确</li>
+  <li><strong>FFT 能量检测：</strong>监测偏斜杂散的能量 &rarr; 反馈调整。收敛慢但鲁棒</li>
+</ul>
+<p><strong>校正方法：</strong></p>
+<ul>
+  <li><strong>模拟域：</strong>可调延迟线 (DTC) 调整各通道采样时钟相位 &rarr; 精度受 DTC 分辨率限制</li>
+  <li><strong>数字域：</strong>数字分数延迟滤波器 (Farrow 结构) 或多项式插值 &rarr; 灵活但消耗数字资源</li>
+  <li><strong>混合域：</strong>模拟粗调 + 数字细校 &rarr; 兼顾精度和功耗</li>
+</ul>
+<div class="formula">校准后偏斜残差 &lt; 50 fs (先进设计中可至 10~20 fs)</div>
+
+<h4 style="color:#92400e;margin-top:20px;">五、输入网络与带宽扩展</h4>
+<p>TI-ADC 的输入网络需要驱动 M 个并行采样开关，总输入电容 = M &times; C<sub>s,ch</sub>。高频下输入阻抗下降，需要片上宽带缓冲器或分布式输入 T-line。输入带宽 BW<sub>in</sub> &gt; f<sub>s</sub>/2 是基本要求：</p>
+<div class="formula">BW<sub>in</sub> = 1/(2&pi;R<sub>s</sub>&middot;M&middot;C<sub>s,ch</sub>) &nbsp; | &nbsp; R<sub>s</sub> = 源阻抗+开关R<sub>on</sub></div>
+<p>高通道数 (M>16) 设计中，常见采用分级缓冲或行波分发 (Traveling Wave Distribution) 架构。</p>
+</div>
+</section>
+
+<!-- ===== Section 3: 电路框图 ===== -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div><div class="icon">🔲</div><h2>芯片内部电路框图</h2>
+    </div>
+    <div class="card-body">
+      <div class="diagram-title">图 3-1 | M 通道 Time-Interleaved ADC 芯片内部架构</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 430" width="800" height="430" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <defs>
+            <marker id="arrTG2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker>
+            <marker id="arrTB2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker>
+          </defs>
+          <rect width="820" height="430" fill="#fafafa" rx="8"/>
+
+          <!-- ▀▀▀▀▀ 模拟域: M 并行子ADC ▀▀▀▀▀ -->
+          <rect x="15" y="15" width="530" height="200" rx="8" fill="none" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="8,4"/>
+          <text x="25" y="35" font-size="10" fill="#e74c3c" font-weight="bold">模拟域 — M 个并行子 ADC + 输入缓冲</text>
+
+          <!-- Input buffer -->
+          <rect x="25" y="55" width="120" height="42" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="85" y="72" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">宽带输入缓冲</text>
+          <text x="85" y="88" font-size="7" fill="#ef4444" text-anchor="middle">驱动M·Cs | BW&gt;fs/2</text>
+
+          <!-- Sub-ADC 0 -->
+          <rect x="160" y="48" width="100" height="56" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="210" y="66" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">子ADC₀</text>
+          <text x="210" y="80" font-size="7" fill="#ef4444" text-anchor="middle">SAR/Pipeline/Flash</text>
+          <text x="210" y="94" font-size="7" fill="#ef4444" text-anchor="middle">fs,ch=fs/M</text>
+
+          <line x1="145" y1="76" x2="158" y2="76" stroke="#e74c3c" stroke-width="1.5" marker-end="url(#arrTG2)"/>
+
+          <!-- Sub-ADC 1 -->
+          <rect x="275" y="48" width="100" height="56" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="325" y="66" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">子ADC₁</text>
+          <text x="325" y="80" font-size="7" fill="#ef4444" text-anchor="middle">SAR/Pipeline/Flash</text>
+          <text x="325" y="94" font-size="7" fill="#ef4444" text-anchor="middle">fs,ch=fs/M</text>
+
+          <!-- ... -->
+          <text x="395" y="80" font-size="10" fill="#e74c3c">...</text>
+
+          <!-- Sub-ADC M-1 -->
+          <rect x="420" y="48" width="110" height="56" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="475" y="66" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">子ADCM-1</text>
+          <text x="475" y="80" font-size="7" fill="#ef4444" text-anchor="middle">SAR/Pipeline/Flash</text>
+          <text x="475" y="94" font-size="7" fill="#ef4444" text-anchor="middle">fs,ch=fs/M</text>
+
+          <!-- Connect input buffer to all sub-ADCs -->
+          <path d="M145,76 L152,76 L152,76" fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+          <path d="M152,76 L270,76" fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+          <path d="M270,76 L275,76" fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+          <path d="M375,76 L415,76" fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+          <path d="M415,76 L420,76" fill="none" stroke="#e74c3c" stroke-width="0.8"/>
+
+          <!-- Clock distribution -->
+          <rect x="25" y="118" width="510" height="55" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="280" y="138" font-size="10" fill="#92400e" text-anchor="middle" font-weight="bold">多相时钟生成与分配 (DLL/PLL)</text>
+          <text x="280" y="154" font-size="8" fill="#b45309" text-anchor="middle">Φ₀ (t=0) → Φ₁ (t=Ts/M) → Φ₂ (t=2Ts/M) → ... → ΦM-1 (t=(M−1)Ts/M)</text>
+          <text x="280" y="168" font-size="7" fill="#b45309" text-anchor="middle">H-tree 等延迟分配 | DTC 可编程延迟线 (偏斜校准)</text>
+
+          <!-- Clock lines to sub-ADCs -->
+          <line x1="210" y1="117" x2="210" y2="104" stroke="#f59e0b" stroke-width="0.8" stroke-dasharray="3,2"/>
+          <line x1="325" y1="117" x2="325" y2="104" stroke="#f59e0b" stroke-width="0.8" stroke-dasharray="3,2"/>
+          <line x1="475" y1="117" x2="475" y2="104" stroke="#f59e0b" stroke-width="0.8" stroke-dasharray="3,2"/>
+
+          <!-- VREF -->
+          <rect x="25" y="180" width="130" height="28" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="90" y="198" font-size="8" fill="#991b1b" text-anchor="middle" font-weight="bold">VREF + Bandgap + 偏置</text>
+
+          <!-- ▀▀▀▀▀ 数字域: 校准与拼接 ▀▀▀▀▀ -->
+          <rect x="15" y="225" width="530" height="105" rx="8" fill="none" stroke="#1a56db" stroke-width="1.5" stroke-dasharray="8,4"/>
+          <text x="25" y="245" font-size="10" fill="#1a56db" font-weight="bold">数字域 — 通道失配校准与输出拼接</text>
+
+          <!-- Detection -->
+          <rect x="30" y="260" width="140" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="100" y="278" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">失配检测</text>
+          <text x="100" y="294" font-size="7" fill="#3b82f6" text-anchor="middle">相关/LMS/参考ADC法</text>
+
+          <line x1="170" y1="280" x2="190" y2="280" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrTB2)"/>
+
+          <!-- Correction -->
+          <rect x="195" y="258" width="130" height="44" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="260" y="276" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">数字校正</text>
+          <text x="260" y="290" font-size="7" fill="#3b82f6" text-anchor="middle">增益×/失调+/偏移Δ</text>
+
+          <line x1="325" y1="280" x2="345" y2="280" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrTB2)"/>
+
+          <!-- MUX + Output -->
+          <rect x="350" y="258" width="120" height="44" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="410" y="276" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">M:1 MUX 拼接</text>
+          <text x="410" y="290" font-size="7" fill="#16a34a" text-anchor="middle">输出速率 fs</text>
+
+          <line x1="470" y1="280" x2="490" y2="280" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="510" y="284" font-size="10" fill="#166534" font-weight="bold">DOUT</text>
+
+          <!-- ▀▀▀▀▀ 右侧: 电源与接口 ▀▀▀▀▀ -->
+          <rect x="560" y="15" width="245" height="315" rx="8" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="8,4"/>
+          <text x="570" y="35" font-size="10" fill="#f59e0b" font-weight="bold">电源与高速接口域</text>
+
+          <rect x="575" y="55" width="215" height="40" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="682" y="72" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">电源管理</text>
+          <text x="682" y="88" font-size="7" fill="#ef4444" text-anchor="middle">AVDD/DVDD 分离 | M× 通道电流</text>
+
+          <text x="682" y="120" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">子ADC架构选择</text>
+          <text x="682" y="136" font-size="7" fill="#b45309" text-anchor="middle">SAR: &lt;200M/ch, 低功耗</text>
+          <text x="682" y="150" font-size="7" fill="#b45309" text-anchor="middle">Pipeline: &lt;500M/ch, 中功耗</text>
+          <text x="682" y="164" font-size="7" fill="#b45309" text-anchor="middle">Flash: &lt;5G/ch, 高功耗</text>
+
+          <text x="682" y="195" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">输出接口</text>
+          <text x="682" y="211" font-size="7" fill="#475569" text-anchor="middle">JESD204C/D SerDes</text>
+          <text x="682" y="225" font-size="7" fill="#475569" text-anchor="middle">数据率 = fs×N (可达Tbps)</text>
+
+          <text x="682" y="255" font-size="9" fill="#475569" text-anchor="middle" font-weight="bold">关键挑战</text>
+          <text x="682" y="271" font-size="7" fill="#475569" text-anchor="middle">时序偏斜 &lt;50fs RMS</text>
+          <text x="682" y="285" font-size="7" fill="#475569" text-anchor="middle">增益/失调/带宽失配</text>
+          <text x="682" y="299" font-size="7" fill="#475569" text-anchor="middle">通道间串扰 &lt;−70dB</text>
+          <text x="682" y="313" font-size="7" fill="#475569" text-anchor="middle">Ptotal=M×Pch</text>
+
+          <text x="410" y="395" font-size="9" fill="#475569" text-anchor="middle">CMOS 工艺 28nm~5nm | fs = 100M~100+ GSPS | 分辨率 8~14 bit | M = 2~256</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>说明：</strong>TI-ADC 以面积和功耗的线性增长换取速度的 M 倍提升。核心挑战不是子 ADC 本身，而是通道间失配的检测与校准——尤其是随输入频率线性恶化的时序偏斜。现代 TI-ADC 依赖全数字后台校准实现接近单通道 ADC 的 SFDR。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 4: 核心对比 ===== -->
+<section id="sec4"><div class="card"><div class="card-header"><div class="section-no">4</div><div class="icon">X</div><h2>核心对比：ADC 架构全景</h2></div><div class="card-body">
+
+<h4>四大 ADC 架构对比</h4>
+<table><thead><tr><th>维度</th><th>Time-Interleaved</th><th>Pipeline</th><th>SAR</th><th>Sigma-Delta</th></tr></thead><tbody>
+<tr><td>分辨率</td><td>8~14 bit</td><td>8~16 bit</td><td>8~18 bit</td><td>16~32 bit</td></tr>
+<tr><td>采样率</td><td>100M~100+ GSPS</td><td>10M~1 GSPS</td><td>DC~10 MSPS</td><td>DC~100 kHz</td></tr>
+<tr><td>通道数</td><td>2~256 (并行)</td><td>1 (流水线级)</td><td>1</td><td>1</td></tr>
+<tr><td>功耗</td><td>M &times; P<sub>ch</sub> (mW~W)</td><td>mW~W</td><td>nW~mW</td><td>&#x3BC;W~mW</td></tr>
+<tr><td>面积</td><td>极大 (M&times;面积)</td><td>大 (多级)</td><td>小</td><td>中 (数字为主)</td></tr>
+<tr><td>延迟</td><td>取决于子 ADC</td><td>6~12 周期</td><td>N 周期</td><td>大 (滤波)</td></tr>
+<tr><td>核心挑战</td><td>失配校准 (偏斜/增益/失调)</td><td>级间增益精度</td><td>电容匹配</td><td>运放噪声/空闲音</td></tr>
+<tr><td>校准复杂度</td><td>极高 (三大失配)</td><td>中高</td><td>>12b需</td><td>天然高精度</td></tr>
+<tr><td>时钟精度要求</td><td>飞秒级 (偏斜)</td><td>ps 级 (非交叠)</td><td>中等</td><td>低 (OSR 容忍)</td></tr>
+</tbody></table>
+<div class="info-box"><strong>决策树：</strong>&lt;100M+&gt;12b &rarr; Pipeline | 100M~1G+10~12b &rarr; Pipeline | &gt;1G+8~12b &rarr; TI-SAR | &gt;10G+6~8b &rarr; TI-Flash</div>
+<h4>TI-ADC 代际演进</h4>
+<table><thead><tr><th>节点</th><th>工艺</th><th>通道数</th><th>f<sub>s</sub></th><th>分辨率</th><th>技术</th></tr></thead><tbody>
+<tr><td>传统</td><td>0.18&#x3BC;m</td><td>2~4</td><td>100M~500M</td><td>6~8b</td><td>Flash 子 ADC, 简单校准</td></tr>
+<tr><td>现代</td><td>65~28nm</td><td>8~32</td><td>1G~10G</td><td>8~12b</td><td>TI-SAR, 数字后台校准</td></tr>
+<tr><td>先进</td><td>16~5nm</td><td>32~256</td><td>10G~128G</td><td>8~14b</td><td>TI-Pipeline+SAR 混合, 全数字校准</td></tr>
+</tbody></table>
+</div></section>
+
+<!-- ===== Section 5: 核心指标 ===== -->
+<section id="sec5"><div class="card"><div class="card-header"><div class="section-no">5</div><div class="icon">X</div><h2>核心指标</h2></div><div class="card-body">
+
+<h4>关键参数</h4>
+<table><thead><tr><th>参数</th><th>范围</th><th>说明</th></tr></thead><tbody>
+<tr><td>分辨率</td><td>8~14 bit</td><td>由子 ADC 架构和校准精度决定</td></tr>
+<tr><td>采样率 f<sub>s</sub></td><td>100 MSPS~100+ GSPS</td><td>= M &times; f<sub>s,ch</sub></td></tr>
+<tr><td>通道数 M</td><td>2~256</td><td>速度与面积/功耗的线性折中</td></tr>
+<tr><td>每通道速率</td><td>100k~5G (取决于架构)</td><td>SAR: &lt;200M; Pipeline: &lt;500M; Flash: &lt;5G</td></tr>
+<tr><td>输入带宽</td><td>&gt; f<sub>s</sub>/2</td><td>需宽带输入缓冲驱动 M 个通道</td></tr>
+<tr><td>SNDR</td><td>40~78 dB</td><td>受失配和子 ADC 噪声限制</td></tr>
+<tr><td>ENOB</td><td>6.5~12.7 bit</td><td>(SNDR&minus;1.76)/6.02</td></tr>
+<tr><td>SFDR (校准后)</td><td>55~80 dBc</td><td>时序偏斜杂散通常是 SFDR 瓶颈</td></tr>
+<tr><td>时序偏斜 (校准后)</td><td>&lt;50~100 fs RMS</td><td>&gt;10 GSPS 时需 &lt;20 fs</td></tr>
+<tr><td>功耗效率</td><td>0.05~2 pJ/step</td><td>先进 TI-SAR 可达 &lt;0.1 pJ/step</td></tr>
+</tbody></table>
+<div class="metric-card"><div class="metric-header"><h4>时序偏斜 (Timing Skew)</h4><span class="metric-abbr">核心</span></div><div class="metric-body">
+<div class="metric-row"><span class="metric-label">定义</span><span>各通道实际采样时刻与理想等间隔时刻的偏差</span></div>
+<div class="metric-row"><span class="metric-label">公式</span><span>SFDR &asymp; 20log(1/(M&middot;&pi;&middot;f<sub>in</sub>&middot;&#x3C3;<sub>skew</sub>))</span></div>
+<div class="metric-row"><span class="metric-label">典型</span><span>未校准: 1~5 ps; 前台校准后: 0.1~1 ps; 全数字后台校准: &lt;50 fs</span></div>
+</div></div>
+</div></section>
+
+<!-- ===== Section 6: 影响因素 ===== -->
+<section id="sec6"><div class="card"><div class="card-header"><div class="section-no">6</div><div class="icon">X</div><h2>影响因素分析</h2></div><div class="card-body">
+
+<table><thead><tr><th>指标</th><th>影响因素</th><th>影响下游</th></tr></thead><tbody>
+<tr><td>SFDR</td><td><span class="chip chip-red">时序偏斜</span> <span class="chip chip-yellow">增益失配</span> <span class="chip chip-blue">失调失配</span> <span class="chip chip-red">带宽失配</span></td><td>ENOB, 杂散</td></tr>
+<tr><td>SNR/SNDR</td><td><span class="chip chip-red">子ADC噪声</span> <span class="chip chip-yellow">时钟抖动</span> <span class="chip chip-blue">输入缓冲噪声</span> <span class="chip chip-green">校准残差</span></td><td>ENOB, BER</td></tr>
+<tr><td>f<sub>s,max</sub></td><td><span class="chip chip-yellow">子ADC速度</span> <span class="chip chip-blue">时钟频率</span> <span class="chip chip-green">M</span> <span class="chip chip-red">建立时间</span></td><td>信号带宽</td></tr>
+<tr><td>输入带宽</td><td><span class="chip chip-blue">M&times;C<sub>s</sub></span> <span class="chip chip-yellow">缓冲器GBW</span> <span class="chip chip-red">版图寄生</span></td><td>高频SFDR</td></tr>
+<tr><td>功耗</td><td><span class="chip chip-blue">M</span> <span class="chip chip-green">子ADC功耗</span> <span class="chip chip-yellow">校准数字功耗</span> <span class="chip chip-red">时钟生成</span></td><td>热预算</td></tr>
+<tr><td>通道间串扰</td><td><span class="chip chip-red">衬底耦合</span> <span class="chip chip-yellow">时钟馈通</span> <span class="chip chip-blue">输入网络耦合</span></td><td>SFDR, 杂散</td></tr>
+</tbody></table>
+<div class="info-box"><strong>总结：</strong>TI-ADC 以面积和功耗的线性增长换取速度的 M 倍提升。核心瓶颈不是子 ADC 本身，而是通道间失配&mdash;&mdash;尤其是随输入频率线性恶化的时序偏斜。因此 TI-ADC 竞争力的本质是校准算法的有效性。</div>
+</div></section>
+
+<!-- ===== Section 7: 测试方法 ===== -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>⓵ 偏斜杂散测试 — 高频 FFT 频谱法</h4>
+      <p>施加高频正弦波 (f<sub>in</sub> 接近 f<sub>s</sub>/2) → FFT 分析 → 检查 f<sub>s</sub>/M ± f<sub>in</sub>, 2f<sub>s</sub>/M ± f<sub>in</sub> 处的杂散幅度。高频输入下偏斜杂散最显著，是 TI-ADC 最关键的测试项。</p>
+
+      <div class="diagram-title">图 7-1 | 偏斜杂散 FFT 测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 130" width="800" height="130" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <defs><marker id="arrTT" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker></defs>
+          <rect width="820" height="130" fill="#fafafa" rx="8"/>
+          <rect x="10" y="30" width="125" height="55" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="72" y="50" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">超低相噪信号源</text>
+          <text x="72" y="68" font-size="7" fill="#3b82f6" text-anchor="middle">R&amp;S SMA100B</text>
+          <text x="72" y="80" font-size="7" fill="#3b82f6" text-anchor="middle">相噪&lt;−140dBc/Hz</text>
+          <line x1="135" y1="57" x2="160" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrTT)"/>
+          <rect x="165" y="35" width="80" height="45" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="205" y="55" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">DUT</text>
+          <text x="205" y="70" font-size="8" fill="#16a34a" text-anchor="middle">TI-ADC</text>
+          <line x1="245" y1="57" x2="270" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrTT)"/>
+          <rect x="275" y="30" width="130" height="55" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="340" y="50" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">高速采集系统</text>
+          <text x="340" y="68" font-size="7" fill="#3b82f6" text-anchor="middle">&gt;2×fs 采样率</text>
+          <text x="340" y="80" font-size="7" fill="#3b82f6" text-anchor="middle">Nrec≥128K</text>
+          <line x1="405" y1="57" x2="430" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrTT)"/>
+          <rect x="435" y="35" width="120" height="45" rx="6" fill="#f8f9fc" stroke="#475569" stroke-width="1.5"/>
+          <text x="495" y="55" font-size="9" fill="#475569" text-anchor="middle" font-weight="bold">FFT 杂散分析</text>
+          <text x="495" y="70" font-size="7" fill="#6b7280" text-anchor="middle">fs/M±fin 杂散</text>
+          <rect x="565" y="35" width="125" height="45" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="627" y="52" font-size="8" fill="#991b1b" text-anchor="middle" font-weight="bold">超低相噪晶振</text>
+          <text x="627" y="68" font-size="7" fill="#ef4444" text-anchor="middle">抖动 &lt;50fs RMS</text>
+          <line x1="627" y1="35" x2="627" y2="20" stroke="#fca5a5" stroke-width="1"/>
+          <line x1="627" y1="20" x2="205" y2="20" stroke="#fca5a5" stroke-width="1"/>
+          <line x1="205" y1="20" x2="205" y2="33" stroke="#fca5a5" stroke-width="1"/>
+          <text x="205" y="105" font-size="9" fill="#475569" text-anchor="middle">判定: 偏斜杂散 &lt; SFDR目标 | 校准后改善 &gt;10~20dB | fin 近 fs/2</text>
+        </svg>
+      </div>
+
+      <h4>⓶ 增益/失调失配测试</h4>
+      <p>低频正弦输入 (偏斜影响最小) → 分析 f<sub>s</sub>/M 整数倍处的杂散 (失调失配) 和 k·f<sub>s</sub>/M ± f<sub>in</sub> 处的杂散 (增益失配)。也可 DC 输入直接测失调失配，正弦扫幅测增益失配曲线。</p>
+
+      <div class="diagram-title">图 7-2 | 增益/失调失配测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 110" width="800" height="110" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <defs><marker id="arrTT2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker></defs>
+          <rect width="820" height="110" fill="#fafafa" rx="8"/>
+          <rect x="10" y="30" width="100" height="55" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="60" y="50" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">信号源/DC源</text>
+          <text x="60" y="68" font-size="7" fill="#3b82f6" text-anchor="middle">AWG/SMU</text>
+          <text x="60" y="80" font-size="7" fill="#3b82f6" text-anchor="middle">DC/低频正弦</text>
+          <line x1="110" y1="57" x2="135" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrTT2)"/>
+          <rect x="140" y="35" width="80" height="45" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="180" y="55" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">DUT</text>
+          <text x="180" y="70" font-size="8" fill="#16a34a" text-anchor="middle">TI-ADC</text>
+          <line x1="220" y1="57" x2="245" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrTT2)"/>
+          <rect x="250" y="30" width="110" height="55" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="305" y="50" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">采集 + FFT</text>
+          <text x="305" y="68" font-size="7" fill="#3b82f6" text-anchor="middle">fs/M 杂散分析</text>
+          <text x="305" y="80" font-size="7" fill="#3b82f6" text-anchor="middle">失调±增益杂散</text>
+          <line x1="360" y1="57" x2="385" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrTT2)"/>
+          <rect x="390" y="35" width="100" height="45" rx="6" fill="#f8f9fc" stroke="#475569" stroke-width="1.5"/>
+          <text x="440" y="52" font-size="9" fill="#475569" text-anchor="middle" font-weight="bold">自动化脚本</text>
+          <text x="440" y="68" font-size="7" fill="#6b7280" text-anchor="middle">扫频/扫幅分析</text>
+          <text x="180" y="95" font-size="9" fill="#475569" text-anchor="middle">判定: 失调杂散 &lt; −60 dBFS | 增益杂散 &lt; −60 dBFS</text>
+        </svg>
+      </div>
+
+      <h4>⓷ 通道间串扰测试</h4>
+      <p>特定通道注入满幅信号，其他通道输入接地 → 测量未注入通道输出中的信号泄漏。通过交叉相关分析量化串扰幅度。版图设计阶段需通过 EM 仿真预评估。</p>
+      <p><strong>设备：</strong>多通道 AWG + 高速采集系统 + 交叉相关分析软件。</p>
+      <p><strong>判定：</strong>串扰 &lt; −70 dB (10+ bit TI-ADC)；串扰过高 → SFDR 恶化，需版图优化。</p>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 8: 注意事项 ===== -->
+<section id="sec8"><div class="card"><div class="card-header"><div class="section-no">8</div><div class="icon">X</div><h2>注意事项</h2></div><div class="card-body">
+
+<div class="caution-grid">
+<div class="caution-item"><div class="ci-title">&#x23F0; 时序偏斜</div><p>TI-ADC 头号杀手。飞秒级偏斜在 >10 GSPS 下即可产生 >&minus;40 dBc 杂散。版图对称布局、等长时钟走线、DTC 模拟校准 + 数字分数延迟滤波器是完整解决方案。</p></div>
+<div class="caution-item"><div class="ci-title">&#x1F4E1; 通道间串扰</div><p>M 个通道集成在同一芯片上，大信号跳变通过衬底、电源和输入网络耦合到其他通道。版图隔离 (深 N-well, Guard Ring, 分布式去耦) 必不可少。</p></div>
+<div class="caution-item"><div class="ci-title">&#x26A1; 输入缓冲驱动能力</div><p>TI-ADC 输入端等效电容 = M &times; C<sub>s</sub>，大 M 下输入阻抗极低。需要片上宽带缓冲器或分布式输入网络。驱动不足 &rarr; 带宽下降 &rarr; 高频 SNDR 滚降。</p></div>
+<div class="caution-item"><div class="ci-title">&#x1F50C; 电源分配网络 (PDN)</div><p>M 个通道以 M 相时钟交错工作 &rarr; 电源电流在 f<sub>s</sub>/M 和 f<sub>s</sub> 处有显著纹波 &rarr; 通过 PDN 阻抗产生电压波动。需要充分的片上/片外去耦和 PDN 设计。</p></div>
+<div class="caution-item"><div class="ci-title">&#x1F4A5; 时钟抖动累积</div><p>TI-ADC 对时钟相位噪声的要求等同于相同 f<sub>s</sub> 的单通道 ADC &rarr; 在 >10 GSPS 下，时钟抖动需 &lt;50 fs RMS 才能实现 &gt;50 dB SNR。这是整个系统 (晶振+PLL+分配) 的综合挑战。</p></div>
+<div class="caution-item"><div class="ci-title">&#x1F4E6; 数字输出带宽</div><p>TI-ADC 总输出数据率 = f<sub>s</sub> &times; N bit/s，在 64 GSPS &times; 12 bit = 768 Gbps。通常需要 SerDes (JESD204C/JESD204D) 接口传输，通道数可达 16~32 lane。</p></div>
+</div>
+<div class="danger-box"><strong>TOP 5 常见错误：</strong><br>1. 忽略时序偏斜校准 &rarr; SFDR 仅 30~40 dBc<br>2. 输入网络设计不足 &rarr; 高频输入严重衰减<br>3. 时钟偏斜末校准 &rarr; 看似随机的高杂散<br>4. PDN 设计不充分 &rarr; 通道间通过电源耦合<br>5. 数字输出接口带宽不足 &rarr; 无法传输完整数据速率</div>
+</div></section>
+
+<!-- ===== Section 9: 选型指南 ===== -->
+<section id="sec9"><div class="card"><div class="card-header"><div class="section-no">9</div><div class="icon">X</div><h2>选型指南</h2></div><div class="card-body">
+
+<div class="compare-grid"><div class="compare-col blue"><h3>选用 Time-Interleaved</h3><ul>
+<li>需要 &gt;1 GSPS 采样率</li>
+<li>8~14 bit 分辨率已足够</li>
+<li>接受多通道面积/功耗代价</li>
+<li>系统具备校准能力或选择内置校准的 TI-ADC</li>
+<li>超宽带应用 (瞬时带宽 >500 MHz)</li>
+<li>光通信/雷达/仪器仪表等高价值应用</li></ul></div>
+<div class="compare-col red"><h3>不适合 Time-Interleaved</h3><ul>
+<li>&lt;500 MSPS + &gt;12b &rarr; 单通道 Pipeline</li>
+<li>&lt;10 MSPS + &gt;14b &rarr; SAR</li>
+<li>极低功耗/面积限制 &rarr; SAR 或 Pipeline</li>
+<li>对校准复杂度/成本敏感 &rarr; 单通道方案</li>
+<li>需要即时启动 (无校准时间) &rarr; 单通道方案</li></ul></div></div>
+<h4>按场景选型</h4>
+<table><thead><tr><th>场景</th><th>f<sub>s</sub></th><th>分辨率</th><th>子ADC架构</th><th>M</th></tr></thead><tbody>
+<tr><td>相干光通信</td><td>128 GSPS</td><td>8b</td><td>TI-Flash</td><td>32~64</td></tr>
+<tr><td>宽带雷达接收</td><td>4~10 GSPS</td><td>10~14b</td><td>TI-SAR</td><td>8~32</td></tr>
+<tr><td>5G 毫米波</td><td>2~6 GSPS</td><td>10~12b</td><td>TI-SAR/Pipeline</td><td>4~16</td></tr>
+<tr><td>高速示波器</td><td>10~256 GSPS</td><td>8~12b</td><td>TI-Flash/SAR</td><td>32~256</td></tr>
+<tr><td>SerDes/背板</td><td>28~112 GSPS</td><td>5~8b</td><td>TI-Flash</td><td>16~64</td></tr>
+<tr><td>仪器仪表</td><td>1~5 GSPS</td><td>12~14b</td><td>TI-Pipeline</td><td>4~8</td></tr>
+</tbody></table>
+<div class="info-box"><strong>AE认知：</strong>TI-ADC 是突破速度极限的"并行主义"方案。选型核心是确认子 ADC 架构 (决定基础精度) 和校准能力 (决定实际 SFDR)。对于 >10 GSPS 应用，时序偏斜校准是区分 TI-ADC 产品优劣的核心技术指标。</div>
+</div></section>
+
+<div class="footer">
+AE 知识文档 · Time-Interleaved ADC 模数转换器<br>
+  覆盖原理、框图、指标、影响因素、测试方法与选型指南 · 文档版本 v2.0 · 生成时间：2026-06-19<br>
+</div>
+
+</body>
+</html>

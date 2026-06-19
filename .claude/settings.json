@@ -1,0 +1,9 @@
+{
+  "description": "AE 知识文档库 - Claude Code 项目配置",
+  "language": "zh-CN",
+  "documentation": {
+    "root": "docs",
+    "encoding": "utf-8",
+    "format": "markdown"
+  }
+}

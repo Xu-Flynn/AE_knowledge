@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>400G/800G oDSP 光数字信号处理器 — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #1a56db; --primary-dark: #0e3a8e; --accent: #e74c3c;
+    --accent2: #27ae60; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+    --optical: #1a56db; --wireless: #e74c3c; --industrial: #27ae60;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  /* HERO */
+  .hero { background: linear-gradient(135deg, #0e3a8e 0%, #1a56db 50%, #0891b2 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  /* NAV */
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  /* CONTAINER */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  /* CARD */
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #1a56db11, #1a56db05); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #2563eb); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #e8f0fe; }
+  /* DIAGRAM */
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  /* BOXES */
+  .info-box { border-left: 4px solid var(--primary); background: #eff6ff; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  /* METRIC CARD */
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #1e40af, #1a56db); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  /* STEPS */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  /* CAUTION */
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  /* FORMULA */
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  /* CHIPS */
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  /* COMPARE */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #eff6ff; border: 2px solid var(--primary); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  /* FOOTER */
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  /* MISC */
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>🔷 400G & 800G oDSP</h1>
+  <div class="subtitle">光数字信号处理器 (Optical Digital Signal Processor) — 数据中心光互连核心芯片</div>
+  <div class="badge-row">
+    <span class="badge">📡 PAM4 调制</span>
+    <span class="badge">⚡ 7nm/5nm FinFET</span>
+    <span class="badge">🔗 800GAUI-8</span>
+    <span class="badge">📊 KP4-FEC</span>
+    <span class="badge">🧪 BER/眼图测试</span>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 核心模块深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、核心对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ Section 1: 背景与定位 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div><div class="icon">📖</div><h2>背景与应用定位</h2>
+    </div>
+    <div class="card-body">
+      <p>400G/800G oDSP (Optical Digital Signal Processor) 是<strong>数据中心光互连的核心芯片</strong>，部署于光模块（QSFP-DD、OSFP）内部，负责对经过光纤传输后严重劣化的高速光信号进行数字信号恢复与补偿。它是连接光域与电域的关键桥梁，决定了光模块的传输距离和信号质量。</p>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col blue">
+          <h3>📌 产品定位</h3>
+          <p><strong>产业链位置：</strong>光模块内部，处于 ADC/DAC 与 Host ASIC 之间</p>
+          <p><strong>核心价值：</strong>将"被光纤破坏"的信号恢复到"无误码"水平</p>
+          <p><strong>本质功能：</strong>高速数字信号处理（均衡 + CDR + FEC）</p>
+        </div>
+        <div class="compare-col green">
+          <h3>🎯 典型应用场景</h3>
+          <ul>
+            <li>数据中心内部互联 (DCI)</li>
+            <li>400GBASE-DR4/FR4/LR4/ER4 光模块</li>
+            <li>800GBASE-2xFR4/2xLR4 光模块</li>
+            <li>400G/600G/800G 相干光通信系统</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">技术路线</h4>
+      <table>
+        <thead><tr><th>维度</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>制程节点</strong></td><td>7nm/5nm FinFET CMOS</td><td>先进工艺支撑高集成度和低功耗</td></tr>
+          <tr><td><strong>调制格式</strong></td><td>PAM4 为主；相干支持 QPSK/8QAM/16QAM</td><td>每符号 2~4 bit</td></tr>
+          <tr><td><strong>封装形式</strong></td><td>Flip-chip BGA (0.8mm pitch), CPO</td><td>高密度互连</td></tr>
+          <tr><td><strong>接口标准</strong></td><td>800GAUI-8 / 400GAUI-8, OIF-CEI-112G</td><td>行业标准电气接口</td></tr>
+          <tr><td><strong>单通道速率</strong></td><td>53.125 Gbaud (106.25Gbps PAM4)</td><td>1UI ≈ 18.8ps</td></tr>
+          <tr><td><strong>FEC 标准</strong></td><td>KP4-FEC (RS 544,514)，相干用 C-FEC</td><td>NCG ~6.2dB</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2: 工作原理 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div><div class="icon">⚙️</div><h2>核心工作原理</h2>
+    </div>
+    <div class="card-body">
+      <p>oDSP 位于光模块内部，<strong>接收链路</strong>中处于 ADC 之后、Host ASIC 之前，<strong>发送链路</strong>反之。其核心任务是补偿光/电信道引入的各种信号损伤。</p>
+
+      <h4>📥 接收方向 (RX Path) 信号处理流程</h4>
+      <div class="diagram-title">图 2-1 | RX 接收链路信号流</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 120" width="760" height="120" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrBlue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <rect x="10" y="15" width="85" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="52" y="38" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">PD+TIA</text>
+          <line x1="95" y1="33" x2="125" y2="33" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="130" y="15" width="70" height="36" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="165" y="38" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">ADC</text>
+          <line x1="200" y1="33" x2="230" y2="33" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="235" y="10" width="520" height="48" rx="8" fill="#1a56db" stroke="#0e3a8e" stroke-width="2"/>
+          <text x="495" y="32" fill="white" font-size="12" font-weight="700" text-anchor="middle">oDSP RX DSP: Skew→FFE→DFE→MLSD→CDR→FEC Decode</text>
+          <text x="495" y="48" fill="#bfdbfe" font-size="9" text-anchor="middle">均衡补偿 + 时钟恢复 + 纠错解码</text>
+          <line x1="755" y1="33" x2="770" y2="33" stroke="#1a56db" stroke-width="2"/>
+          <text x="772" y="37" fill="#1e40af" font-size="10" font-weight="700">Host</text>
+        </svg>
+      </div>
+
+      <h4>📤 发送方向 (TX Path) 信号处理流程</h4>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 120" width="760" height="120" xmlns="http://www.w3.org/2000/svg">
+          <text x="10" y="37" fill="#1e40af" font-size="10" font-weight="700">Host</text>
+          <line x1="40" y1="33" x2="55" y2="33" stroke="#1a56db" stroke-width="2"/>
+          <rect x="60" y="10" width="520" height="48" rx="8" fill="#1a56db" stroke="#0e3a8e" stroke-width="2"/>
+          <text x="320" y="32" fill="white" font-size="12" font-weight="700" text-anchor="middle">oDSP TX DSP: FEC Encode→PAM4 Map→Pulse Shape→Pre-emphasis→NLC</text>
+          <text x="320" y="48" fill="#bfdbfe" font-size="9" text-anchor="middle">FEC编码 + 符号映射 + 频谱整形 + 预均衡 + 非线性补偿</text>
+          <line x1="580" y1="33" x2="610" y2="33" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="615" y="15" width="70" height="36" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="650" y="38" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">DAC</text>
+          <line x1="685" y1="33" x2="715" y2="33" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <rect x="720" y="15" width="55" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="747" y="38" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">Driver+Mod</text>
+        </svg>
+      </div>
+
+      <div class="info-box"><strong>💡 关键认知：</strong>oDSP 的本质是"用数学修复物理"——光纤的色散、非线性和损耗在数字域通过复杂算法补偿，让信号"看起来"像是经过理想信道传输。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2B: 模块深度解析 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header" style="background:linear-gradient(90deg,#fef3c7,#fde68a);border-bottom:2px solid #f59e0b;">
+      <div class="section-no" style="background:#d97706;">🔬</div><div class="icon">🧠</div><h2 style="color:#92400e;">核心模块深度解析</h2>
+    </div>
+    <div class="card-body">
+
+      <!-- FFE -->
+      <h4 style="color:#92400e;">一、前馈均衡器 (FFE) — 15-tap 自适应 FIR</h4>
+      <p>FFE 是一种线性 FIR 均衡器，通过加权组合延迟的输入信号补偿信道频率选择性衰落。400G/800G oDSP 采用 <strong>15-tap 自适应 FFE</strong>：</p>
+      <div class="formula">y[n] = Σ(k=-3 to 11) c[k] · x[n−k] &nbsp;&nbsp;|&nbsp;&nbsp; LMS 自适应: c[k]⁽ⁿ⁺¹⁾ = c[k]⁽ⁿ⁾ + μ · e(n) · x(n−k)</div>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>前向抽头 (pre-cursor)</td><td>3~5 tap</td><td>补偿反射引起的 pre-cursor ISI</td></tr>
+          <tr><td>后向抽头 (post-cursor)</td><td>9~11 tap</td><td>补偿信道损耗引起的 post-cursor ISI</td></tr>
+          <tr><td>最大补偿 @14GHz</td><td>>30 dB</td><td>Nyquist 频率处增益</td></tr>
+          <tr><td>系数位宽</td><td>8~10 bit</td><td>计算精度</td></tr>
+        </tbody>
+      </table>
+
+      <!-- DFE -->
+      <h4 style="color:#92400e;margin-top:20px;">二、判决反馈均衡器 (DFE) — 3-tap Speculative</h4>
+      <p>DFE 利用已判决符号的加权反馈消除后向 ISI，<strong>不放大噪声</strong>是其核心优势。</p>
+      <div class="formula">y[n] = x[n] − Σ(k=1 to 3) d[n−k] · b[k] &nbsp;&nbsp;|&nbsp;&nbsp; PAM4 判决阈值: −2, 0, +2</div>
+      <p><strong>Speculative DFE（推测式）：</strong>为满足 1UI (≈18.8ps @53Gbaud) 的时序约束，并行计算所有 4 种可能的反馈值，根据 d[n−1] 选择正确路径。</p>
+      <div class="warn-box"><strong>⚠️ 错误传播：</strong>3-tap DFE 下，一个判决错误最多传播 3 个符号。MLSD 可有效缓解此问题。</div>
+
+      <!-- MLSD -->
+      <h4 style="color:#92400e;margin-top:20px;">三、最大似然序列检测器 (MLSD) — Viterbi 算法</h4>
+      <p>MLSD 基于 Viterbi 算法寻找最小欧氏距离的发送序列，是 AWGN 信道下的<strong>理论最优检测</strong>。</p>
+      <table>
+        <thead><tr><th>特性</th><th>DFE</th><th>MLSD (64-State)</th></tr></thead>
+        <tbody>
+          <tr><td>SNR 增益</td><td>基准</td><td style="color:#1a56db;font-weight:600;">+1~2dB</td></tr>
+          <tr><td>复杂度</td><td>O(N)</td><td>O(4<sup>L</sup>)</td></tr>
+          <tr><td>延迟</td><td>~5 UI</td><td>32~64 UI</td></tr>
+          <tr><td>功耗</td><td>~0.3W/lane</td><td>~1W/lane</td></tr>
+        </tbody>
+      </table>
+      <p><strong>使用策略：</strong>短距 → FFE+DFE；中距 → +16-state MLSD；长距 → +64-state MLSD+CD 补偿</p>
+
+      <!-- CDR -->
+      <h4 style="color:#92400e;margin-top:20px;">四、时钟数据恢复 (CDR) — Mueller-Muller PD</h4>
+      <div class="formula">相位误差 = e(n)·d(n−1) − e(n−1)·d(n) &nbsp;&nbsp;|&nbsp;&nbsp; 二阶 PLL: Kp + Ki/s</div>
+      <table>
+        <thead><tr><th>参数</th><th>400G</th><th>800G</th></tr></thead>
+        <tbody>
+          <tr><td>锁定范围</td><td>±300ppm</td><td>±350ppm</td></tr>
+          <tr><td>锁定时间</td><td><100μs</td><td><100μs</td></tr>
+          <tr><td>恢复时钟 RJ</td><td><200fs</td><td><180fs</td></tr>
+          <tr><td>环路带宽</td><td>1~10MHz</td><td>2~15MHz</td></tr>
+        </tbody>
+      </table>
+      <p><strong>JTF 特性：</strong>低通 — f ≪ BW 时 0dB（跟踪），f ≫ BW 时 −40dB/dec（抑制）</p>
+
+      <!-- FEC -->
+      <h4 style="color:#92400e;margin-top:20px;">五、FEC 编解码器 — KP4-FEC</h4>
+      <table>
+        <thead><tr><th>参数</th><th>KP4-FEC</th><th>C-FEC (相干)</th></tr></thead>
+        <tbody>
+          <tr><td>码型</td><td>RS(544,514) over GF(2¹⁰)</td><td>级联 FEC</td></tr>
+          <tr><td>冗余度</td><td>5.5%</td><td>~15%</td></tr>
+          <tr><td>纠错能力</td><td>t=15 符号/码字</td><td>更强</td></tr>
+          <tr><td>NCG @1e-15</td><td>~6.2dB</td><td>~10.5dB</td></tr>
+          <tr><td>Pre-FEC 门限</td><td>2.4e-4</td><td>1.5e-2</td></tr>
+        </tbody>
+      </table>
+      <p><strong>RS 解码流程：</strong>伴随式计算 → Berlekamp-Massey 算法 → Chien Search → Forney 算法（错误值求解）</p>
+
+      <!-- TX -->
+      <h4 style="color:#92400e;margin-top:20px;">六、TX 发送端 DSP</h4>
+      <p><strong>PAM4 Gray 映射：</strong>00→−3, 01→−1, 11→+1, 10→+3（相邻电平仅 1 bit 不同，降低误码影响）</p>
+      <div class="formula">3-tap FIR: Vout[n] = c_pre·Vin[n+1] + c_main·Vin[n] + c_post·Vin[n−1]</div>
+      <p><strong>非线性预补偿 (NLC)：</strong>补偿 MZM 调制器的 sin² 非线性传输函数，提升 PAM4 眼图线性度。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 3: 电路框图 ═══════════ -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div><div class="icon">🔲</div><h2>芯片内部电路框图</h2>
+    </div>
+    <div class="card-body">
+      <div class="diagram-title">图 3-1 | 400G/800G oDSP 芯片内部架构</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 520" width="780" height="500" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <rect width="820" height="520" fill="#fafafa" rx="8"/>
+          <!-- AFE Row -->
+          <rect x="15" y="15" width="180" height="70" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="105" y="42" font-size="11" fill="#1e40af" text-anchor="middle" font-weight="bold">RX AFE Interface</text>
+          <text x="105" y="58" font-size="9" fill="#3b82f6" text-anchor="middle">4×112G I/F, Deskew &lt;0.5ps</text>
+          <text x="105" y="75" font-size="8" fill="#60a5fa" text-anchor="middle">ADC 8b 112GS/s</text>
+
+          <rect x="215" y="15" width="180" height="70" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="305" y="42" font-size="11" fill="#1e40af" text-anchor="middle" font-weight="bold">TX AFE Interface</text>
+          <text x="305" y="58" font-size="9" fill="#3b82f6" text-anchor="middle">4×112G I/F, Pre-emp</text>
+          <text x="305" y="75" font-size="8" fill="#60a5fa" text-anchor="middle">DAC 8b 112GS/s</text>
+
+          <rect x="415" y="15" width="170" height="70" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="500" y="42" font-size="11" fill="#92400e" text-anchor="middle" font-weight="bold">CDR / PLL / CMU</text>
+          <text x="500" y="58" font-size="9" fill="#b45309" text-anchor="middle">Multi-Bank, RefClk 156.25M</text>
+
+          <rect x="605" y="15" width="200" height="70" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="705" y="42" font-size="11" fill="#166534" text-anchor="middle" font-weight="bold">FEC Codec</text>
+          <text x="705" y="58" font-size="9" fill="#16a34a" text-anchor="middle">KP4-FEC Enc/Dec, C-FEC</text>
+
+          <!-- DSP Datapath -->
+          <rect x="15" y="100" width="790" height="215" rx="8" fill="#eff6ff" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="410" y="120" font-size="12" fill="#1e40af" text-anchor="middle" font-weight="bold">共享数字前端 (DSP Datapath)</text>
+
+          <!-- Row 1 -->
+          <rect x="30" y="132" width="170" height="40" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="115" y="150" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">Skew Comp (4ch)</text>
+          <text x="115" y="164" font-size="8" fill="#3b82f6" text-anchor="middle">&lt;0.5ps 精度</text>
+
+          <rect x="215" y="132" width="170" height="40" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="300" y="150" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">FFE (15-tap)</text>
+          <text x="300" y="164" font-size="8" fill="#3b82f6" text-anchor="middle">Adaptive LMS</text>
+
+          <rect x="400" y="132" width="170" height="40" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="485" y="150" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">CDR (Baud-rate)</text>
+          <text x="485" y="164" font-size="8" fill="#3b82f6" text-anchor="middle">Mueller-Muller PD</text>
+
+          <rect x="585" y="132" width="200" height="40" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="685" y="150" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">DFE (3-tap Speculative)</text>
+          <text x="685" y="164" font-size="8" fill="#3b82f6" text-anchor="middle">Adaptive</text>
+
+          <!-- Row 2 -->
+          <rect x="30" y="185" width="350" height="40" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="205" y="203" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">MLSD (Viterbi) — 64-State Grid Decoder</text>
+          <text x="205" y="217" font-size="8" fill="#3b82f6" text-anchor="middle">ACS: 256次/符号周期</text>
+
+          <rect x="395" y="185" width="390" height="40" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="590" y="203" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">TX DSP Precoder: Gray Map + 3-tap FIR + NLC</text>
+          <text x="590" y="217" font-size="8" fill="#3b82f6" text-anchor="middle">PAM4 符号映射 + 预均衡</text>
+
+          <!-- Row 3 -->
+          <rect x="30" y="238" width="350" height="40" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="205" y="256" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">CD Compensation (频域) ±2000ps/nm</text>
+          <text x="205" y="270" font-size="8" fill="#3b82f6" text-anchor="middle">相干模式: +IQ Imbalance Comp</text>
+
+          <rect x="395" y="238" width="390" height="40" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="590" y="256" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">自适应训练 (Trainer) + 系数跟踪</text>
+          <text x="590" y="270" font-size="8" fill="#3b82f6" text-anchor="middle">启动/重收敛自动训练</text>
+
+          <!-- Monitor Row -->
+          <rect x="15" y="330" width="790" height="60" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="410" y="350" font-size="11" fill="#475569" text-anchor="middle" font-weight="bold">系统监测 & 管理接口</text>
+          <rect x="30" y="358" width="110" height="22" rx="4" fill="#e2e8f0"/><text x="85" y="373" font-size="9" fill="#475569" text-anchor="middle">PRBS Gen/Chk</text>
+          <rect x="150" y="358" width="110" height="22" rx="4" fill="#e2e8f0"/><text x="205" y="373" font-size="9" fill="#475569" text-anchor="middle">Eye Monitor 2D</text>
+          <rect x="270" y="358" width="110" height="22" rx="4" fill="#e2e8f0"/><text x="325" y="373" font-size="9" fill="#475569" text-anchor="middle">Temp Sensor ±2°C</text>
+          <rect x="390" y="358" width="110" height="22" rx="4" fill="#e2e8f0"/><text x="445" y="373" font-size="9" fill="#475569" text-anchor="middle">BER Counters</text>
+          <rect x="510" y="358" width="80" height="22" rx="4" fill="#e2e8f0"/><text x="550" y="373" font-size="9" fill="#475569" text-anchor="middle">SPI Slave</text>
+          <rect x="600" y="358" width="80" height="22" rx="4" fill="#e2e8f0"/><text x="640" y="373" font-size="9" fill="#475569" text-anchor="middle">MDIO C45</text>
+          <rect x="690" y="358" width="100" height="22" rx="4" fill="#e2e8f0"/><text x="740" y="373" font-size="9" fill="#475569" text-anchor="middle">JTAG Debug</text>
+
+          <!-- Power Row -->
+          <rect x="15" y="400" width="790" height="45" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="410" y="420" font-size="10" fill="#991b1b" text-anchor="middle" font-weight="bold">电源管理: Vcore LDO (0.75-0.85V) | Vio LDO (1.2V) | Vana LDO (1.8V) | Power Gating</text>
+
+          <!-- Interface labels -->
+          <text x="105" y="470" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">Host-Side: 8×112G PAM4 (800GAUI-8)</text>
+          <text x="500" y="470" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">Line-Side: 4×112G PAM4 (光口)</text>
+          <text x="750" y="470" font-size="9" fill="#6b7280" text-anchor="middle">FC-BGA 封装</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>说明：</strong>RX AFE 接收外部 ADC 数据 → DSP 数据路径进行均衡/CDR/FEC 解码 → 通过 Host 接口输出。TX 方向反之。所有模块共享 DSP 数据路径，监测与诊断模块提供实时性能可视化。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 4: 核心对比 ═══════════ -->
+<section id="sec4">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">4</div><div class="icon">⚖️</div><h2>代际与技术对比</h2>
+    </div>
+    <div class="card-body">
+      <h4>400G vs 800G oDSP 代际对比</h4>
+      <table>
+        <thead><tr><th>对比维度</th><th>400G oDSP</th><th>800G oDSP</th><th>提升</th></tr></thead>
+        <tbody>
+          <tr><td><strong>总数据速率</strong></td><td>425 Gbps</td><td>850 Gbps</td><td>2×</td></tr>
+          <tr><td><strong>Host 通道数</strong></td><td>8×53G</td><td>8×106G</td><td>速率翻倍</td></tr>
+          <tr><td><strong>光侧通道数</strong></td><td>4×106G</td><td>4×212G / 8×106G</td><td>灵活配置</td></tr>
+          <tr><td><strong>最大功耗</strong></td><td>&lt;8W</td><td>&lt;14W</td><td>效率提升</td></tr>
+          <tr><td><strong>转发延迟</strong></td><td>&lt;80ns</td><td>&lt;100ns</td><td>含FEC</td></tr>
+          <tr><td><strong>CD 容忍度</strong></td><td>±800ps/nm</td><td>±400ps/nm</td><td>(速率越高越敏感)</td></tr>
+          <tr><td><strong>信道补偿@Nyquist</strong></td><td>>30dB @26.5GHz</td><td>>28dB @26.5GHz</td><td>高频损耗更大</td></tr>
+          <tr><td><strong>恢复时钟 RJ</strong></td><td>&lt;200fs</td><td>&lt;180fs</td><td>更严格</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">oDSP 均衡策略对比</h4>
+      <table>
+        <thead><tr><th>场景</th><th>推荐均衡方案</th><th>功耗</th><th>延迟</th><th>性能</th></tr></thead>
+        <tbody>
+          <tr><td>短距 (DR, &lt;500m)</td><td>FFE + DFE (3-tap)</td><td>低</td><td>&lt;30ns</td><td>够用</td></tr>
+          <tr><td>中距 (FR, 2km)</td><td>FFE + DFE + 16-state MLSD</td><td>中</td><td>~50ns</td><td>+1dB SNR</td></tr>
+          <tr><td>长距 (LR/ER, 10km+)</td><td>FFE + DFE + 64-state MLSD + CD Comp</td><td>高</td><td>~80ns</td><td>+2dB SNR</td></tr>
+          <tr><td>相干 (400G/600G/800G)</td><td>全链路 DSP + C-FEC + NLC</td><td>最高</td><td>~100ns</td><td>最优</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 5: 核心指标 ═══════════ -->
+<section id="sec5">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">5</div><div class="icon">📊</div><h2>核心性能指标</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📌 5.1 系统级指标</h4>
+      <table>
+        <thead><tr><th>指标名称</th><th>400G 规格</th><th>800G 规格</th><th>单位</th><th>含义说明</th></tr></thead>
+        <tbody>
+          <tr><td>总数据速率</td><td>425</td><td>850</td><td>Gbps</td><td>含 FEC 开销</td></tr>
+          <tr><td>调制格式</td><td>PAM4</td><td>PAM4</td><td>-</td><td>每符号 2bit</td></tr>
+          <tr><td>最大功耗</td><td>&lt;8</td><td>&lt;14</td><td>W</td><td>Tcase=85°C</td></tr>
+          <tr><td>转发延迟</td><td>&lt;80</td><td>&lt;100</td><td>ns</td><td>含 FEC 编解码</td></tr>
+          <tr><td>结温范围</td><td colspan="2">−40~+125</td><td>°C</td><td>工业级</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.2 接收性能指标</h4>
+      <table>
+        <thead><tr><th>指标</th><th>400G 规格</th><th>800G 规格</th><th>测试条件</th></tr></thead>
+        <tbody>
+          <tr><td><strong>RX 灵敏度</strong></td><td>40mVppd</td><td>50mVppd</td><td>Pre-FEC BER=2.4e-4</td></tr>
+          <tr><td><strong>CD 容忍度</strong></td><td>±800ps/nm</td><td>±400ps/nm</td><td>FR4 2km 光纤</td></tr>
+          <tr><td><strong>DGD 容忍度</strong></td><td>30ps</td><td>20ps</td><td>最大 PMD</td></tr>
+          <tr><td><strong>信道补偿@Nyquist</strong></td><td>>30dB</td><td>>28dB</td><td>@f_nyq=26.5GHz</td></tr>
+          <tr><td><strong>反射容忍度</strong></td><td>−10dB</td><td>−8dB</td><td>OMA=−3dBm</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.3 抖动与时序指标</h4>
+      <div class="metric-card">
+        <div class="metric-header"><h4>恢复时钟随机抖动 · RJ</h4><span class="metric-abbr">RJ RMS</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">400G 规格</span><span>&lt;200fs RMS（相噪积分 10k~100MHz）</span></div>
+          <div class="metric-row"><span class="metric-label">800G 规格</span><span>&lt;180fs RMS</span></div>
+          <div class="metric-row"><span class="metric-label">影响</span><span>RJ 直接影响 SNR → BER；每增加 100fs RJ，SNR 下降约 0.5~1dB</span></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>指标</th><th>规格</th><th>测量方法</th></tr></thead>
+        <tbody>
+          <tr><td>DJ (确定性抖动)</td><td>&lt;0.15UI</td><td>DDJ 分离法</td></tr>
+          <tr><td>TJ @1e-15</td><td>&lt;0.3UI</td><td>浴缸曲线外推</td></tr>
+          <tr><td>SJ 容限 @10MHz</td><td>>0.5UI</td><td>正弦抖动注入</td></tr>
+          <tr><td>频偏容限</td><td>±350ppm</td><td>频偏扫描</td></tr>
+          <tr><td>锁定时间</td><td>&lt;100μs</td><td>频率阶跃测试</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.4 TX 发射机指标</h4>
+      <div class="metric-card">
+        <div class="metric-header"><h4>TDECQ · 发射机色散眼图闭合度</h4><span class="metric-abbr">TDECQ</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>衡量理想参考接收机因发射机不理想而看到的眼图闭合程度（IEEE 802.3ck）</span></div>
+          <div class="formula">TDECQ = 10·log₁₀(OMA_TX / OMA_ideal) &nbsp;|&nbsp; 要求: &lt;3.4dB</div>
+          <div class="metric-row"><span class="metric-label">分解</span><span>TDECQ_noise（~1.0-1.5dB）+ TDECQ_ISI（~1.0-2.0dB）</span></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>指标</th><th>规格</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td>差分输出幅度</td><td>100~1200mVppd</td><td>可编程 ~2mV 步进</td></tr>
+          <tr><td>RLM (电平分离度)</td><td>>0.92</td><td>PAM4 眼图均匀度</td></tr>
+          <tr><td>EW5 (眼宽 @1e-5)</td><td>>0.2UI</td><td>水平张开度</td></tr>
+          <tr><td>EH5 (眼高 @1e-5)</td><td>>32mV</td><td>垂直张开度</td></tr>
+          <tr><td>上升/下降时间</td><td>&lt;9ps</td><td>20%-80%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 6: 影响因素 ═══════════ -->
+<section id="sec6">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">6</div><div class="icon">🔗</div><h2>指标影响因素分析</h2>
+    </div>
+    <div class="card-body">
+      <h4>📍 关键指标影响因素网络</h4>
+      <table>
+        <thead><tr><th>关键指标</th><th>被哪些因素影响（降级）</th><th>该指标又影响哪些下游性能</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>BER / 灵敏度</strong></td>
+            <td><span class="chip chip-red">信道 ISI/损耗</span><span class="chip chip-red">CD/DGD</span><span class="chip chip-red">反射</span><span class="chip chip-red">电源噪声</span><span class="chip chip-red">时钟抖动</span><span class="chip chip-red">温度</span></td>
+            <td><span class="chip chip-blue">链路预算</span><span class="chip chip-blue">传输距离</span><span class="chip chip-blue">系统误码率</span></td>
+          </tr>
+          <tr>
+            <td><strong>TDECQ</strong></td>
+            <td><span class="chip chip-red">TX FIR 设置不当</span><span class="chip chip-red">DAC 非线性</span><span class="chip chip-red">输出阻抗失配</span><span class="chip chip-red">带宽限制</span></td>
+            <td><span class="chip chip-blue">光眼图质量</span><span class="chip chip-blue">链路功率预算</span><span class="chip chip-blue">模块合规性</span></td>
+          </tr>
+          <tr>
+            <td><strong>CDR 抖动</strong></td>
+            <td><span class="chip chip-red">参考时钟相噪</span><span class="chip chip-red">PLL 环路带宽</span><span class="chip chip-red">电源纹波耦合</span><span class="chip chip-red">输入信号质量</span></td>
+            <td><span class="chip chip-blue">恢复时钟 RJ</span><span class="chip chip-blue">BER 下限</span><span class="chip chip-blue">级联抖动累积</span></td>
+          </tr>
+          <tr>
+            <td><strong>功耗</strong></td>
+            <td><span class="chip chip-red">数据速率/通道数</span><span class="chip chip-red">均衡复杂度(MLSD/FFE)</span><span class="chip chip-red">PVT corner</span><span class="chip chip-red">温度</span></td>
+            <td><span class="chip chip-blue">模块热设计</span><span class="chip chip-blue">散热方案</span><span class="chip chip-blue">系统可靠性</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="success-box" style="margin-top:16px;">
+        <strong>✅ 关键共同影响因素（所有高速芯片均适用）：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>电源完整性 (PDN)：</strong>DC-DC 开关纹波、PDN 谐振引起的电源噪声直接耦合到敏感模拟电路</li>
+          <li><strong>时钟质量 (Jitter)：</strong>参考时钟相噪直接影响 CDR 恢复时钟质量 → SNR → BER</li>
+          <li><strong>信号完整性 (SI)：</strong>PCB trace 损耗、阻抗失配、连接器反射 → ISI → BER 恶化</li>
+          <li><strong>温度：</strong>PVT 变化 → 模拟偏置漂移、时序变化；高温 → 漏电流增加 → 功耗升高</li>
+          <li><strong>工艺角 (PVT)：</strong>SS/TT/FF corner 下性能差异可达 3dB（灵敏度）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 7: 测试方法 ═══════════ -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法详解</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📐 7.1 接收灵敏度与 BER 测试</h4>
+      <p><strong>测试原理：</strong>通过受控衰减测量不同输入幅度下的 BER，确定满足 Pre-FEC BER=2.4e-4 所需的最小输入幅度。</p>
+
+      <h4 style="margin-top:14px;">测试设备清单</h4>
+      <table>
+        <thead><tr><th>设备名称</th><th>推荐型号</th><th>关键规格</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>误码仪 (BERT)</td><td>Keysight M8040A</td><td>64GBaud PAM4, RJ&lt;150fs</td><td>PPG 发送 + ED 检测</td></tr>
+          <tr><td>实时示波器</td><td>Keysight UXR1104A</td><td>110GHz, 256GS/s</td><td>眼图/PAM4 分析</td></tr>
+          <tr><td>可调衰减器</td><td>EXFO FVA-600</td><td>0~60dB, 0.01dB 步进</td><td>精确功率控制</td></tr>
+          <tr><td>可编程电源</td><td>Keysight N6705C</td><td>4ch, 低噪声</td><td>多轨供电</td></tr>
+          <tr><td>VNA</td><td>Keysight PNA-X N5247B</td><td>10M~67GHz</td><td>S 参数提取</td></tr>
+          <tr><td>温控平台</td><td>MPI Thermal TA-5000</td><td>−60~+200°C</td><td>三温测试</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">测试框图</h4>
+      <div class="diagram-title">图 7-1 | 接收端 BER 测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 180" width="760" height="180" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arr7" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <rect x="15" y="30" width="150" height="60" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="90" y="55" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle">BERT PPG</text>
+          <text x="90" y="72" fill="#3b82f6" font-size="9" text-anchor="middle">M8040A PRBS31Q</text>
+          <text x="90" y="85" fill="#3b82f6" font-size="9" text-anchor="middle">106.25G 800mVppd</text>
+          <line x1="165" y1="60" x2="220" y2="60" stroke="#1a56db" stroke-width="2" marker-end="url(#arr7)"/>
+          <rect x="225" y="30" width="120" height="60" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="285" y="55" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">可调衰减器</text>
+          <text x="285" y="72" fill="#b45309" font-size="9" text-anchor="middle">EXFO FVA-600</text>
+          <text x="285" y="85" fill="#b45309" font-size="9" text-anchor="middle">0~40dB, 0.5dB步进</text>
+          <line x1="345" y1="60" x2="400" y2="60" stroke="#1a56db" stroke-width="2" marker-end="url(#arr7)"/>
+          <rect x="405" y="30" width="180" height="60" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="495" y="55" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle">ISI 信道 + DUT oDSP</text>
+          <text x="495" y="72" fill="#3b82f6" font-size="9" text-anchor="middle">PCB trace / RF Cable</text>
+          <text x="495" y="85" fill="#3b82f6" font-size="9" text-anchor="middle">供电: Vcore/Vio/Vana</text>
+          <line x1="585" y1="60" x2="620" y2="60" stroke="#1a56db" stroke-width="2" marker-end="url(#arr7)"/>
+          <rect x="625" y="30" width="140" height="60" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="695" y="55" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">BERT ED / 环回</text>
+          <text x="695" y="72" fill="#16a34a" font-size="9" text-anchor="middle">PRBS Checker</text>
+          <rect x="15" y="110" width="750" height="55" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="390" y="132" fill="#475569" font-size="10" text-anchor="middle">Phase 0: 预热30min + 校准 | Phase 1: DUT初始化 (上电时序→CDR锁定→DFE收敛→PRBS同步)</text>
+          <text x="390" y="150" fill="#475569" font-size="10" text-anchor="middle">Phase 2: 衰减扫描 (0→灵敏度→瀑布曲线) | Phase 3: 三温重复 (-40/+25/+85°C) | Phase 4: PSRR测试</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:18px;">🔊 7.2 发射机 TDECQ 测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>示波器校准</h5><p>垂直校准 (DC 精度)、时基校准、通道去嵌入（若有外部衰减器）。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>PAM4 软件配置</h5><p>符号率 53.125 Gbaud；参考接收机: CTLE Auto + FFE 5-tap + DFE 3-tap；CDR: 二阶 PLL, BW=Baud/1667。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>数据采集</h5><p>采集长度 >2M UI (IEEE 最小)，建议 >5M UI；10 次独立采集取平均。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>分析输出</h5><p>TDECQ (dB)、RLM (>0.92)、EW5 (>0.2UI)、EH5 (>32mV)、眼图轮廓 (3 层)。</p></div></div>
+        <div class="step"><div class="step-no">5</div><div class="step-content"><h5>TX FIR 优化</h5><p>扫描 c_main[20~60], c_pre[-10~10], c_post[-10~10] → 最小 TDECQ + RLM>0.92。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">🔴 7.3 CDR 性能专项测试</h4>
+      <table>
+        <thead><tr><th>测试项目</th><th>测试方法</th><th>判定标准</th></tr></thead>
+        <tbody>
+          <tr><td><strong>抖动容限 (JTOL)</strong></td><td>注入不同频率/幅度的 SJ，测量 BER=2.4e-4 时的最大 SJ</td><td>满足 OIF-CEI-112G-VSR 模板</td></tr>
+          <tr><td><strong>频率偏移容限</strong></td><td>缓慢增加频率偏移 (10ppm/s)，监测 Lock Status 和 BER</td><td>±350ppm</td></tr>
+          <tr><td><strong>恢复时钟抖动</strong></td><td>相噪分析仪 E5052B，相噪积分 10k~100MHz</td><td>RJ &lt;200fs RMS</td></tr>
+          <tr><td><strong>锁定时间</strong></td><td>速率阶跃: 标称→标称+200ppm，示波器测 CDR Lock 信号延迟</td><td>&lt;100μs</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">🟢 7.4 FEC 性能测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>BER 瀑布曲线</h5><p>靶向 Pre-FEC 点: [5e-3, 2e-3, 1e-3, 5e-4, 2.4e-4, 1e-4, 5e-5]；期望 Pre-FEC=2.4e-4 时 Post-FEC &lt;1e-15。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>突发纠错测试</h5><p>注入连续错误 Burst: 5/10/15/20/25 符号；5~15 符号全部纠正；16~25 符号部分不可纠。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>FEC 同步/失步</h5><p>信号突然中断 → FEC 检测失步 → 恢复后自动重同步；测量高 BER 恢复后 FEC 重新同步时间。</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 8: 注意事项 ═══════════ -->
+<section id="sec8">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">8</div><div class="icon">⚠️</div><h2>测试与使用注意事项</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>⚡ 通用注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">🔌 上电时序（绝对关键！）</div><p>上电: Vcore(0.8V) → 等待>10ms → Vio(1.2V) → 等待>10ms → Vana(1.8V)；断电: 反向！绝对禁止颠倒，否则可能永久损坏芯片！</p></div>
+        <div class="caution-item"><div class="ci-title">🕐 参考时钟质量</div><p>频率: 156.25/312.5MHz LVDS；抖动: &lt;200fs RMS (12k~20MHz)；相噪: −145dBc/Hz @10kHz offset；精度: ±50ppm。</p></div>
+        <div class="caution-item"><div class="ci-title">⚡ 电源隔离与去耦</div><p>AVDD 与 DVDD 分开供电；就近放 100nF+10μF 去耦电容；数字 I/O 开关噪声通过衬底耦合到模拟前端。</p></div>
+        <div class="caution-item"><div class="ci-title">📐 PCB 布局规范</div><p>100ohm 差分阻抗 (±5%)；等长布线；参考层完整不分割；高速信号远离时钟线；保护环包围敏感模拟引脚。</p></div>
+        <div class="caution-item"><div class="ci-title">🌡️ 散热设计</div><p>theta-JC ~2°C/W；Tj_max 125°C；推荐散热片+导热硅脂/TIM+模块外壳导热；800G 全功耗 &lt;14W 需认真对待热设计。</p></div>
+        <div class="caution-item"><div class="ci-title">🛡️ ESD 防护</div><p>HBM: 2kV, CDM: 500V；客户 SMT 产线需 ESD 管控；建议 PCB 添加 TVS 保护；操作时佩戴接地手环。</p></div>
+      </div>
+
+      <h4 style="margin-top:20px;">🔵 oDSP 专项注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">⏱ CDR 锁定确认</div><p>测试前务必确认 CDR Lock Status=1；未锁定时 BER 无意义；锁定后建议等待 >50ms 让 DFE 系数收敛。</p></div>
+        <div class="caution-item"><div class="ci-title">📊 FEC 同步状态</div><p>BER 测试时需同时监控 FEC Sync 状态；FEC 未同步时 Post-FEC BER 虚高；每次衰减变更后等待 FEC 重新同步。</p></div>
+        <div class="caution-item"><div class="ci-title">🔍 电缆去嵌入</div><p>测试电缆和 PCB trace 的损耗必须在测量结果中补偿；使用 VNA 提取 S 参数 → 示波器去嵌入功能。</p></div>
+        <div class="caution-item"><div class="ci-title">🚫 避免过量程</div><p>RX 输入不得超过 ADC 满量程；TX 输出预加重过度 → 信号削波 → 谐波增加 → TDECQ 恶化。</p></div>
+      </div>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🚨 FFT/BER 测试最常见错误：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>未做相干采样：</strong>频谱泄漏导致 SNR/SFDR 虚低</li>
+          <li><strong>激励源自身失真太大：</strong>测出的 THD 是激励源而非 DUT 的</li>
+          <li><strong>CDR 未锁定时测 BER：</strong>结果完全无意义</li>
+          <li><strong>DFE 未收敛：</strong>前 50ms 数据不可用</li>
+          <li><strong>忽视温度稳定：</strong>温度变化过程中测量 → 数据漂移</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 9: 选型指南 ═══════════ -->
+<section id="sec9">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">9</div><div class="icon">🧭</div><h2>选型与应用指南</h2>
+    </div>
+    <div class="card-body">
+
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>✅ 选用 400G oDSP 的场景</h3>
+          <ul>
+            <li>400GBASE-DR4/FR4/LR4 光模块设计</li>
+            <li>单通道 106Gbps PAM4 应用</li>
+            <li>功耗预算 &lt;8W</li>
+            <li>成熟供应链，成本敏感</li>
+            <li>距离 &lt;10km（DR/FR/LR）</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>✅ 选用 800G oDSP 的场景</h3>
+          <ul>
+            <li>800GBASE 光模块设计</li>
+            <li>需要更高端口密度（1.6T 演进）</li>
+            <li>AI/ML 集群超大规模互联</li>
+            <li>支持 112Gbps/lane 电接口</li>
+            <li>功耗预算 &lt;14W</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">均衡策略选择速查</h4>
+      <table>
+        <thead><tr><th>应用距离</th><th>光纤类型</th><th>推荐均衡</th><th>是否需要 MLSD</th><th>是否需要 CD Comp</th></tr></thead>
+        <tbody>
+          <tr><td>&lt;500m (DR)</td><td>SMF</td><td>FFE+DFE</td><td>否</td><td>否</td></tr>
+          <tr><td>2km (FR4)</td><td>SMF</td><td>FFE+DFE+16-state MLSD</td><td>推荐</td><td>否</td></tr>
+          <tr><td>10km (LR4)</td><td>SMF</td><td>FFE+DFE+64-state MLSD+CD Comp</td><td>必须</td><td>必须</td></tr>
+          <tr><td>40km+ (ER4)</td><td>SMF</td><td>全链路 DSP + C-FEC</td><td>必须</td><td>必须</td></tr>
+          <tr><td>相干 (400G+)</td><td>SMF/DWDM</td><td>全链路 DSP + NLC + C-FEC</td><td>必须</td><td>必须</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>💡 AE 工程直觉：</strong>"短距靠 FFE/DFE，中距加 MLSD，长距上 CD Comp + C-FEC，相干用全链路 DSP。时钟和电源是所有性能的天花板。"
+      </div>
+
+      <h4 style="margin-top:18px;">系统链路预算速算示例 (400GBASE-DR4, 500m)</h4>
+      <table>
+        <thead><tr><th>环节</th><th>增益/损耗</th><th>累计功率</th></tr></thead>
+        <tbody>
+          <tr><td>TX oDSP 输出</td><td>-</td><td>−5 dBm</td></tr>
+          <tr><td>Driver + Modulator</td><td>−7 dB</td><td>−12 dBm (光纤耦合输出)</td></tr>
+          <tr><td>500m SMF + Connector</td><td>−2 dB</td><td>−14 dBm (光纤输入)</td></tr>
+          <tr><td>PD 响应 + TIA 增益</td><td>等效 ~+4 dB</td><td>−10 dBm (电等效)</td></tr>
+          <tr><td>oDSP 灵敏度</td><td>−10 dBm</td><td>链路余量 >3 dB ✅</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<div class="footer">
+AE 知识文档 · 400G/800G oDSP 光数字信号处理器<br>
+  覆盖原理、框图、指标、影响因素、测试方法与选型指南 · 文档版本 v2.0 · 生成时间：2026-06-18<br>
+  原始 MD 版本 v1.0 · <a href="../../docs/01_光通信/01_400G_800G_oDSP.md">查看原始 Markdown</a>
+</div>
+
+</body>
+</html>

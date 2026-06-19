@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>储能 BMS AFE 电池管理系统模拟前端 — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #27ae60; --primary-dark: #166534; --accent: #e74c3c;
+    --accent2: #27ae60; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+    --optical: #1a56db; --wireless: #e74c3c; --industrial: #27ae60;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  /* HERO */
+  .hero { background: linear-gradient(135deg, #166534 0%, #27ae60 50%, #0891b2 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  /* NAV */
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  /* CONTAINER */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  /* CARD */
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #27ae6011, #27ae6005); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #16a34a); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #d1fae5; }
+  /* DIAGRAM */
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  /* BOXES */
+  .info-box { border-left: 4px solid var(--primary); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  /* METRIC CARD */
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #166534, #27ae60); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  /* STEPS */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  /* CAUTION */
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  /* FORMULA */
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  /* CHIPS */
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  /* COMPARE */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #eff6ff; border: 2px solid var(--primary); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  /* FOOTER */
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  /* MISC */
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>🔋 储能 BMS AFE</h1>
+  <div class="subtitle">电池管理系统模拟前端 (Battery Management System Analog Front-End) — 大规模储能核心芯片</div>
+  <div class="badge-row">
+    <span class="badge">⚡ 18串监测</span>
+    <span class="badge">🎯 ±1mV 精度</span>
+    <span class="badge">🔄 Σ-Δ ADC</span>
+    <span class="badge">🔗 Daisy-Chain SPI</span>
+    <span class="badge">⚖️ 被动均衡</span>
+    <span class="badge">🏭 工业级 −40~+85°C</span>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 核心模块深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、核心对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ Section 1: 背景与定位 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div><div class="icon">📖</div><h2>背景与应用定位</h2>
+    </div>
+    <div class="card-body">
+      <p>储能BMS AFE (Analog Front-End) 是<strong>大规模储能系统中电池管理系统的核心模拟芯片</strong>，负责对串联电池组中每个电池单元的电压、温度和电流进行高精度监测，以及执行电池均衡。它是电池安全与寿命管理的基石，直接影响储能系统的 SOC 估算精度和运行可靠性。</p>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col blue">
+          <h3>📌 产品定位</h3>
+          <p><strong>产业链位置：</strong>电池组与 MCU 之间，承担所有模拟信号采集与前端处理</p>
+          <p><strong>核心价值：</strong>精确测量每节电池 (<span class="formula-inline">±1mV</span>)，保障 SOC 估算精度 <span class="formula-inline">~0.5%</span></p>
+          <p><strong>本质功能：</strong>高精度电压/温度/电流采集 + 电池均衡 + 硬件保护</p>
+        </div>
+        <div class="compare-col green">
+          <h3>🎯 典型应用场景</h3>
+          <ul>
+            <li>大型储能电站 (Grid-scale ESS): >1MWh</li>
+            <li>工商业储能 (C&I ESS): 100kWh~1MWh</li>
+            <li>家庭储能 (Residential ESS): 5~20kWh</li>
+            <li>通信基站备电 (Telecom backup)</li>
+            <li>UPS 不间断电源系统</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">技术路线</h4>
+      <table>
+        <thead><tr><th>维度</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>监测电池串数</strong></td><td>12~18串/芯片</td><td>可堆叠至 >1000V 系统</td></tr>
+          <tr><td><strong>电压测量精度</strong></td><td>±1mV @25°C</td><td>全温度校准后，影响 SOC 估算精度</td></tr>
+          <tr><td><strong>ADC 架构</strong></td><td>16~18bit Sigma-Delta ADC</td><td>过采样 + 噪声整形，适合 DC/低频信号</td></tr>
+          <tr><td><strong>通信接口</strong></td><td>Daisy-Chain SPI / 隔离 CAN</td><td>支持多芯片堆叠，高低压域隔离</td></tr>
+          <tr><td><strong>均衡方式</strong></td><td>被动均衡（内置 MOS 开关）</td><td>均衡电流 50~300mA，外部电阻设定</td></tr>
+          <tr><td><strong>工艺</strong></td><td>BCD (Bipolar-CMOS-DMOS)</td><td>高压耐受，支持 >1000V 共模</td></tr>
+          <tr><td><strong>温度范围</strong></td><td>−40~+85°C</td><td>工业级</td></tr>
+          <tr><td><strong>系统寿命</strong></td><td>>15年</td><td>储能系统长寿要求</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2: 工作原理 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div><div class="icon">⚙️</div><h2>核心工作原理</h2>
+    </div>
+    <div class="card-body">
+      <p>BMS AFE 位于电池组与 MCU 之间，<strong>采集链路</strong>将电池的模拟信号数字化后上报 MCU，<strong>控制链路</strong>接收 MCU 指令执行均衡和保护动作。其核心任务是高精度、高可靠地监测每一节电池的状态。</p>
+
+      <h4>📥 BMS 系统级信号流</h4>
+      <div class="diagram-title">图 2-1 | BMS 系统架构</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 110" width="760" height="110" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrGrn" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker></defs>
+          <rect x="10" y="15" width="100" height="42" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="60" y="41" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">电池组 (n串)</text>
+          <line x1="110" y1="36" x2="145" y2="36" stroke="#27ae60" stroke-width="2" marker-end="url(#arrGrn)"/>
+          <rect x="150" y="10" width="200" height="52" rx="8" fill="#27ae60" stroke="#166534" stroke-width="2"/>
+          <text x="250" y="33" fill="white" font-size="11" font-weight="700" text-anchor="middle">BMS AFE (每12~18串1颗)</text>
+          <text x="250" y="50" fill="#bbf7d0" font-size="9" text-anchor="middle">电压+温度+电流+均衡</text>
+          <line x1="350" y1="36" x2="385" y2="36" stroke="#27ae60" stroke-width="2" marker-end="url(#arrGrn)"/>
+          <rect x="390" y="15" width="90" height="42" rx="6" fill="#dcfce7" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="435" y="41" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">MCU</text>
+          <line x1="480" y1="36" x2="515" y2="36" stroke="#27ae60" stroke-width="2" marker-end="url(#arrGrn)"/>
+          <rect x="520" y="15" width="110" height="42" rx="6" fill="#dcfce7" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="575" y="41" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">系统控制器</text>
+          <rect x="640" y="18" width="130" height="36" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="1"/>
+          <text x="705" y="40" fill="#92400e" font-size="9" text-anchor="middle">均衡电路 (被动/主动)</text>
+        </svg>
+      </div>
+
+      <h4>📐 电压监测链路 (Cell Voltage Monitoring)</h4>
+      <p>差分测量每个电池单元的正负极电压，通过高压 MUX 逐一切换测量：</p>
+      <div class="formula">V_cell[n] = V[n] − V[n−1] &nbsp;&nbsp;|&nbsp;&nbsp; 共模电压可达 >1000V</div>
+      <div class="diagram-title">图 2-2 | 单节电池电压测量链路</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 80" width="760" height="80" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="18" width="85" height="36" rx="6" fill="#dcfce7" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="52" y="41" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">电池单元</text>
+          <line x1="95" y1="36" x2="125" y2="36" stroke="#27ae60" stroke-width="2" marker-end="url(#arrGrn)"/>
+          <rect x="130" y="15" width="95" height="42" rx="6" fill="#f0fdf4" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="177" y="32" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">高压MUX</text>
+          <text x="177" y="47" fill="#16a34a" font-size="8" text-anchor="middle">(18:1 差分)</text>
+          <line x1="225" y1="36" x2="255" y2="36" stroke="#27ae60" stroke-width="2" marker-end="url(#arrGrn)"/>
+          <rect x="260" y="15" width="80" height="42" rx="6" fill="#f0fdf4" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="300" y="32" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">电平移位</text>
+          <text x="300" y="47" fill="#16a34a" font-size="8" text-anchor="middle">Level Shift</text>
+          <line x1="340" y1="36" x2="370" y2="36" stroke="#27ae60" stroke-width="2" marker-end="url(#arrGrn)"/>
+          <rect x="375" y="15" width="70" height="42" rx="6" fill="#f0fdf4" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="410" y="32" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">PGA</text>
+          <text x="410" y="47" fill="#16a34a" font-size="8" text-anchor="middle">G=1~8</text>
+          <line x1="445" y1="36" x2="475" y2="36" stroke="#27ae60" stroke-width="2" marker-end="url(#arrGrn)"/>
+          <rect x="480" y="10" width="155" height="52" rx="8" fill="#27ae60" stroke="#166534" stroke-width="2"/>
+          <text x="557" y="32" fill="white" font-size="10" font-weight="700" text-anchor="middle">Σ-Δ ADC (16~18bit)</text>
+          <text x="557" y="50" fill="#bbf7d0" font-size="8" text-anchor="middle">过采样+噪声整形+数字滤波</text>
+          <line x1="635" y1="36" x2="665" y2="36" stroke="#27ae60" stroke-width="2" marker-end="url(#arrGrn)"/>
+          <rect x="670" y="18" width="95" height="36" rx="6" fill="#dcfce7" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="717" y="41" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">数字结果 → MCU</text>
+        </svg>
+      </div>
+
+      <h4>🌡️ 温度与电流监测</h4>
+      <table>
+        <thead><tr><th>监测对象</th><th>方案</th><th>传感器</th><th>AFE 功能</th></tr></thead>
+        <tbody>
+          <tr><td><strong>温度</strong></td><td>外接 NTC 热敏电阻</td><td>NTC (4~8路/芯片)</td><td>内置激励电流源 → 测电压 → 换算温度，精度 ±1~2°C</td></tr>
+          <tr><td><strong>电流</strong></td><td>分流电阻 (Shunt) / 霍尔传感器</td><td>50~100μΩ Shunt</td><td>高精度电流 ADC (16~18bit, 带 PGA) + 库仑计数硬件累积器</td></tr>
+        </tbody>
+      </table>
+
+      <h4>⚖️ 电池均衡 (Cell Balancing)</h4>
+      <p><strong>被动均衡（AFE 集成主流方案）：</strong>检测到某电池电压高于其他 → 开启该电池内置均衡 MOS 开关 → 电流通过外部电阻耗散为热量 → 电池电压降低 → 循环直至所有电池电压在阈值内。</p>
+      <div class="formula">I_balance = (V_cell − V_sat) / R_ext &nbsp;&nbsp;|&nbsp;&nbsp; 典型 50~300mA，由外部电阻设定</div>
+
+      <h4>🔗 堆叠架构 (Daisy-Chain SPI)</h4>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 80" width="760" height="80" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="18" width="70" height="36" rx="6" fill="#dcfce7" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="45" y="41" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">MCU</text>
+          <line x1="80" y1="36" x2="130" y2="36" stroke="#27ae60" stroke-width="2"/>
+          <text x="105" y="28" fill="#16a34a" font-size="8" text-anchor="middle">SPI</text>
+          <rect x="135" y="15" width="110" height="42" rx="6" fill="#27ae60" stroke="#166534" stroke-width="1.5"/>
+          <text x="190" y="32" fill="white" font-size="10" font-weight="700" text-anchor="middle">AFE #1 (底部)</text>
+          <text x="190" y="48" fill="#bbf7d0" font-size="8" text-anchor="middle">地电位参考</text>
+          <line x1="245" y1="36" x2="280" y2="36" stroke="#27ae60" stroke-width="2"/>
+          <rect x="245" y="56" width="70" height="18" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="0.8"/>
+          <text x="280" y="69" fill="#92400e" font-size="7" text-anchor="middle">隔离 (电容/变压器)</text>
+          <rect x="285" y="15" width="110" height="42" rx="6" fill="#27ae60" stroke="#166534" stroke-width="1.5"/>
+          <text x="340" y="32" fill="white" font-size="10" font-weight="700" text-anchor="middle">AFE #2</text>
+          <text x="340" y="48" fill="#bbf7d0" font-size="8" text-anchor="middle">~60V 参考</text>
+          <line x1="395" y1="36" x2="430" y2="36" stroke="#27ae60" stroke-width="2"/>
+          <rect x="395" y="56" width="70" height="18" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="0.8"/>
+          <text x="430" y="69" fill="#92400e" font-size="7" text-anchor="middle">隔离</text>
+          <text x="460" y="41" fill="#6b7280" font-size="12">...</text>
+          <line x1="485" y1="36" x2="520" y2="36" stroke="#27ae60" stroke-width="2"/>
+          <rect x="495" y="56" width="70" height="18" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="0.8"/>
+          <text x="530" y="69" fill="#92400e" font-size="7" text-anchor="middle">隔离</text>
+          <rect x="525" y="15" width="110" height="42" rx="6" fill="#27ae60" stroke="#166534" stroke-width="1.5"/>
+          <text x="580" y="32" fill="white" font-size="10" font-weight="700" text-anchor="middle">AFE #n (顶部)</text>
+          <text x="580" y="48" fill="#bbf7d0" font-size="8" text-anchor="middle">>1000V 参考</text>
+          <text x="660" y="41" fill="#16a34a" font-size="9">最多 40颗堆叠 (>700V)</text>
+        </svg>
+      </div>
+
+      <div class="info-box"><strong>💡 关键认知：</strong>每颗 AFE 有独立地址，MCU 通过 Daisy-Chain 访问所有 AFE。底部 AFE 工作在地电位，顶部可能工作于 >1000V，芯片间通信需要电容/变压器隔离。AFE 内部集成隔离通信接口。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2B: 模块深度解析 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header" style="background:linear-gradient(90deg,#fef3c7,#fde68a);border-bottom:2px solid #f59e0b;">
+      <div class="section-no" style="background:#d97706;">🔬</div><div class="icon">🧠</div><h2 style="color:#92400e;">核心模块深度解析</h2>
+    </div>
+    <div class="card-body">
+
+      <!-- Sigma-Delta ADC -->
+      <h4 style="color:#92400e;">一、Sigma-Delta ADC — 16~18bit 高精度模数转换</h4>
+      <p>Σ-Δ ADC 通过过采样和噪声整形实现超高分辨率，是电池电压测量的理想架构。电池电压是典型的 DC/低频信号，恰好匹配 Σ-Δ ADC 的特性。</p>
+      <div class="formula">OSR = f_s / (2·f_bw) &nbsp;&nbsp;|&nbsp;&nbsp; SNR提升 = 10·log₁₀(OSR) dB (一阶)</div>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>分辨率 (ENOB)</td><td>14~16 bit</td><td>实际有效位数（非理想因素限制）</td></tr>
+          <tr><td>过采样率 (OSR)</td><td>64~256</td><td>每输出一个采样点的过采样次数</td></tr>
+          <tr><td>调制器阶数</td><td>2阶或3阶</td><td>高阶→更强噪声整形，但需防不稳定</td></tr>
+          <tr><td>量化器</td><td>1-bit 或 Multi-bit</td><td>Multi-bit 提升稳定性，降低量化噪声</td></tr>
+          <tr><td>转换速率</td><td>100μs~10ms/cell</td><td>可编程，满足电池慢变特性</td></tr>
+          <tr><td>数字滤波器</td><td>Sinc³ + 补偿 FIR</td><td>抽取 + 50/60Hz 工频抑制</td></tr>
+        </tbody>
+      </table>
+      <p><strong>为何 Σ-Δ 适合电池测量：</strong>电池电压变化频率极低 (<1Hz)，Σ-Δ 可充分过采样换取分辨率；Sinc 滤波器天然在 50/60Hz 处有零点，能有效抑制工频干扰。</p>
+
+      <!-- 被动均衡 -->
+      <h4 style="color:#92400e;margin-top:20px;">二、被动均衡电路 — 内置 MOS + 外部电阻</h4>
+      <p>被动均衡是最成熟、成本最低的均衡方案。AFE 内部集成均衡 MOS 开关和驱动电路，外部仅需一颗功率电阻。</p>
+      <div class="formula">P_diss = I_bal² · R_ext = (50~300mA)² · R_ext &nbsp;&nbsp;|&nbsp;&nbsp; Ron_MOS < 2Ω（降低芯片损耗）</div>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>设计要点</th></tr></thead>
+        <tbody>
+          <tr><td>均衡电流</td><td>50~300mA</td><td>由外部电阻 R_ext 设定</td></tr>
+          <tr><td>内置 MOS Ron</td><td><2Ω</td><td>Ron 越低，芯片发热越小</td></tr>
+          <tr><td>均衡模式</td><td>手动/自动/定时</td><td>自动模式由 AFE 状态机控制</td></tr>
+          <tr><td>占空比控制</td><td>可编程 0~100%</td><td>防止过热</td></tr>
+          <tr><td>同时均衡通道</td><td>受限于热预算</td><td>需保证结温 <125°C</td></tr>
+        </tbody>
+      </table>
+      <div class="warn-box"><strong>⚠️ 散热设计：</strong>被动均衡的本质是将多余能量转化为热量耗散。大电流 (300mA) 均衡时，外部电阻和芯片本身都需要散热考量。均衡策略需权衡速度和热管理。</div>
+
+      <!-- 库仑计数 -->
+      <h4 style="color:#92400e;margin-top:20px;">三、库仑计数器 (Coulomb Counter) — 硬件 SOC 估算</h4>
+      <p>库仑计数器对电流进行连续时间积分，直接估算电池的荷电状态 (SOC)，无需 MCU 软件干预。</p>
+      <div class="formula">SOC(t) = SOC₀ − (1/C_nom) · ∫₀ᵗ I(τ) dτ &nbsp;&nbsp;|&nbsp;&nbsp; 硬件累积器精度 < 0.5% FS</div>
+      <table>
+        <thead><tr><th>特性</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>累积寄存器位宽</td><td>48~64 bit（防止溢出）</td></tr>
+          <tr><td>采样率</td><td>可编程，典型 1k~10k SPS</td></tr>
+          <tr><td>精度 @FS</td><td>< 0.5%（满量程误差）</td></tr>
+          <tr><td>数据读出</td><td>SPI 寄存器直接读取，无需 MCU 累积</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 保护电路 -->
+      <h4 style="color:#92400e;margin-top:20px;">四、硬件保护电路 — 独立于 MCU 的安全防线</h4>
+      <table>
+        <thead><tr><th>保护类型</th><th>检测方式</th><th>响应时间</th><th>输出动作</th></tr></thead>
+        <tbody>
+          <tr><td><strong>过压保护 (OV)</strong></td><td>硬件比较器，每通道独立阈值</td><td><10μs</td><td>Alert 引脚 + 寄存器标志</td></tr>
+          <tr><td><strong>欠压保护 (UV)</strong></td><td>硬件比较器</td><td><10μs</td><td>Alert 引脚 + 寄存器标志</td></tr>
+          <tr><td><strong>过温保护 (OT)</strong></td><td>芯片内部温度传感器 + 比较器</td><td><100μs</td><td>关闭均衡 + Alert</td></tr>
+          <tr><td><strong>过流保护 (OC)</strong></td><td>分流电压比较器</td><td><10μs</td><td>Alert 引脚（可驱动安全继电器）</td></tr>
+        </tbody>
+      </table>
+      <p><strong>关键设计：</strong>硬件保护路径完全独立于 ADC 和 MCU。即使 MCU 死机或通信中断，OV/UV/OT/OC 保护仍然正常工作。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 3: 电路框图 ═══════════ -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div><div class="icon">🔲</div><h2>芯片内部电路框图</h2>
+    </div>
+    <div class="card-body">
+      <div class="diagram-title">图 3-1 | 储能 BMS AFE (18串) 芯片内部架构</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 580" width="780" height="560" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <rect width="820" height="580" fill="#fafafa" rx="8"/>
+
+          <!-- Battery Interface Row -->
+          <rect x="15" y="12" width="790" height="62" rx="6" fill="#f0fdf4" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="410" y="32" font-size="11" fill="#166534" text-anchor="middle" font-weight="bold">电池接口 (C0~C18)</text>
+          <text x="410" y="48" font-size="9" fill="#16a34a" text-anchor="middle">差分输入 → 高压MUX(18:1) → 电平移位 → 可编程增益放大器(PGA) → 共模耐受 >1000V</text>
+          <text x="410" y="64" font-size="8" fill="#4ade80" text-anchor="middle">支持 LFP(3.2V) / NMC(3.6~3.7V) / LTO(2.3V) 全类型锂电池</text>
+
+          <!-- ADC Row -->
+          <rect x="15" y="84" width="790" height="70" rx="8" fill="#eff6ff" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="410" y="104" font-size="11" fill="#1e40af" text-anchor="middle" font-weight="bold">高精度 ADC 阵列</text>
+
+          <rect x="30" y="112" width="230" height="33" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="145" y="128" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">Σ-Δ ADC (电压) 16~18bit</text>
+          <text x="145" y="141" font-size="8" fill="#3b82f6" text-anchor="middle">差分输入, ±1mV 精度</text>
+
+          <rect x="280" y="112" width="230" height="33" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="395" y="128" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">Σ-Δ ADC (电流 Shunt) 16~18bit</text>
+          <text x="395" y="141" font-size="8" fill="#3b82f6" text-anchor="middle">PGA G=1~64, ±300mV 范围</text>
+
+          <rect x="530" y="112" width="260" height="33" rx="5" fill="white" stroke="#93c5fd"/>
+          <text x="660" y="128" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">SAR ADC (温度/辅助) 12bit</text>
+          <text x="660" y="141" font-size="8" fill="#3b82f6" text-anchor="middle">NTC×8路激励+测量</text>
+
+          <!-- Balancing Row -->
+          <rect x="15" y="164" width="790" height="65" rx="8" fill="#f0fdf4" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="410" y="184" font-size="11" fill="#166534" text-anchor="middle" font-weight="bold">均衡电路 (18通道被动均衡)</text>
+          <rect x="30" y="192" width="120" height="27" rx="4" fill="#dcfce7" stroke="#86efac"/>
+          <text x="90" y="210" font-size="9" fill="#166534" text-anchor="middle">均衡MOS ×18</text>
+          <rect x="160" y="192" width="120" height="27" rx="4" fill="#dcfce7" stroke="#86efac"/>
+          <text x="220" y="210" font-size="9" fill="#166534" text-anchor="middle">Ron < 2Ω</text>
+          <rect x="290" y="192" width="150" height="27" rx="4" fill="#dcfce7" stroke="#86efac"/>
+          <text x="365" y="210" font-size="9" fill="#166534" text-anchor="middle">I_bal 50~300mA</text>
+          <rect x="450" y="192" width="140" height="27" rx="4" fill="#dcfce7" stroke="#86efac"/>
+          <text x="520" y="210" font-size="9" fill="#166534" text-anchor="middle">外部R设定电流</text>
+          <rect x="600" y="192" width="180" height="27" rx="4" fill="#dcfce7" stroke="#86efac"/>
+          <text x="690" y="210" font-size="9" fill="#166534" text-anchor="middle">手动/自动/定时模式</text>
+
+          <!-- Protection Row -->
+          <rect x="15" y="239" width="790" height="65" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+          <text x="410" y="259" font-size="11" fill="#991b1b" text-anchor="middle" font-weight="bold">硬件保护功能 (独立于MCU)</text>
+          <rect x="30" y="268" width="140" height="27" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+          <text x="100" y="286" font-size="9" fill="#991b1b" text-anchor="middle">OV 过压比较器 ×18</text>
+          <rect x="185" y="268" width="140" height="27" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+          <text x="255" y="286" font-size="9" fill="#991b1b" text-anchor="middle">UV 欠压比较器 ×18</text>
+          <rect x="340" y="268" width="140" height="27" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+          <text x="410" y="286" font-size="9" fill="#991b1b" text-anchor="middle">OT 过温保护</text>
+          <rect x="495" y="268" width="140" height="27" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+          <text x="565" y="286" font-size="9" fill="#991b1b" text-anchor="middle">OC 过流保护</text>
+          <rect x="650" y="268" width="130" height="27" rx="4" fill="#fee2e2" stroke="#fca5a5"/>
+          <text x="715" y="286" font-size="9" fill="#991b1b" text-anchor="middle">Alert 引脚输出</text>
+
+          <!-- Digital Control Row -->
+          <rect x="15" y="314" width="790" height="75" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="410" y="334" font-size="11" fill="#92400e" text-anchor="middle" font-weight="bold">数字控制 & 通信子系统</text>
+          <rect x="30" y="344" width="135" height="35" rx="4" fill="white" stroke="#fcd34d"/>
+          <text x="97" y="359" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">状态机 (自动扫描)</text>
+          <text x="97" y="373" font-size="7" fill="#b45309" text-anchor="middle">周期扫描/阈值触发</text>
+
+          <rect x="180" y="344" width="135" height="35" rx="4" fill="white" stroke="#fcd34d"/>
+          <text x="247" y="359" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">寄存器 (配置/结果)</text>
+          <text x="247" y="373" font-size="7" fill="#b45309" text-anchor="middle">SPI 可读写</text>
+
+          <rect x="330" y="344" width="160" height="35" rx="4" fill="white" stroke="#fcd34d"/>
+          <text x="410" y="359" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">Daisy-Chain SPI</text>
+          <text x="410" y="373" font-size="7" fill="#b45309" text-anchor="middle">1~4Mbps, 独立地址</text>
+
+          <rect x="505" y="344" width="135" height="35" rx="4" fill="white" stroke="#fcd34d"/>
+          <text x="572" y="359" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">隔离通信 I/F</text>
+          <text x="572" y="373" font-size="7" fill="#b45309" text-anchor="middle">电容/变压器隔离</text>
+
+          <rect x="655" y="344" width="130" height="35" rx="4" fill="white" stroke="#fcd34d"/>
+          <text x="720" y="359" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">库仑计数累积器</text>
+          <text x="720" y="373" font-size="7" fill="#b45309" text-anchor="middle">48~64bit 硬件</text>
+
+          <!-- Power Row -->
+          <rect x="15" y="400" width="790" height="45" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+          <text x="410" y="420" font-size="10" fill="#166534" text-anchor="middle" font-weight="bold">电源管理: LDO (从电池组取电) | 高精度基准电压源 (<10ppm/°C) | 待机功耗 <100μA | 工作功耗 <10mA</text>
+
+          <!-- Temp Row -->
+          <rect x="15" y="455" width="790" height="40" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="410" y="473" font-size="10" fill="#475569" text-anchor="middle" font-weight="bold">温度监测: NTC1~NTC8 激励电流源 + MUX + ADC | 精度 ±1~2°C</text>
+          <text x="410" y="488" font-size="8" fill="#6b7280" text-anchor="middle">芯片内部温度传感器 (用于OT保护 + 热管理)</text>
+
+          <!-- Labels -->
+          <text x="410" y="520" font-size="10" fill="#166534" text-anchor="middle" font-weight="bold">MCU-Side: Daisy-Chain SPI / 隔离CAN | BCD 工艺 (高压耐受)</text>
+          <text x="410" y="540" font-size="9" fill="#6b7280" text-anchor="middle">封装: QFP/TQFP/LQFP | 最多40颗堆叠 >700V 系统 | 寿命 >15年</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>说明：</strong>电池接口通过高压 MUX 接入差分信号 → PGA 放大后送 Σ-Δ ADC 数字化 → 数字控制模块通过 Daisy-Chain SPI 上报 MCU。均衡电路、硬件保护和温度监测模块独立运行，保障系统安全。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 4: 核心对比 ═══════════ -->
+<section id="sec4">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">4</div><div class="icon">⚖️</div><h2>均衡方案与架构对比</h2>
+    </div>
+    <div class="card-body">
+      <h4>被动均衡 vs 主动均衡 技术对比</h4>
+      <table>
+        <thead><tr><th>对比维度</th><th>被动均衡 (AFE 集成)</th><th>主动均衡 (外部电路)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>原理</strong></td><td>电阻耗散多余能量为热量</td><td>DC-DC/电容飞跨转移能量</td></tr>
+          <tr><td><strong>效率</strong></td><td>0%（全部耗散）</td><td>80~95%（能量回收）</td></tr>
+          <tr><td><strong>均衡电流</strong></td><td>50~300mA（受热限制）</td><td>1~5A（大电流均衡）</td></tr>
+          <tr><td><strong>成本</strong></td><td>低（仅需外部电阻）</td><td>高（需 DC-DC/电感/电容阵列）</td></tr>
+          <tr><td><strong>复杂度</strong></td><td>低（AFE 内部集成）</td><td>高（额外芯片 + 复杂控制）</td></tr>
+          <tr><td><strong>散热需求</strong></td><td>需要（热量集中）</td><td>低（能量转移而非耗散）</td></tr>
+          <tr><td><strong>适用场景</strong></td><td>小容量电池、成本敏感</td><td>大容量电池、长续航要求</td></tr>
+          <tr><td><strong>AFE 支持</strong></td><td>内置 MOS 开关 + 驱动</td><td>提供控制接口，需外置电路</td></tr>
+          <tr><td><strong>寿命影响</strong></td><td>均衡时局部发热，需热管理</td><td>热量均匀分布，对寿命有利</td></tr>
+        </tbody>
+      </table>
+
+      <div class="compare-grid" style="margin-top:20px;">
+        <div class="compare-col blue">
+          <h3>✅ 选用被动均衡的场景</h3>
+          <ul>
+            <li>电池容量较小 (<100Ah)</li>
+            <li>成本敏感型项目</li>
+            <li>系统散热条件好（风冷/液冷）</li>
+            <li>均衡频率低，电池一致性较好</li>
+            <li>家庭储能、通信备电等小功率应用</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>✅ 选用主动均衡的场景</h3>
+          <ul>
+            <li>电池容量大 (>100Ah)，均衡时间长</li>
+            <li>对系统效率要求高（减少能量浪费）</li>
+            <li>散热条件受限（密闭环境）</li>
+            <li>电池老化不一致性增大时</li>
+            <li>大型储能电站、工商业储能</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">电池类型与电压特征速查</h4>
+      <table>
+        <thead><tr><th>电池类型</th><th>标称电压</th><th>满充电压</th><th>放电截止</th><th>特点</th></tr></thead>
+        <tbody>
+          <tr><td><strong>LFP (磷酸铁锂)</strong></td><td>3.20V</td><td>3.65V</td><td>2.50V</td><td>安全、长寿、平台电压平坦</td></tr>
+          <tr><td><strong>NMC (三元锂)</strong></td><td>3.60~3.70V</td><td>4.20V</td><td>3.00V</td><td>能量密度高、电压随SOC变化明显</td></tr>
+          <tr><td><strong>LTO (钛酸锂)</strong></td><td>2.30V</td><td>2.70V</td><td>1.80V</td><td>超长寿命、快充、低温性能好</td></tr>
+        </tbody>
+      </table>
+      <div class="info-box"><strong>💡 电压精度是关键：</strong>±1mV 的电压测量精度约影响 SOC 估算精度 0.5%。LFP 电池的平台电压非常平坦（3.2~3.3V），对测量精度要求更严苛。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 5: 核心指标 ═══════════ -->
+<section id="sec5">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">5</div><div class="icon">📊</div><h2>核心性能指标</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📌 5.1 电压测量指标</h4>
+      <div class="metric-card">
+        <div class="metric-header"><h4>电压测量精度 · Cell Voltage Accuracy</h4><span class="metric-abbr">V_ERR</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">精度 @25°C</span><span>±1mV（全温度校准后）</span></div>
+          <div class="metric-row"><span class="metric-label">温漂</span><span><10μV/°C（基准源温漂）</span></div>
+          <div class="metric-row"><span class="metric-label">影响</span><span>1mV 误差 → SOC 误差约 0.5%（LFP 平台电压平坦区影响更大）</span></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>单位</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>测量范围</td><td>0~5</td><td>V/cell</td><td>覆盖所有锂电池类型</td></tr>
+          <tr><td>测量精度 @25°C</td><td>±1</td><td>mV</td><td>全温度校准后</td></tr>
+          <tr><td>温漂</td><td><10</td><td>μV/°C</td><td>基准源温漂决定</td></tr>
+          <tr><td>ADC 分辨率</td><td>16~18</td><td>bit</td><td>Sigma-Delta 架构</td></tr>
+          <tr><td>测量速度</td><td>100μs~10ms</td><td>/cell</td><td>可编程调节</td></tr>
+          <tr><td>共模电压</td><td>>1000</td><td>V</td><td>高压电池组顶部耐受</td></tr>
+          <tr><td>差分输入阻抗</td><td>>10</td><td>MΩ</td><td>降低对电池的负载效应</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.2 电流测量指标</h4>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>单位</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>分流输入范围</td><td>±100 ~ ±300</td><td>mV</td><td>可编程增益调整</td></tr>
+          <tr><td>电流 ADC 分辨率</td><td>16~18</td><td>bit</td><td>带 PGA 可编程增益</td></tr>
+          <tr><td>库仑计数精度</td><td><0.5</td><td>% FS</td><td>硬件累积器，48~64bit</td></tr>
+          <tr><td>过流检测响应</td><td><10</td><td>μs</td><td>硬件比较器路径</td></tr>
+          <tr><td>PGA 增益范围</td><td>1~64</td><td>V/V</td><td>适配不同 Shunt 阻值</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.3 均衡指标</h4>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>单位</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>均衡通道数</td><td>18</td><td>/芯片</td><td>每串电池独立均衡</td></tr>
+          <tr><td>均衡电流</td><td>50~300</td><td>mA</td><td>外部电阻设定</td></tr>
+          <tr><td>均衡 MOS Ron</td><td><2</td><td>Ω</td><td>降低芯片损耗和发热</td></tr>
+          <tr><td>均衡模式</td><td colspan="2">-</td><td>手动/自动/定时</td></tr>
+          <tr><td>占空比控制</td><td>0~100</td><td>%</td><td>防止过热</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.4 系统级指标</h4>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>单位</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>堆叠芯片数</td><td>最多40颗 (>700V)</td><td>-</td><td>Daisy-Chain 拓扑</td></tr>
+          <tr><td>通信接口</td><td>Daisy-Chain SPI / 隔离 CAN</td><td>-</td><td>1~4Mbps</td></tr>
+          <tr><td>工作功耗</td><td><10</td><td>mA</td><td>正常运行模式</td></tr>
+          <tr><td>待机功耗</td><td><100</td><td>μA</td><td>休眠/待机模式</td></tr>
+          <tr><td>温度范围</td><td>−40~+85</td><td>°C</td><td>工业级</td></tr>
+          <tr><td>基准温漂</td><td><10</td><td>ppm/°C</td><td>高精度带隙基准</td></tr>
+          <tr><td>寿命要求</td><td>>15</td><td>年</td><td>储能系统长寿需求</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 6: 影响因素 ═══════════ -->
+<section id="sec6">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">6</div><div class="icon">🔗</div><h2>指标影响因素分析</h2>
+    </div>
+    <div class="card-body">
+      <h4>📍 关键指标影响因素网络</h4>
+      <table>
+        <thead><tr><th>关键指标</th><th>被哪些因素影响（降级）</th><th>该指标又影响哪些下游性能</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>电压测量精度</strong></td>
+            <td><span class="chip chip-red">基准温漂</span><span class="chip chip-red">PCB 漏电流</span><span class="chip chip-red">输入滤波差异</span><span class="chip chip-red">ADC 非线性</span><span class="chip chip-red">温度梯度</span><span class="chip chip-red">工频干扰</span></td>
+            <td><span class="chip chip-blue">SOC 估算精度</span><span class="chip chip-blue">均衡判断</span><span class="chip chip-blue">OV/UV 保护阈值</span></td>
+          </tr>
+          <tr>
+            <td><strong>库仑计数精度</strong></td>
+            <td><span class="chip chip-red">Shunt 温漂</span><span class="chip chip-red">ADC 偏移</span><span class="chip chip-red">积分时钟误差</span><span class="chip chip-red">PCB 热电偶效应</span></td>
+            <td><span class="chip chip-blue">SOC 长期漂移</span><span class="chip chip-blue">SOH 估算</span><span class="chip chip-blue">续航里程预测</span></td>
+          </tr>
+          <tr>
+            <td><strong>均衡效率</strong></td>
+            <td><span class="chip chip-red">MOS Ron 温升</span><span class="chip chip-red">散热条件</span><span class="chip chip-red">连线电阻</span><span class="chip chip-red">电压测量误差</span></td>
+            <td><span class="chip chip-blue">均衡速度</span><span class="chip chip-blue">系统热管理</span><span class="chip chip-blue">电池一致性</span></td>
+          </tr>
+          <tr>
+            <td><strong>通信可靠性</strong></td>
+            <td><span class="chip chip-red">隔离器件老化</span><span class="chip chip-red">共模瞬变 (dv/dt)</span><span class="chip chip-red">EMI 干扰</span><span class="chip chip-red">线缆长度</span></td>
+            <td><span class="chip chip-blue">数据完整性</span><span class="chip chip-blue">保护响应延迟</span><span class="chip chip-blue">系统可用性</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="success-box" style="margin-top:16px;">
+        <strong>✅ 储能 BMS AFE 关键共同影响因素：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>PCB 漏电流：</strong>高压电池组的 PCB 漏电流（尤其在高湿环境）直接并联在电池输入阻抗上，导致测量分压误差。设计时需加保护环 (Guard Ring)。</li>
+          <li><strong>输入 RC 滤波匹配：</strong>每个电池通道的输入 RC 滤波器时间常数必须严格匹配，否则在扫描切换时引起瞬态误差。</li>
+          <li><strong>基准源温漂：</strong>电池组温度分布不均，基准源温漂 (<10ppm/°C) 直接转化为测量误差的温漂分量。这是全温精度的天花板。</li>
+          <li><strong>工频干扰 (50/60Hz)：</strong>储能电站的强电环境引入工频干扰。Σ-Δ ADC 的 Sinc³ 滤波器在 50/60Hz 处有零点，但滤波器选择不当会削弱抑制效果。</li>
+          <li><strong>PGA 增益误差：</strong>多通道 PGA 的增益匹配误差导致通道间相对精度下降，影响均衡判断的一致性。</li>
+          <li><strong>热梯度：</strong>大型电池组内部温度不均匀，导致 NTC 测量偏差和基准漂移的分层效应。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 7: 测试方法 ═══════════ -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法详解</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📐 7.1 电压测量精度测试</h4>
+      <p><strong>测试原理：</strong>使用高精度电压源模拟电池电压，测量 AFE 读数与参考电压的偏差。全温度、全量程覆盖。</p>
+
+      <h4 style="margin-top:14px;">测试设备清单</h4>
+      <table>
+        <thead><tr><th>设备名称</th><th>推荐型号</th><th>关键规格</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>高精度电压源</td><td>Fluke 5730A</td><td>6.5 位以上, <2ppm 精度</td><td>提供参考电池电压</td></tr>
+          <tr><td>高精度万用表</td><td>Keysight 3458A</td><td>8.5 位, <0.1ppm 线性度</td><td>独立测量验证</td></tr>
+          <tr><td>电池模拟器</td><td>Pickering 41-752 / Chroma</td><td>多通道 (18+), 隔离输出</td><td>模拟串联电池组</td></tr>
+          <tr><td>温控箱</td><td>ESPEC SU-242</td><td>−70~+180°C, ±0.3°C</td><td>三温测试 (−40/+25/+85°C)</td></tr>
+          <tr><td>示波器</td><td>Keysight MSOX3054A</td><td>500MHz</td><td>通信波形/保护响应测量</td></tr>
+          <tr><td>精密电流源</td><td>Keithley 6221</td><td>0.1% 精度</td><td>库仑计数精度测试</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">测试框图</h4>
+      <div class="diagram-title">图 7-1 | 电压测量精度测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 160" width="760" height="160" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arr7g" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker></defs>
+          <rect x="15" y="20" width="140" height="55" rx="8" fill="#dcfce7" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="85" y="42" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">电池模拟器</text>
+          <text x="85" y="56" fill="#16a34a" font-size="8" text-anchor="middle">18通道隔离输出</text>
+          <text x="85" y="68" fill="#16a34a" font-size="8" text-anchor="middle">3.000/3.500/4.000/4.200V</text>
+          <line x1="155" y1="47" x2="200" y2="47" stroke="#27ae60" stroke-width="2" marker-end="url(#arr7g)"/>
+          <rect x="205" y="15" width="170" height="65" rx="8" fill="#27ae60" stroke="#166534" stroke-width="2"/>
+          <text x="290" y="38" fill="white" font-size="10" font-weight="700" text-anchor="middle">DUT: BMS AFE</text>
+          <text x="290" y="53" fill="#bbf7d0" font-size="8" text-anchor="middle">18串连接, PSU供电</text>
+          <text x="290" y="68" fill="#bbf7d0" font-size="8" text-anchor="middle">三温测试: −40/+25/+85°C</text>
+          <line x1="375" y1="47" x2="420" y2="47" stroke="#27ae60" stroke-width="2" marker-end="url(#arr7g)"/>
+          <rect x="425" y="22" width="90" height="50" rx="8" fill="#dcfce7" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="470" y="44" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">MCU</text>
+          <text x="470" y="60" fill="#16a34a" font-size="8" text-anchor="middle">SPI 读取</text>
+          <line x1="515" y1="47" x2="560" y2="47" stroke="#27ae60" stroke-width="2" marker-end="url(#arr7g)"/>
+          <rect x="565" y="22" width="100" height="50" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="615" y="44" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">数据分析</text>
+          <text x="615" y="60" fill="#b45309" font-size="8" text-anchor="middle">误差 = V_afe - V_ref</text>
+          <rect x="685" y="22" width="100" height="50" rx="8" fill="#dcfce7" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="735" y="44" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">3458A 独立验证</text>
+          <text x="735" y="60" fill="#16a34a" font-size="8" text-anchor="middle">参考真值</text>
+          <rect x="15" y="95" width="770" height="50" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="400" y="115" fill="#475569" font-size="9" text-anchor="middle">Phase 1: 电池模拟器校准 (3458A 独立验证) | Phase 2: DUT 初始化 → 配置扫描周期 → 记录所有通道读数</text>
+          <text x="400" y="132" fill="#475569" font-size="9" text-anchor="middle">Phase 3: 遍历电压点 [2.0, 2.5, 3.0, 3.5, 4.0, 4.2, 4.5]V | Phase 4: 三温重复 | Phase 5: 统计最大误差</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:18px;">📊 7.2 均衡功能测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>均衡使能与电流测量</h5><p>通过 SPI 使能某通道均衡 → 测量外部电阻两端压降 → 计算均衡电流 I_bal = V_drop / R_ext。验证 I_bal 与寄存器设定一致。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>MOS Ron 测量</h5><p>在均衡条件下测量 AFE 均衡引脚电压与电池引脚电压之差，计算 Ron = (V_cell − V_bal_pin) / I_bal。要求 <2Ω。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>热测试</h5><p>最大均衡电流 (300mA) 下连续运行 30 分钟 → 热成像仪监测芯片表面温度 → 验证结温 < Tj_max (125°C)。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>均衡占空比验证</h5><p>设定不同占空比 (25%/50%/75%/100%) → 示波器测量均衡控制信号 → 验证占空比精度和时序。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">🔗 7.3 堆叠通信测试</h4>
+      <table>
+        <thead><tr><th>测试项目</th><th>测试方法</th><th>判定标准</th></tr></thead>
+        <tbody>
+          <tr><td><strong>通信可靠性</strong></td><td>搭建多芯片 (如 20颗) 堆叠系统，连续通信 24 小时</td><td>零误码</td></tr>
+          <tr><td><strong>通信延迟</strong></td><td>测量 MCU 发送 → 最远 AFE 响应的往返延迟</td><td><1ms (20颗堆叠)</td></tr>
+          <tr><td><strong>共模瞬变抗扰</strong></td><td>施加 dv/dt 脉冲到电池组 (模拟负载突变)</td><td>通信无中断/无错误</td></tr>
+          <tr><td><strong>地址分配</strong></td><td>验证自动地址分配和手动地址配置</td><td>所有 AFE 可独立寻址</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">🛡️ 7.4 保护功能测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>OV/UV 阈值测试</h5><p>缓慢扫描电池电压越过 OV/UV 阈值 → 示波器测量 Alert 引脚响应 → 记录触发时刻的精确电压值。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>响应时间测试</h5><p>电压阶跃 (从正常→过压) → 示波器双通道测量: Ch1=触发信号, Ch2=Alert 输出 → 测量延迟 <10μs。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>OT 保护测试</h5><p>外部加热 AFE → 监测内部温度传感器读数 → 验证 OT 阈值触发时 Alert 输出和均衡自动关闭。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>MCU 独立保护验证</h5><p>断开 MCU 通信 → 施加过压故障 → 验证 Alert 引脚仍然正常输出（证明保护独立于 MCU）。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">🔢 7.5 库仑计数精度测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>精密电流注入</h5><p>Keithley 6221 输出已知恒定电流 (如 1A, 10A) → 持续 30 分钟。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>累积值读取</h5><p>读取 AFE 库仑计数寄存器 → 计算 Q_measured vs Q_expected (I × t) → 偏差 < 0.5% FS。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>动态电流测试</h5><p>施加变化电流波形（模拟真实放电/充电） → 验证动态累积精度。</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 8: 注意事项 ═══════════ -->
+<section id="sec8">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">8</div><div class="icon">⚠️</div><h2>测试与使用注意事项</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>⚡ 通用设计注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">🔌 输入 RC 滤波器匹配</div><p>每个电池通道的输入 RC 滤波器时间常数必须严格匹配。不匹配会导致 MUX 切换时各通道瞬态建立时间不同，产生通道间测量误差。建议 RC 容差 <1%。</p></div>
+        <div class="caution-item"><div class="ci-title">⚡ PCB 漏电流防护</div><p>高压电池组的 PCB 漏电流（尤其高湿环境）会并联在电池输入阻抗上导致测量误差。设计时在敏感引脚周围加保护环 (Guard Ring)，连接到低阻抗驱动节点。</p></div>
+        <div class="caution-item"><div class="ci-title">🌡️ 热梯度管理</div><p>大型电池组内部温度不均匀，基准在不同 AFE 处的温度可能不同。确保 PCB 上有良好的等温设计，关键模拟走线远离发热源（均衡电阻、电源电路）。</p></div>
+        <div class="caution-item"><div class="ci-title">🔗 通信隔离耐压</div><p>顶部 AFE 可能处于 >1000V 电位。隔离器件（电容/变压器）的耐压必须留有足够裕量 (>2× 系统电压)。PCB 爬电距离需符合 IEC 62368 标准。</p></div>
+        <div class="caution-item"><div class="ci-title">⚖️ 均衡散热设计</div><p>均衡电阻的发热不容忽视。多通道同时均衡时，总热量 = N × I_bal² × R_ext。散热设计需考虑最坏情况（所有通道同时均衡）。</p></div>
+        <div class="caution-item"><div class="ci-title">🛡️ ESD 与浪涌防护</div><p>电池接口暴露于外部连接，需防护 ESD (HBM 2kV) 和浪涌。建议 PCB 添加 TVS 管和共模扼流圈。操作时佩戴接地手环。</p></div>
+      </div>
+
+      <h4 style="margin-top:20px;">🟢 BMS AFE 专项注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">🔋 电池反接保护</div><p>AFE 设计需考虑电池反接场景（维修/安装时）。电池反接可能导致 AFE 永久损坏，需在输入路径加串联保护二极管或 P-ch MOSFET 反接保护。</p></div>
+        <div class="caution-item"><div class="ci-title">📊 SOC 估算依赖电压精度</div><p>LFP 电池的 SOC-电压曲线非常平坦（3.20~3.35V 覆盖 30%~80% SOC）。1mV 电压误差在平坦区可导致 >1% SOC 误差。校准和维护精度至关重要。</p></div>
+        <div class="caution-item"><div class="ci-title">🔄 ADC 扫描时序</div><p>Σ-Δ ADC 的建立时间 (Settling) 在通道切换时不可忽略。MUX 切换后需等待足够长的建立时间 (通常 10~100μs)，否则读数有残余误差。</p></div>
+        <div class="caution-item"><div class="ci-title">📡 工频干扰抑制</div><p>储能电站强电环境引入 50/60Hz 工频干扰。Σ-Δ ADC 的数字滤波器需配置 Sinc³ 滤波器，其零点精确对齐 50Hz (或 60Hz) 及其谐波。</p></div>
+      </div>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🚨 BMS AFE 测试最常见错误：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>未等待 ADC 建立就读取：</strong>通道切换后 Σ-Δ ADC 需要 settling time，立即读取得到错误数据</li>
+          <li><strong>忽视输入滤波差异：</strong>各通道使用不同容差的 RC 元件导致通道间系统偏差</li>
+          <li><strong>未在目标温度下校准：</strong>室温校准后直接用于高低温，全温误差超预期</li>
+          <li><strong>均衡测试时未考虑 PCB 走线压降：</strong>大电流均衡时 PCB 走线 IR drop 影响测量精度</li>
+          <li><strong>保护功能测试未断开 MCU：</strong>无法验证硬件保护的独立性</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 9: 选型指南 ═══════════ -->
+<section id="sec9">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">9</div><div class="icon">🧭</div><h2>选型与应用指南</h2>
+    </div>
+    <div class="card-body">
+
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>✅ 选用 12~14 串 AFE 的场景</h3>
+          <ul>
+            <li>家庭储能 (48V 系统, 16串 LFP)</li>
+            <li>通信基站备电 (48V)</li>
+            <li>小型 UPS 系统</li>
+            <li>单颗 AFE 即可覆盖，无需堆叠</li>
+            <li>成本最敏感，系统电压 <100V</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>✅ 选用 18 串 AFE 的场景</h3>
+          <ul>
+            <li>工商业储能 (400V~800V 平台)</li>
+            <li>大型储能电站 (>1MWh)</li>
+            <li>需要堆叠多颗 AFE (>700V 系统)</li>
+            <li>更少芯片数 → 更高可靠性</li>
+            <li>每串成本更低 (规模效应)</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">通信接口选择速查</h4>
+      <table>
+        <thead><tr><th>应用场景</th><th>推荐通信</th><th>方案特点</th></tr></thead>
+        <tbody>
+          <tr><td>单颗 AFE (≤18串, 低压)</td><td>SPI 直连</td><td>最简单，无需隔离</td></tr>
+          <tr><td>多颗 AFE 堆叠 (高压)</td><td>Daisy-Chain SPI</td><td>成本低，布线简单</td></tr>
+          <tr><td>强 EMI 环境 (工业/电站)</td><td>隔离 CAN / CAN-FD</td><td>差分传输，抗干扰强</td></tr>
+          <tr><td>对实时性要求高</td><td>Daisy-Chain + 全局同步</td><td>同步触发所有 AFE 同时采样</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">系统配置速算示例 (800V 储能电站)</h4>
+      <table>
+        <thead><tr><th>环节</th><th>参数</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>电池类型</td><td>LFP 3.2V</td><td>228串 = 729.6V</td></tr>
+          <tr><td>每颗 AFE 覆盖</td><td>18串</td><td>18 × 3.2 = 57.6V/AFE</td></tr>
+          <tr><td>所需 AFE 数量</td><td>13颗 (228/18≈13)</td><td>Daisy-Chain 堆叠</td></tr>
+          <tr><td>顶部 AFE 共模</td><td>~712V</td><td>隔离耐压需 >1500V</td></tr>
+          <tr><td>通信延迟</td><td><1ms (全链)</td><td>13颗 SPI daisy-chain</td></tr>
+          <tr><td>均衡电流</td><td>100mA</td><td>R_ext ≈ 32Ω, P_diss ≈ 0.32W/ch</td></tr>
+          <tr><td>系统总监测点数</td><td>228电压 + 52温度</td><td>13 AFE × ~4 NTC/AFE</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>💡 AE 工程直觉：</strong>"低压少串用单颗，高压多串靠堆叠。精度看基准和 PCB，均衡看散热和策略。保护必须独立于 MCU，通信隔离是高压安全的底线。储能系统 15 年寿命，设计时就要考虑长期可靠性。"
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<div class="footer">
+AE 知识文档 · 储能 BMS AFE 电池管理系统模拟前端<br>
+  覆盖原理、框图、指标、影响因素、测试方法与选型指南 · 文档版本 v2.0 · 生成时间：2026-06-19<br>
+  原始 MD 版本 v1.0 · <a href="../../docs/03_工业汽车/01_储能BMS_AFE.md">查看原始 Markdown</a>
+</div>
+
+</body>
+</html>

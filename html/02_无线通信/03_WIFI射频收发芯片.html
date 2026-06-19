@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WiFi射频收发芯片 (WiFi RF Transceiver) — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #c0392b; --primary-dark: #7b241c; --accent: #e74c3c;
+    --accent2: #d97706; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+    --optical: #1a56db; --wireless: #e74c3c; --industrial: #27ae60;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  /* HERO */
+  .hero { background: linear-gradient(135deg, #991b1b 0%, #e74c3c 50%, #d97706 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  /* NAV */
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  /* CONTAINER */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  /* CARD */
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #c0392b11, #c0392b05); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #e74c3c); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #fef2f2; }
+  /* DIAGRAM */
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  /* BOXES */
+  .info-box { border-left: 4px solid var(--primary); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #fefce8; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  /* METRIC CARD */
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #7b241c, #c0392b); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--primary-dark); font-weight: 600; }
+  /* STEPS */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  /* CAUTION */
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  /* FORMULA */
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  /* CHIPS */
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  /* COMPARE */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  /* FOOTER */
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  /* MISC */
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>📶 WiFi 射频收发芯片</h1>
+  <div class="subtitle">WiFi RF Transceiver — 无线通信射频前端核心芯片，覆盖 2.4/5/6GHz 三频</div>
+  <div class="badge-row">
+    <span class="badge">📡 4096QAM 调制</span>
+    <span class="badge">⚡ RF-CMOS / RF-SOI</span>
+    <span class="badge">📶 三频 2.4/5/6GHz</span>
+    <span class="badge">📊 MIMO 2x2~8x8</span>
+    <span class="badge">🧪 EVM 测试</span>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 核心模块深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、核心对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ Section 1: 背景与定位 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div><div class="icon">📖</div><h2>背景与应用定位</h2>
+    </div>
+    <div class="card-body">
+      <p>WiFi射频收发芯片是<strong>无线通信射频前端核心芯片</strong>，部署于WiFi路由器/AP、智能手机、物联网终端内部，负责将基带数字信号调制到2.4/5/6GHz射频频段进行发射，并将接收到的射频信号下变频为基带信号。它是决定WiFi设备通信速率、覆盖范围和功耗的关键器件。</p>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col red">
+          <h3>📌 产品定位</h3>
+          <p><strong>产业链位置：</strong>处于WiFi基带PHY与天线之间，完成射频信号收发</p>
+          <p><strong>核心价值：</strong>在极低成本(<$5)下实现宽带、高线性度、低功耗射频收发</p>
+          <p><strong>本质功能：</strong>宽带零中频(ZIF)收发器 + 多频段频率合成 + 共存管理</p>
+        </div>
+        <div class="compare-col green">
+          <h3>🎯 典型应用场景</h3>
+          <ul>
+            <li>WiFi 7 (802.11be) / WiFi 6E (802.11ax) 路由器/AP</li>
+            <li>智能手机/平板 WiFi FEM (Front-End Module)</li>
+            <li>IoT WiFi设备 (智能家居, 可穿戴)</li>
+            <li>企业级AP, Mesh WiFi系统</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">技术路线</h4>
+      <table>
+        <thead><tr><th>维度</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>频段覆盖</strong></td><td>2.4GHz + 5GHz + 6GHz 三频</td><td>WiFi 6E/7 全频段支持</td></tr>
+          <tr><td><strong>信号带宽</strong></td><td>20/40/80/160/320MHz</td><td>WiFi 7 新增 320MHz</td></tr>
+          <tr><td><strong>调制格式</strong></td><td>最高 4096QAM (WiFi 7)</td><td>EVM 要求 < −38dB</td></tr>
+          <tr><td><strong>MIMO 配置</strong></td><td>2x2, 4x4, 8x8</td><td>多流空间复用</td></tr>
+          <tr><td><strong>制程工艺</strong></td><td>RF-CMOS, RF-SOI</td><td>低成本、高集成度</td></tr>
+          <tr><td><strong>特殊技术</strong></td><td>MLO 多频段聚合</td><td>多链路操作提升吞吐和可靠性</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2: 工作原理 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div><div class="icon">⚙️</div><h2>核心工作原理</h2>
+    </div>
+    <div class="card-body">
+      <p>WiFi射频收发芯片采用<strong>零中频(ZIF)架构</strong>，将射频信号直接变频到基带I/Q，省去中频级从而降低成本和功耗。芯片内部集成射频前端(LNA/PA Driver/TR Switch)、收发器(Mixer/LPF/PGA/ADC/DAC)和频率合成器(PLL)。</p>
+
+      <h4>WiFi vs 蜂窝通信差异</h4>
+      <table>
+        <thead><tr><th>特性</th><th>WiFi</th><th>5G NR</th></tr></thead>
+        <tbody>
+          <tr><td><strong>频段</strong></td><td>2.4/5/6 GHz ISM</td><td>授权 Sub-6/mmWave</td></tr>
+          <tr><td><strong>带宽</strong></td><td>20~320 MHz</td><td>5~400 MHz</td></tr>
+          <tr><td><strong>调制</strong></td><td>up to 4096QAM</td><td>up to 256QAM (R17)</td></tr>
+          <tr><td><strong>发射功率</strong></td><td>&lt;30dBm (1W)</td><td>基站 &gt;40dBm</td></tr>
+          <tr><td><strong>接入方式</strong></td><td>CSMA/CA</td><td>调度</td></tr>
+          <tr><td><strong>成本</strong></td><td>极低 (&lt;$5)</td><td>较高</td></tr>
+          <tr><td><strong>MIMO</strong></td><td>2x2~8x8</td><td>64T64R</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:16px;">📥 接收方向 (RX Path) — ZIF 零中频信号流</h4>
+      <div class="diagram-title">图 2-1 | RX 接收链路信号流</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 120" width="780" height="120" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrRed" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#c0392b"/></marker></defs>
+          <rect x="10" y="15" width="70" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="45" y="38" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">天线</text>
+          <line x1="80" y1="33" x2="110" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="115" y="15" width="80" height="36" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="155" y="38" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">TR Switch</text>
+          <line x1="195" y1="33" x2="225" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="230" y="15" width="60" height="36" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="260" y="38" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">LNA</text>
+          <line x1="290" y1="33" x2="320" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="325" y="10" width="85" height="48" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="367" y="32" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">I/Q Mixer</text>
+          <text x="367" y="48" fill="#b45309" font-size="7.5" text-anchor="middle">宽带 2.4~6GHz</text>
+          <line x1="410" y1="33" x2="440" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="445" y="15" width="70" height="36" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="480" y="38" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">LPF+VGA</text>
+          <line x1="515" y1="33" x2="545" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="550" y="15" width="60" height="36" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="580" y="38" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">ADC</text>
+          <line x1="610" y1="33" x2="640" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="645" y="10" width="160" height="48" rx="8" fill="#c0392b" stroke="#7b241c" stroke-width="2"/>
+          <text x="725" y="32" fill="white" font-size="10" font-weight="700" text-anchor="middle">PHY 基带</text>
+          <text x="725" y="48" fill="#fecaca" font-size="8" text-anchor="middle">DFE·FFT·均衡·解码</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:12px;">📤 发送方向 (TX Path) — ZIF 零中频信号流</h4>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 120" width="780" height="120" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="10" width="160" height="48" rx="8" fill="#c0392b" stroke="#7b241c" stroke-width="2"/>
+          <text x="90" y="32" fill="white" font-size="10" font-weight="700" text-anchor="middle">PHY 基带</text>
+          <text x="90" y="48" fill="#fecaca" font-size="8" text-anchor="middle">编码·调制·IFFT</text>
+          <line x1="170" y1="33" x2="200" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="205" y="15" width="60" height="36" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="235" y="38" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">DAC</text>
+          <line x1="265" y1="33" x2="295" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="300" y="15" width="70" height="36" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="335" y="38" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">LPF</text>
+          <line x1="370" y1="33" x2="400" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="405" y="10" width="85" height="48" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="447" y="32" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">I/Q Mixer</text>
+          <text x="447" y="48" fill="#b45309" font-size="7.5" text-anchor="middle">宽带调制</text>
+          <line x1="490" y1="33" x2="520" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="525" y="15" width="80" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="565" y="38" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">PA Driver</text>
+          <line x1="605" y1="33" x2="635" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="640" y="15" width="80" height="36" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="680" y="38" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">TR Switch</text>
+          <line x1="720" y1="33" x2="750" y2="33" stroke="#c0392b" stroke-width="2" marker-end="url(#arrRed)"/>
+          <rect x="755" y="15" width="55" height="36" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="782" y="38" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">天线</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:16px;">WiFi 7 (802.11be) 新特性</h4>
+      <table>
+        <thead><tr><th>新特性</th><th>规格</th><th>对射频芯片的挑战</th></tr></thead>
+        <tbody>
+          <tr><td><strong>320MHz 带宽</strong></td><td>6GHz 频段，320MHz 连续带宽</td><td>需要更宽带模拟前端、更高采样率 ADC/DAC</td></tr>
+          <tr><td><strong>4096QAM 调制</strong></td><td>EVM 要求 &lt;−38dB</td><td>极低相噪 PLL、极高线性度 TX链、精确 I/Q 校准</td></tr>
+          <tr><td><strong>16x16 MU-MIMO</strong></td><td>最多 16 空间流</td><td>多通道一致性、通道间隔离度</td></tr>
+          <tr><td><strong>MLO 多链路操作</strong></td><td>多频段同时传输</td><td>三频同时工作能力、多路 PLL 并行</td></tr>
+          <tr><td><strong>前导码打孔</strong></td><td>Preamble Puncturing</td><td>灵活的频谱资源调度</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box"><strong>💡 关键认知：</strong>WiFi射频收发芯片的核心挑战是"宽带+高线性度+低成本"的三角矛盾——320MHz带宽和4096QAM要求极高的模拟性能，而消费电子市场要求BOM成本低于$5。架构设计需要在性能、功耗和成本之间精妙平衡。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2B: 模块深度解析 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header" style="background:linear-gradient(90deg,#fef3c7,#fde68a);border-bottom:2px solid #f59e0b;">
+      <div class="section-no" style="background:#d97706;">🔬</div><div class="icon">🧠</div><h2 style="color:#92400e;">核心模块深度解析</h2>
+    </div>
+    <div class="card-body">
+
+      <!-- LNA -->
+      <h4 style="color:#92400e;">一、LNA + TR Switch — 集成开关的低噪声放大器</h4>
+      <p>WiFi射频前端将<strong>LNA与TR Switch集成</strong>，共享天线端口。TR Switch在TX/RX模式间快速切换（<2μs），LNA提供第一级低噪声放大，直接决定接收灵敏度。</p>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>噪声系数 NF</td><td>&lt;3dB (WiFi 6E) / &lt;3.5dB (WiFi 7)</td><td>宽带下 NF 随频率升高而恶化</td></tr>
+          <tr><td>增益范围</td><td>0~30dB (LNA 级)</td><td>多级增益控制，防 ADC 饱和</td></tr>
+          <tr><td>开关隔离度</td><td>>30dB</td><td>TX泄漏不损坏LNA输入</td></tr>
+          <tr><td>切换时间</td><td>&lt;2μs</td><td>满足 WiFi 帧间隔要求 (SIFS=10μs)</td></tr>
+        </tbody>
+      </table>
+      <p><strong>设计挑战：</strong>集成开关增加插入损耗 → 直接恶化 NF。需优化开关尺寸和偏置，兼顾隔离度和插入损耗。RF-SOI 工艺天然适合此结构。</p>
+
+      <!-- I/Q Mixer -->
+      <h4 style="color:#92400e;margin-top:20px;">二、宽带 I/Q Mixer — 覆盖 2.4~6GHz 的设计挑战</h4>
+      <p>WiFi 三频要求 Mixer 覆盖<strong>2.4GHz 到 6GHz</strong>超宽频率范围，这对 LO 驱动、I/Q 平衡和线性度提出极高要求。</p>
+      <table>
+        <thead><tr><th>参数</th><th>2.4GHz 频段</th><th>5/6GHz 频段</th></tr></thead>
+        <tbody>
+          <tr><td>变频增益</td><td>+8dB</td><td>+5dB（高频增益下降）</td></tr>
+          <tr><td>IIP3</td><td>>+8dBm</td><td>>+5dBm</td></tr>
+          <tr><td>I/Q 幅度平衡</td><td>&lt;0.1dB</td><td>&lt;0.3dB（更敏感）</td></tr>
+          <tr><td>I/Q 相位平衡</td><td>&lt;1°</td><td>&lt;3°（高频更差）</td></tr>
+          <tr><td>LO 泄漏</td><td>&lt;−40dBc</td><td>&lt;−40dBc</td></tr>
+        </tbody>
+      </table>
+      <p><strong>4096QAM 下的 I/Q 平衡：</strong>EVM &lt;−38dB 要求 I/Q 幅度误差 &lt;0.05dB、相位误差 &lt;0.3°。必须通过数字预校准 (Digital I/Q Calibration) 实现，上电后自适应补偿模拟域的不平衡。</p>
+      <div class="formula">I/Q 不平衡对 EVM 的影响: EVM_dB ≈ 20·log₁₀(Δg/2 + Δφ²/4) &nbsp;|&nbsp; 目标: Δg &lt; 0.05dB, Δφ &lt; 0.3°</div>
+
+      <!-- PA Driver -->
+      <h4 style="color:#92400e;margin-top:20px;">三、PA Driver 线性度 — 4096QAM 的严苛要求</h4>
+      <p>PA Driver 是 TX链最后一级芯片内放大器，驱动外部 PA。<strong>4096QAM 要求 EVM &lt;−38dB</strong>，这意味着 PA Driver 必须具有极高的线性度，否则星座点将因非线性失真而无法分辨。</p>
+      <table>
+        <thead><tr><th>参数</th><th>1024QAM 要求</th><th>4096QAM 要求</th></tr></thead>
+        <tbody>
+          <tr><td>输出 P1dB</td><td>>+12dBm</td><td>>+15dBm（更高回退）</td></tr>
+          <tr><td>OIP3</td><td>>+22dBm</td><td>>+28dBm</td></tr>
+          <tr><td>EVM 目标</td><td>&lt;−35dB</td><td>&lt;−38dB（极限挑战）</td></tr>
+          <tr><td>ACLR</td><td>&lt;−42dBc</td><td>&lt;−45dBc</td></tr>
+          <tr><td>工作回退</td><td>6~8dB</td><td>8~10dB（更大回退保线性）</td></tr>
+        </tbody>
+      </table>
+      <p><strong>数字预失真 (DPD)：</strong>4096QAM 下 PA 的非线性必须通过 DPD 补偿。芯片需集成 DPD 引擎，通过反馈路径实时监测 PA 输出并预补偿非线性失真。DPD 可将 EVM 从 −33dB 改善到 −40dB 级别。</p>
+      <div class="warn-box"><strong>⚠️ 关键认知：</strong>4096QAM 的 −38dB EVM 是"全链路"指标——LO相噪、I/Q平衡、PA线性度、电源噪声，任何一环不达标都会导致 EVM 超标。AE 调试时需逐环排查。</div>
+
+      <!-- PLL -->
+      <h4 style="color:#92400e;margin-top:20px;">四、三频 PLL 频率合成器 — 2.4G+5G+6G 独立锁相环</h4>
+      <p>为实现 MLO (多频段同时操作)，芯片需集成<strong>三个独立 PLL</strong>，分别锁定 2.4GHz、5GHz 和 6GHz 频段，且要求极快的频率切换速度。</p>
+      <div class="formula">PLL 锁定时间估算: T_lock ≈ 200 / BW_loop &nbsp;&nbsp;|&nbsp;&nbsp; BW_loop=10MHz → T_lock≈20μs (满足 WiFi 7 要求)</div>
+      <table>
+        <thead><tr><th>参数</th><th>2.4G PLL</th><th>5G PLL</th><th>6G PLL</th></tr></thead>
+        <tbody>
+          <tr><td>输出频率</td><td>2.4~2.5 GHz</td><td>5.15~5.85 GHz</td><td>5.925~7.125 GHz</td></tr>
+          <tr><td>相噪@100kHz</td><td>&lt;−108dBc/Hz</td><td>&lt;−105dBc/Hz</td><td>&lt;−103dBc/Hz</td></tr>
+          <tr><td>相噪@1MHz</td><td>&lt;−135dBc/Hz</td><td>&lt;−130dBc/Hz</td><td>&lt;−128dBc/Hz</td></tr>
+          <tr><td>积分抖动</td><td>&lt;120fs</td><td>&lt;150fs</td><td>&lt;180fs</td></tr>
+          <tr><td>锁定时间</td><td>&lt;20μs</td><td>&lt;20μs</td><td>&lt;20μs</td></tr>
+          <tr><td>频率步进</td><td colspan="3"><100kHz（支持精细信道调节）</td></tr>
+        </tbody>
+      </table>
+      <p><strong>快速锁定技术：</strong>两档环路带宽——锁定阶段用宽带（>10MHz）快速捕获；锁定后切换到窄带（~1MHz）优化相噪。VCO 采用多段调谐以覆盖全频段。</p>
+
+      <!-- ADC/DAC -->
+      <h4 style="color:#92400e;margin-top:20px;">五、ADC/DAC — 宽带数据转换器</h4>
+      <p>WiFi 7 的 320MHz 带宽要求 ADC/DAC 的采样率大幅提升。采用<strong>12-bit Pipeline ADC</strong>和<strong>12-bit Current-Steering DAC</strong>，在功耗和精度之间取平衡。</p>
+      <table>
+        <thead><tr><th>参数</th><th>WiFi 6E</th><th>WiFi 7</th></tr></thead>
+        <tbody>
+          <tr><td>ADC 分辨率</td><td>10~12 bit</td><td>12 bit</td></tr>
+          <tr><td>ADC 采样率</td><td>80~160 MSPS</td><td>160~320 MSPS</td></tr>
+          <tr><td>DAC 分辨率</td><td>10~12 bit</td><td>12 bit</td></tr>
+          <tr><td>DAC 采样率</td><td>80~160 MSPS</td><td>160~320 MSPS</td></tr>
+          <tr><td>SFDR</td><td>>60dB</td><td>>65dB</td></tr>
+          <tr><td>ENOB @Nyquist</td><td>>9.5 bit</td><td>>10 bit</td></tr>
+        </tbody>
+      </table>
+      <p><strong>功耗权衡：</strong>12bit @320MSPS ADC 功耗约 50~80mW/channel。2x2 MIMO 需要 4 个 ADC (I/Q × 2通道)，总 ADC 功耗 ~200-320mW。Pipeline 架构是最佳折中选择。</p>
+
+      <!-- 共存管理 -->
+      <h4 style="color:#92400e;margin-top:20px;">六、共存管理 (Coexistence) — BT/WiFi 与 LTE/WiFi 共存</h4>
+      <p>2.4GHz ISM 频段是 WiFi、蓝牙(BT)、Zigbee 等多种无线协议的共享频谱，<strong>共存管理</strong>是 WiFi 芯片的必备功能。</p>
+      <table>
+        <thead><tr><th>共存场景</th><th>冲突机制</th><th>解决方案</th></tr></thead>
+        <tbody>
+          <tr><td><strong>BT/WiFi 共存</strong></td><td>同为 2.4GHz，时分/频分冲突</td><td>PTA (Packet Traffic Arbitration) 机制，硬件优先级仲裁</td></tr>
+          <tr><td><strong>LTE/WiFi 共存</strong></td><td>LTE Band 7/40/41 邻近 2.4GHz</td><td>滤波器 + 功率回退 + 调度协调</td></tr>
+          <tr><td><strong>WiFi/WiFi 共存</strong></td><td>多 AP 同频道竞争</td><td>CSMA/CA 协议层面解决</td></tr>
+          <tr><td><strong>多频段 MLO</strong></td><td>芯片内 2.4G/5G/6G 同时工作</td><td>三路独立 PLL + 隔离设计，避免互调</td></tr>
+        </tbody>
+      </table>
+      <p><strong>PTA 架构：</strong>WiFi和BT共享同一根 2.4GHz 天线，PTA 控制器根据实时业务优先级（BT 音频 > WiFi 数据 > BT 扫描）动态分配时间片，切换粒度 <10μs。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 3: 电路框图 ═══════════ -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div><div class="icon">🔲</div><h2>芯片内部电路框图</h2>
+    </div>
+    <div class="card-body">
+      <div class="diagram-title">图 3-1 | WiFi 7 三频 2x2 RF 收发芯片内部架构</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 540" width="780" height="520" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <rect width="820" height="540" fill="#fafafa" rx="8"/>
+
+          <!-- 2.4GHz Path -->
+          <rect x="15" y="10" width="255" height="24" rx="5" fill="#c0392b" opacity="0.85"/>
+          <text x="142" y="27" fill="white" font-size="10" font-weight="bold" text-anchor="middle">2.4GHz 路径 (Ch0)</text>
+
+          <rect x="20" y="40" width="80" height="36" rx="5" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.2"/>
+          <text x="60" y="56" fill="#991b1b" font-size="8.5" font-weight="bold" text-anchor="middle">LNA+Switch</text>
+          <text x="60" y="68" fill="#ef4444" font-size="7" text-anchor="middle">NF&lt;2.5dB</text>
+
+          <rect x="110" y="40" width="70" height="36" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.2"/>
+          <text x="145" y="56" fill="#92400e" font-size="8.5" font-weight="bold" text-anchor="middle">Mixer I/Q</text>
+          <text x="145" y="68" fill="#b45309" font-size="7" text-anchor="middle">宽带</text>
+
+          <rect x="190" y="40" width="75" height="36" rx="5" fill="#dbeafe" stroke="#1a56db" stroke-width="1.2"/>
+          <text x="227" y="56" fill="#1e40af" font-size="8.5" font-weight="bold" text-anchor="middle">LPF+PGA</text>
+          <text x="227" y="68" fill="#3b82f6" font-size="7" text-anchor="middle">BW 20/40M</text>
+
+          <!-- 5GHz Path -->
+          <rect x="15" y="110" width="255" height="24" rx="5" fill="#d97706" opacity="0.85"/>
+          <text x="142" y="127" fill="white" font-size="10" font-weight="bold" text-anchor="middle">5GHz 路径 (Ch0)</text>
+
+          <rect x="20" y="140" width="80" height="36" rx="5" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.2"/>
+          <text x="60" y="156" fill="#991b1b" font-size="8.5" font-weight="bold" text-anchor="middle">LNA+Switch</text>
+          <text x="60" y="168" fill="#ef4444" font-size="7" text-anchor="middle">NF&lt;3dB</text>
+
+          <rect x="110" y="140" width="70" height="36" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.2"/>
+          <text x="145" y="156" fill="#92400e" font-size="8.5" font-weight="bold" text-anchor="middle">Mixer I/Q</text>
+          <text x="145" y="168" fill="#b45309" font-size="7" text-anchor="middle">宽带</text>
+
+          <rect x="190" y="140" width="75" height="36" rx="5" fill="#dbeafe" stroke="#1a56db" stroke-width="1.2"/>
+          <text x="227" y="156" fill="#1e40af" font-size="8.5" font-weight="bold" text-anchor="middle">LPF+PGA</text>
+          <text x="227" y="168" fill="#3b82f6" font-size="7" text-anchor="middle">BW 20~160M</text>
+
+          <!-- 6GHz Path -->
+          <rect x="15" y="210" width="255" height="24" rx="5" fill="#dc2626" opacity="0.85"/>
+          <text x="142" y="227" fill="white" font-size="10" font-weight="bold" text-anchor="middle">6GHz 路径 (Ch0) — WiFi 7 新增</text>
+
+          <rect x="20" y="240" width="80" height="36" rx="5" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.2"/>
+          <text x="60" y="256" fill="#991b1b" font-size="8.5" font-weight="bold" text-anchor="middle">LNA+Switch</text>
+          <text x="60" y="268" fill="#ef4444" font-size="7" text-anchor="middle">NF&lt;3.5dB</text>
+
+          <rect x="110" y="240" width="70" height="36" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.2"/>
+          <text x="145" y="256" fill="#92400e" font-size="8.5" font-weight="bold" text-anchor="middle">Mixer I/Q</text>
+          <text x="145" y="268" fill="#b45309" font-size="7" text-anchor="middle">宽带 6G</text>
+
+          <rect x="190" y="240" width="75" height="36" rx="5" fill="#dbeafe" stroke="#1a56db" stroke-width="1.2"/>
+          <text x="227" y="256" fill="#1e40af" font-size="8.5" font-weight="bold" text-anchor="middle">LPF+PGA</text>
+          <text x="227" y="268" fill="#3b82f6" font-size="7" text-anchor="middle">BW 20~320M</text>
+
+          <!-- ADC Column -->
+          <rect x="275" y="50" width="65" height="250" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="307" y="170" fill="#1e40af" font-size="10" font-weight="bold" text-anchor="middle" transform="rotate(-90,307,170)">ADC 12bit 320MSPS</text>
+
+          <!-- DAC Column -->
+          <rect x="350" y="50" width="65" height="250" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="382" y="170" fill="#1e40af" font-size="10" font-weight="bold" text-anchor="middle" transform="rotate(-90,382,170)">DAC 12bit 320MSPS</text>
+
+          <!-- PHY Baseband -->
+          <rect x="425" y="50" width="170" height="250" rx="8" fill="#c0392b" stroke="#7b241c" stroke-width="2"/>
+          <text x="510" y="100" fill="white" font-size="11" font-weight="bold" text-anchor="middle">PHY 基带处理器</text>
+          <text x="510" y="120" fill="#fecaca" font-size="8" text-anchor="middle">802.11be MAC/PHY</text>
+
+          <rect x="440" y="135" width="140" height="28" rx="4" fill="rgba(255,255,255,0.15)"/>
+          <text x="510" y="153" fill="white" font-size="8.5" text-anchor="middle">DFE · FFT · 信道估计</text>
+          <rect x="440" y="170" width="140" height="28" rx="4" fill="rgba(255,255,255,0.15)"/>
+          <text x="510" y="188" fill="white" font-size="8.5" text-anchor="middle">均衡 · 预失真(DPD)</text>
+          <rect x="440" y="205" width="140" height="28" rx="4" fill="rgba(255,255,255,0.15)"/>
+          <text x="510" y="223" fill="white" font-size="8.5" text-anchor="middle">MIMO解调 · LDPC</text>
+          <rect x="440" y="240" width="140" height="28" rx="4" fill="rgba(255,255,255,0.15)"/>
+          <text x="510" y="258" fill="white" font-size="8.5" text-anchor="middle">AGC · 共存管理</text>
+
+          <!-- PLL Block Right Side -->
+          <rect x="610" y="50" width="195" height="120" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="707" y="72" fill="#92400e" font-size="10" font-weight="bold" text-anchor="middle">PLL / 频率合成器 ×3</text>
+          <rect x="622" y="82" width="170" height="25" rx="4" fill="white" stroke="#f59e0b"/>
+          <text x="707" y="99" fill="#b45309" font-size="8.5" text-anchor="middle">PLL_2.4G: 2.4~2.5GHz, &lt;20μs</text>
+          <rect x="622" y="112" width="170" height="25" rx="4" fill="white" stroke="#f59e0b"/>
+          <text x="707" y="129" fill="#b45309" font-size="8.5" text-anchor="middle">PLL_5G: 5.15~5.85GHz, &lt;20μs</text>
+          <rect x="622" y="142" width="170" height="25" rx="4" fill="white" stroke="#f59e0b"/>
+          <text x="707" y="159" fill="#b45309" font-size="8.5" text-anchor="middle">PLL_6G: 5.925~7.125GHz, &lt;20μs</text>
+
+          <!-- 共存管理 Block -->
+          <rect x="610" y="185" width="195" height="115" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="707" y="207" fill="#166534" font-size="10" font-weight="bold" text-anchor="middle">共存管理 Coexistence</text>
+          <rect x="622" y="217" width="170" height="25" rx="4" fill="white" stroke="#86efac"/>
+          <text x="707" y="234" fill="#166534" font-size="8.5" text-anchor="middle">PTA: WiFi/BT 仲裁</text>
+          <rect x="622" y="247" width="170" height="25" rx="4" fill="white" stroke="#86efac"/>
+          <text x="707" y="264" fill="#166534" font-size="8.5" text-anchor="middle">LTE/WiFi 共存滤波器</text>
+          <rect x="622" y="277" width="170" height="18" rx="4" fill="#e2e8f0"/>
+          <text x="707" y="290" fill="#475569" font-size="7.5" text-anchor="middle">时间片分配 &lt;10μs</text>
+
+          <!-- Channel 1 indicator -->
+          <rect x="440" y="315" width="365" height="30" rx="5" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="622" y="335" fill="#991b1b" font-size="9" font-weight="bold" text-anchor="middle">通道1 (Ch1) — 与Ch0对称的2.4G/5G/6G三路收发路径 (2x2 MIMO)</text>
+
+          <!-- Power & Interface -->
+          <rect x="15" y="355" width="790" height="55" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="410" y="375" fill="#475569" font-size="10" font-weight="bold" text-anchor="middle">系统监测 & 管理接口</text>
+          <rect x="30" y="383" width="110" height="20" rx="4" fill="#e2e8f0"/><text x="85" y="397" font-size="8" fill="#475569" text-anchor="middle">Temp Sensor ±2°C</text>
+          <rect x="150" y="383" width="110" height="20" rx="4" fill="#e2e8f0"/><text x="205" y="397" font-size="8" fill="#475569" text-anchor="middle">EVM Monitor</text>
+          <rect x="270" y="383" width="110" height="20" rx="4" fill="#e2e8f0"/><text x="325" y="397" font-size="8" fill="#475569" text-anchor="middle">RSSI 指示器</text>
+          <rect x="390" y="383" width="110" height="20" rx="4" fill="#e2e8f0"/><text x="445" y="397" font-size="8" fill="#475569" text-anchor="middle">SPI Slave</text>
+          <rect x="510" y="383" width="110" height="20" rx="4" fill="#e2e8f0"/><text x="565" y="397" font-size="8" fill="#475569" text-anchor="middle">JTAG Debug</text>
+          <rect x="630" y="383" width="155" height="20" rx="4" fill="#e2e8f0"/><text x="707" y="397" font-size="8" fill="#475569" text-anchor="middle">IQ 校准引擎</text>
+
+          <!-- Power label -->
+          <rect x="15" y="420" width="790" height="40" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="410" y="440" fill="#991b1b" font-size="9.5" font-weight="bold" text-anchor="middle">电源管理: VDD_RF (1.8V) | VDD_ANA (1.2V) | VDD_DIG (0.9V) | VDD_PA (3.3V) | 多级 Power Gating</text>
+
+          <!-- Bottom labels -->
+          <text x="307" y="480" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">RF前端 → ADC/DAC → PHY基带</text>
+          <text x="510" y="480" font-size="9" fill="#c0392b" text-anchor="middle" font-weight="bold">数字接口: PCIe Gen3 / USB 3.0</text>
+          <text x="707" y="480" font-size="9" fill="#6b7280" text-anchor="middle">封装: WLCSP / QFN</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>说明：</strong>三频收发芯片集成2.4G/5G/6G三条独立射频路径，每路径含LNA+Switch、I/Q Mixer、LPF+PGA。三路PLL独立提供LO信号。PHY基带完成802.11be信号处理。共存管理模块协调BT/WiFi频谱共享。支持2x2 MIMO（Ch0+Ch1对称结构）。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 4: 核心对比 ═══════════ -->
+<section id="sec4">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">4</div><div class="icon">⚖️</div><h2>代际与技术对比</h2>
+    </div>
+    <div class="card-body">
+      <h4>WiFi 6E vs WiFi 7 代际对比</h4>
+      <table>
+        <thead><tr><th>对比维度</th><th>WiFi 6E (802.11ax)</th><th>WiFi 7 (802.11be)</th><th>提升/变化</th></tr></thead>
+        <tbody>
+          <tr><td><strong>最大带宽</strong></td><td>160 MHz</td><td>320 MHz</td><td>2×</td></tr>
+          <tr><td><strong>最高调制</strong></td><td>1024QAM</td><td>4096QAM</td><td>每符号 +2bit</td></tr>
+          <tr><td><strong>EVM 要求</strong></td><td>&lt;−35dB</td><td>&lt;−38dB</td><td>严苛 3dB</td></tr>
+          <tr><td><strong>最大 MIMO</strong></td><td>8×8</td><td>16×16</td><td>2×</td></tr>
+          <tr><td><strong>频段</strong></td><td>2.4/5/6 GHz</td><td>2.4/5/6 GHz + MLO</td><td>多频段聚合</td></tr>
+          <tr><td><strong>理论速率</strong></td><td>9.6 Gbps</td><td>46 Gbps</td><td>~5×</td></tr>
+          <tr><td><strong>关键新特性</strong></td><td>OFDMA, 1024QAM, BSS Coloring</td><td>MLO, Preamble Puncturing, 4096QAM</td><td>架构级升级</td></tr>
+          <tr><td><strong>ADC/DAC 采样率</strong></td><td>80~160 MSPS</td><td>160~320 MSPS</td><td>2×</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">WiFi RF 架构方案对比</h4>
+      <table>
+        <thead><tr><th>架构方案</th><th>优势</th><th>劣势</th><th>适用场景</th></tr></thead>
+        <tbody>
+          <tr><td><strong>ZIF 零中频</strong></td><td>成本最低, 集成度最高, 无镜像抑制问题</td><td>DC offset, LO leakage, I/Q 不平衡敏感</td><td>主流 WiFi 芯片</td></tr>
+          <tr><td><strong>低中频 (Low-IF)</strong></td><td>无 DC offset 问题</td><td>需要镜像抑制, 带宽受限</td><td>窄带 IoT WiFi</td></tr>
+          <tr><td><strong>直接采样</strong></td><td>最高灵活性, 纯数字化</td><td>功耗极高, ADC 要求极高</td><td>高端 SDR 平台</td></tr>
+          <tr><td><strong>超外差</strong></td><td>最佳选择性</td><td>成本高, 体积大, 多个滤波器</td><td>专业测试设备</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 5: 核心指标 ═══════════ -->
+<section id="sec5">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">5</div><div class="icon">📊</div><h2>核心性能指标</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📌 5.1 接收链路指标</h4>
+      <table>
+        <thead><tr><th>指标</th><th>WiFi 6E 规格</th><th>WiFi 7 规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>频段</strong></td><td>2.4/5/6 GHz</td><td>2.4/5/6 GHz</td><td>三频覆盖</td></tr>
+          <tr><td><strong>带宽</strong></td><td>20~160 MHz</td><td>20~320 MHz</td><td>WiFi 7 新增 320M</td></tr>
+          <tr><td><strong>噪声系数 NF</strong></td><td>&lt;3dB</td><td>&lt;3.5dB</td><td>宽带下 NF 更高</td></tr>
+          <tr><td><strong>增益范围</strong></td><td>0~55dB</td><td>0~55dB</td><td>多级步进可调</td></tr>
+          <tr><td><strong>IIP3</strong></td><td>&gt;+5dBm</td><td>&gt;+5dBm</td><td>抗邻道阻塞</td></tr>
+          <tr><td><strong>灵敏度 @MCS11</strong></td><td>−52dBm</td><td>−49dBm (4096QAM)</td><td>PER&lt;10%</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.2 发送链路指标</h4>
+      <div class="metric-card">
+        <div class="metric-header"><h4>EVM · 误差矢量幅度 (4096QAM 关键指标)</h4><span class="metric-abbr">EVM</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>衡量实际发射信号与理想星座点之间的偏差，综合反映 TX 链所有非理想因素</span></div>
+          <div class="formula">EVM_dB = 10·log₁₀(P_error / P_signal) &nbsp;|&nbsp; 4096QAM 要求: &lt;−38dB (≈1.26%)</div>
+          <div class="metric-row"><span class="metric-label">1024QAM 目标</span><span>EVM &lt; −35dB（WiFi 6E / WiFi 7 低速率模式）</span></div>
+          <div class="metric-row"><span class="metric-label">4096QAM 目标</span><span>EVM &lt; −38dB（WiFi 7 最高速率，全链路极限优化）</span></div>
+          <div class="metric-row"><span class="metric-label">EVM 预算分解</span><span>LO 相噪 (−42dB) + I/Q 不平衡 (−45dB) + PA 非线性 (−42dB) + 电源噪声 (−48dB) = −38dB 总</span></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>指标</th><th>规格</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td>线性输出功率</td><td>+5~+10dBm (PA Driver)</td><td>驱动外部 PA</td></tr>
+          <tr><td>EVM (1024QAM)</td><td>&lt;−35dB</td><td>WiFi 6E 最高调制</td></tr>
+          <tr><td>EVM (4096QAM)</td><td>&lt;−38dB</td><td>WiFi 7, 极其严格!</td></tr>
+          <tr><td>ACLR</td><td>&lt;−45dBc</td><td>邻道泄漏比</td></tr>
+          <tr><td>LO Leakage</td><td>&lt;−40dBc</td><td>本振泄漏抑制</td></tr>
+          <tr><td>输出回波损耗</td><td>&lt;−12dB</td><td>50Ω 匹配</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.3 LO 频率合成器指标</h4>
+      <table>
+        <thead><tr><th>指标</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>相噪@100kHz</strong></td><td>&lt;−105 dBc/Hz</td><td>影响低频相位噪声</td></tr>
+          <tr><td><strong>相噪@1MHz</strong></td><td>&lt;−130 dBc/Hz</td><td>影响宽带相位噪声</td></tr>
+          <tr><td><strong>积分抖动</strong></td><td>&lt;150fs RMS (1k~100MHz)</td><td>直接影响 EVM 下限</td></tr>
+          <tr><td><strong>锁定时间</strong></td><td>&lt;20μs</td><td>快速信道切换 (WiFi 6/7 要求)</td></tr>
+          <tr><td><strong>频率步进</strong></td><td>&lt;100kHz</td><td>精细信道调节</td></tr>
+          <tr><td><strong>参考时钟</strong></td><td>40/80MHz XTAL</td><td>外部晶体振荡器</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.4 系统级指标</h4>
+      <table>
+        <thead><tr><th>指标</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>MIMO 配置</strong></td><td>2x2 / 4x4</td><td>多流空间复用</td></tr>
+          <tr><td><strong>三频同时工作</strong></td><td>支持 (MLO)</td><td>2.4G+5G+6G 同时收发</td></tr>
+          <tr><td><strong>功耗 (2x2 三频)</strong></td><td>&lt;3W</td><td>含 ADC/DAC/PLL</td></tr>
+          <tr><td><strong>封装形式</strong></td><td>WLCSP / QFN</td><td>消费级低成本封装</td></tr>
+          <tr><td><strong>工作温度</strong></td><td>−20~+85°C</td><td>消费/工业级</td></tr>
+          <tr><td><strong>数字接口</strong></td><td>PCIe Gen3 / USB 3.0</td><td>与 Host 通信</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 6: 影响因素 ═══════════ -->
+<section id="sec6">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">6</div><div class="icon">🔗</div><h2>指标影响因素分析</h2>
+    </div>
+    <div class="card-body">
+      <h4>📍 关键指标影响因素网络</h4>
+      <table>
+        <thead><tr><th>关键指标</th><th>被哪些因素影响（降级）</th><th>该指标又影响哪些下游性能</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>EVM</strong></td>
+            <td><span class="chip chip-red">LO 相噪</span><span class="chip chip-red">I/Q 不平衡</span><span class="chip chip-red">PA 非线性</span><span class="chip chip-red">电源噪声</span><span class="chip chip-red">温度漂移</span></td>
+            <td><span class="chip chip-blue">MCS 等级</span><span class="chip chip-blue">数据速率</span><span class="chip chip-blue">链路稳定性</span></td>
+          </tr>
+          <tr>
+            <td><strong>噪声系数 NF</strong></td>
+            <td><span class="chip chip-red">LNA 设计</span><span class="chip chip-red">TR Switch 损耗</span><span class="chip chip-red">片外匹配</span><span class="chip chip-red">工艺角</span></td>
+            <td><span class="chip chip-blue">接收灵敏度</span><span class="chip chip-blue">覆盖范围</span><span class="chip chip-blue">MCS 等级</span></td>
+          </tr>
+          <tr>
+            <td><strong>共存在能</strong></td>
+            <td><span class="chip chip-red">BT 发射功率</span><span class="chip chip-red">天线隔离度</span><span class="chip chip-red">PTA 算法</span><span class="chip chip-red">LTE 邻近频段</span></td>
+            <td><span class="chip chip-blue">2.4G WiFi 吞吐</span><span class="chip chip-blue">BT 音频质量</span><span class="chip chip-blue">用户感知</span></td>
+          </tr>
+          <tr>
+            <td><strong>功耗</strong></td>
+            <td><span class="chip chip-red">信号带宽</span><span class="chip chip-red">MIMO 阶数</span><span class="chip chip-red">ADC/DAC 采样率</span><span class="chip chip-red">PVT corner</span></td>
+            <td><span class="chip chip-blue">电池续航</span><span class="chip chip-blue">热设计</span><span class="chip chip-blue">终端待机</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="success-box" style="margin-top:16px;">
+        <strong>✅ WiFi 射频芯片关键共同影响因素：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>LO 相噪是 EVM 天花板：</strong>4096QAM 要求积分抖动 &lt;150fs —— LO 相噪每恶化 3dB，EVM 恶化 ~2dB</li>
+          <li><strong>I/Q 校准必做：</strong>上电后自动校准，补偿工艺/温度引入的 I/Q 不平衡；校准精度 &lt;0.05dB / &lt;0.3°</li>
+          <li><strong>三频共存干扰：</strong>6G PLL 的谐波可能落入 2.4G 频段；三路 PLL 需充分隔离 (>40dB)</li>
+          <li><strong>电源完整性 (PDN)：</strong>DC-DC 开关纹波耦合到 VCO → 杂散 → EVM 突刺；LDO 供电可避免但功耗略高</li>
+          <li><strong>快速信道切换：</strong>PLL 锁定 &lt;20μs 要求 VCO 快速稳定；两档环路带宽是关键设计</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 7: 测试方法 ═══════════ -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法详解</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📐 7.1 标准 WiFi 射频测试</h4>
+      <p><strong>测试原理：</strong>使用 WiFi 综测仪模拟 AP/STA，测量 DUT 的发射和接收性能，包括 TX 功率、EVM、频谱模板和 RX 灵敏度。</p>
+
+      <h4 style="margin-top:14px;">测试设备清单</h4>
+      <table>
+        <thead><tr><th>设备名称</th><th>推荐型号</th><th>关键规格</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>WiFi 综测仪</td><td>Keysight UXM 5G (E7515B)</td><td>WiFi 7 ready, 320MHz BW</td><td>综合 TX/RX 测试</td></tr>
+          <tr><td>WiFi 综测仪</td><td>LitePoint IQxel-MW 7G</td><td>三频 (2.4/5/6G), 320MHz</td><td>产线快速测试</td></tr>
+          <tr><td>WiFi 综测仪</td><td>Rohde & Schwarz CMW500/CMX</td><td>宽带综测平台</td><td>研发/认证测试</td></tr>
+          <tr><td>矢量信号分析仪</td><td>Keysight N9042B UXA</td><td>2Hz~50GHz, 1GHz 分析带宽</td><td>EVM 深度分析</td></tr>
+          <tr><td>相噪分析仪</td><td>Keysight E5052B SSA</td><td>10M~7GHz</td><td>LO 相噪/抖动测试</td></tr>
+          <tr><td>矢量网络分析仪</td><td>Keysight PNA-X N5247B</td><td>10M~67GHz</td><td>S 参数/匹配</td></tr>
+          <tr><td>可编程电源</td><td>Keysight N6705C</td><td>4ch, 低噪声</td><td>多轨供电</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">测试框图</h4>
+      <div class="diagram-title">图 7-1 | WiFi 射频收发完整测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 210" width="760" height="210" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arr7w" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#c0392b"/></marker></defs>
+          <!-- Control PC -->
+          <rect x="15" y="15" width="120" height="50" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+          <text x="75" y="40" fill="#475569" font-size="10" font-weight="700" text-anchor="middle">控制 PC</text>
+          <text x="75" y="55" fill="#94a3b8" font-size="8" text-anchor="middle">LAN / GPIB / USB</text>
+
+          <!-- WiFi 综测仪 -->
+          <rect x="185" y="10" width="180" height="60" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="275" y="32" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">WiFi 综测仪</text>
+          <text x="275" y="48" fill="#3b82f6" font-size="8" text-anchor="middle">Keysight UXM / IQxel-MW</text>
+          <text x="275" y="62" fill="#3b82f6" font-size="8" text-anchor="middle">320MHz BW, 3频支持</text>
+
+          <!-- RF Cable -->
+          <line x1="365" y1="40" x2="415" y2="40" stroke="#c0392b" stroke-width="2" marker-end="url(#arr7w)"/>
+
+          <!-- DUT Board -->
+          <rect x="420" y="10" width="180" height="60" rx="8" fill="#fee2e2" stroke="#e74c3c" stroke-width="2"/>
+          <text x="510" y="30" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">DUT 评估板</text>
+          <text x="510" y="46" fill="#ef4444" font-size="8" text-anchor="middle">WiFi 7 RF 收发芯片</text>
+          <text x="510" y="60" fill="#ef4444" font-size="8" text-anchor="middle">WLCSP 封装</text>
+
+          <!-- Power -->
+          <rect x="630" y="10" width="135" height="60" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="697" y="32" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">可编程电源</text>
+          <text x="697" y="48" fill="#16a34a" font-size="8" text-anchor="middle">N6705C 4ch</text>
+          <text x="697" y="62" fill="#16a34a" font-size="8" text-anchor="middle">VDD_RF/ANA/DIG/PA</text>
+
+          <!-- Signal analyzer line -->
+          <line x1="510" y1="70" x2="510" y2="90" stroke="#c0392b" stroke-width="1.5"/>
+          <rect x="420" y="95" width="180" height="50" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="510" y="115" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">可选: VSA (N9042B)</text>
+          <text x="510" y="133" fill="#b45309" font-size="8" text-anchor="middle">EVM 深度分析 / 星座图</text>
+
+          <!-- Test flow box -->
+          <rect x="15" y="110" width="750" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+          <text x="180" y="130" fill="#475569" font-size="10" text-anchor="middle">Phase 0: 预热30min + 综测仪校准 | Phase 1: DUT 初始化 (供电时序→PLL锁定→IQ校准→AGC收敛)</text>
+          <text x="260" y="148" fill="#475569" font-size="10" text-anchor="middle">Phase 2: TX测试 (功率扫描→EVM@各MCS→频谱模板→ACLR) | Phase 3: RX测试 (灵敏度扫描→PER曲线→阻塞)</text>
+          <text x="260" y="166" fill="#475569" font-size="10" text-anchor="middle">Phase 4: MIMO测试 (多流EVM→信道相关性→串扰) | Phase 5: 共存测试 (BT/WiFi→LTE/WiFi) | Phase 6: 三温重复</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:18px;">📶 7.2 EVM 测试 — 4096QAM 关键步骤</h4>
+      <p><strong>测试难度：</strong>4096QAM 的 −38dB EVM 接近当前消费级 RF-CMOS 工艺的物理极限，测试本身必须极其精确，任何环节的噪声耦合都可能掩盖 DUT 的真实性能。</p>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>参考时钟优化</h5><p>使用超低相噪信号源 (如 Keysight E8663D) 提供外部参考时钟；相噪@10kHz &lt;−145dBc/Hz。板载 XTAL 可能不够好。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>I/Q 校准先决</h5><p>每次上电后必须执行 I/Q 校准流程；确认 I/Q 幅度误差 &lt;0.05dB、相位误差 &lt;0.3° 后再测 EVM。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>发射功率回退扫描</h5><p>从 Pmax−15dB 到 Pmax−3dB 扫描输出功率；找到 EVM 最优回退点（通常 Pmax−8~10dB）。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>DPD 启用/禁用对比</h5><p>分别测试 DPD 关闭和开启时的 EVM；DPD 应改善 3~6dB EVM。如果改善不足，检查反馈路径校准。</p></div></div>
+        <div class="step"><div class="step-no">5</div><div class="step-content"><h5>全频段 EVM 扫描</h5><p>在 2.4G/5G/6G 各频段的高/中/低信道测试 EVM；6GHz 高频端 EVM 通常会恶化 1~2dB。</p></div></div>
+        <div class="step"><div class="step-no">6</div><div class="step-content"><h5>温度循环验证</h5><p>−20°C / +25°C / +85°C 三温下重复 EVM 测试；温度变化会破坏 I/Q 校准——验证温度补偿算法有效。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">🔴 7.3 快速信道切换测试 — PLL 锁定时间</h4>
+      <table>
+        <thead><tr><th>测试项目</th><th>测试方法</th><th>判定标准</th></tr></thead>
+        <tbody>
+          <tr><td><strong>频率阶跃锁定</strong></td><td>SPI 命令切换 PLL 频率 (如 Ch36→Ch100)；示波器监测 Vtune 和 Lock Detect 信号</td><td>锁定时间 &lt;20μs</td></tr>
+          <tr><td><strong>跨频段切换</strong></td><td>2.4G→5G→6G 顺序切换，测量各段锁定时间</td><td>每段 &lt;20μs</td></tr>
+          <tr><td><strong>MLO 同时锁定</strong></td><td>三个 PLL 同时频率切换，测量最慢锁定时间</td><td>&lt;25μs (略放宽)</td></tr>
+          <tr><td><strong>锁定后相噪验证</strong></td><td>锁定后立即测量相噪@100kHz / @1MHz</td><td>满足规格，无暂态劣化</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">🟢 7.4 共存测试 — BT/WiFi & LTE/WiFi</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>BT/WiFi 共存：吞吐量测试</h5><p>BT 持续发送 ACL 包 (最高功率) 的同时，测量 WiFi 2.4GHz 各 MCS 的吞吐量；期望吞吐下降 &lt;15%。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>BT/WiFi 共存：阻塞测试</h5><p>BT TX 在 Ch0~78 各信道发送时，测量 WiFi RX 灵敏度降级；期望灵敏度降级 &lt;3dB (PTA 工作状态)。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>LTE/WiFi 共存：邻频测试</h5><p>LTE Band 40 (2300~2400MHz) 信号注入，WiFi Ch1 (2412MHz) 测量灵敏度降级；期望降级 &lt;5dB @LTE +20dBm。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>PSRR 验证</h5><p>在电源轨注入 100kHz/1MHz 纹波，测量 EVM 变化；期望 EVM 恶化 &lt;2dB @50mVpp 纹波。</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 8: 注意事项 ═══════════ -->
+<section id="sec8">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">8</div><div class="icon">⚠️</div><h2>测试与使用注意事项</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>⚡ 通用注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">📶 4096QAM EVM 挑战（极其严格！）</div><p>−38dB EVM 是消费级 RF-CMOS 的极限。全链路需优化：超低相噪 PLL + I/Q 自动校准 + DPD 数字预失真 + 低噪声 LDO 供电。任何一环疏忽都会超标。</p></div>
+        <div class="caution-item"><div class="ci-title">🔧 I/Q 校准必做</div><p>每次上电、温度变化 >20°C、频率切换后，都必须重新执行 I/Q 校准。校准未完成前所有 EVM 测量无效。校准算法收敛时间 <100μs。</p></div>
+        <div class="caution-item"><div class="ci-title">📡 三频共存干扰管理</div><p>三路 PLL 同时工作时交叉耦合严重。PCB layout 必须隔离三路 VCO 电源和地平面。片内隔离度 >40dB。测试时逐频段验证互调产物。</p></div>
+        <div class="caution-item"><div class="ci-title">⏱ 快速信道切换时序</div><p>WiFi 帧间隔 SIFS=10μs，PLL 锁定 &lt;20μs。测试时确保用高速 SPI (>20MHz) 下发频率字。锁定检测信号需无毛刺，否则误导基带调度。</p></div>
+        <div class="caution-item"><div class="ci-title">🔋 低功耗设计（电池供电终端）</div><p>2x2 三频全负载功耗 <3W。测试时验证各电源轨电流分配。启用 Power Gating：空闲链路自动断电。电池供电场景重点关注待机电流。</p></div>
+        <div class="caution-item"><div class="ci-title">🌍 频谱法规认证（各国不同）</div><p>FCC (美国): 6GHz 仅限 LPI/VLP 模式；CE (欧洲): 6GHz 限制更严；SRRC (中国): 6GHz 尚待开放。测试时使用对应国家的频谱模板和功率限制。</p></div>
+      </div>
+
+      <h4 style="margin-top:20px;">🔴 WiFi 射频芯片专项注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">🔍 DPD 训练收敛确认</div><p>DPD 引擎需要足够长的训练序列才能收敛；测试前确认 DPD 训练完成标志位置位；DPD 系数冻结后不得在测试中更改。</p></div>
+        <div class="caution-item"><div class="ci-title">📊 综测仪与被测芯片同步</div><p>综测仪和 DUT 必须使用相同的 MCS、带宽、MIMO 配置；触发信号对齐 (<1μs 偏差)；否则测出的 EVM 虚高。</p></div>
+        <div class="caution-item"><div class="ci-title">🛡️ 天线端口 ESD 防护</div><p>天线端口直接暴露外部，极易 ESD 损伤；调试时确保操作员佩戴接地手环；PCB 预留 TVS 二极管位置。</p></div>
+        <div class="caution-item"><div class="ci-title">📐 PCB 射频走线规范</div><p>50Ω 单端 / 100Ω 差分阻抗控制 (±5%)；射频走线不得跨分割参考层；LNA 输入走线尽可能短 (<5mm)；收发隔离 >30dB。</p></div>
+      </div>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🚨 WiFi RF 测试最常见错误：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>未做 I/Q 校准就测 EVM：</strong>结果完全没有意义，I/Q 不平衡可导致 EVM 恶化 10~20dB</li>
+          <li><strong>DPD 未收敛就测试：</strong>PA 非线性未补偿，4096QAM 下 EVM 可能只能达到 −30dB</li>
+          <li><strong>使用普通 XTAL 做参考时钟：</strong>相噪太差，限制了 DUT 的真实 EVM 能力</li>
+          <li><strong>电缆损耗未补偿：</strong>10cm RF 电缆在 6GHz 可引入 >1dB 损耗 → 测出的功率和 EVM 均不准</li>
+          <li><strong>忽视温度稳定：</strong>芯片自发热可导致 EVM 漂移 >2dB；测试前至少预热 15 分钟</li>
+          <li><strong>电源纹波超标：</strong>DC-DC 纹波直接耦合到 VCO → 杂散 → EVM 突刺；建议用 LDO 评估</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 9: 选型指南 ═══════════ -->
+<section id="sec9">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">9</div><div class="icon">🧭</div><h2>选型与应用指南</h2>
+    </div>
+    <div class="card-body">
+
+      <div class="compare-grid">
+        <div class="compare-col red">
+          <h3>✅ 选用 WiFi 6E 的场景</h3>
+          <ul>
+            <li>成本敏感型消费电子产品</li>
+            <li>160MHz 带宽已够用的场景</li>
+            <li>1024QAM 满足速率需求</li>
+            <li>成熟生态，驱动和认证完善</li>
+            <li>IoT/智能家居（不需要极致速率）</li>
+            <li>电池供电设备（功耗更低）</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>✅ 选用 WiFi 7 的场景</h3>
+          <ul>
+            <li>极致数据速率需求 (46Gbps)</li>
+            <li>320MHz + 4096QAM 全功能</li>
+            <li>MLO 多频段聚合提升可靠性</li>
+            <li>未来-proof 部署（旗舰产品）</li>
+            <li>企业 AP / Mesh WiFi 骨干</li>
+            <li>AR/VR 低延迟无线传输</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">MIMO 配置选择</h4>
+      <table>
+        <thead><tr><th>配置</th><th>适用场景</th><th>速率</th><th>功耗</th><th>成本</th></tr></thead>
+        <tbody>
+          <tr><td><strong>1x1 (SISO)</strong></td><td>IoT, 传感器节点</td><td>低</td><td>极低 (~0.5W)</td><td>最低</td></tr>
+          <tr><td><strong>2x2 MIMO</strong></td><td>手机、平板、主流路由器</td><td>中高</td><td>低 (~3W 三频)</td><td>主流</td></tr>
+          <tr><td><strong>4x4 MIMO</strong></td><td>高端路由器、企业 AP</td><td>高</td><td>中 (~6W)</td><td>较高</td></tr>
+          <tr><td><strong>8x8 MIMO</strong></td><td>旗舰企业 AP、运营商级</td><td>最高</td><td>高 (~12W)</td><td>最高</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">WiFi 7 应用场景速查</h4>
+      <table>
+        <thead><tr><th>应用场景</th><th>推荐配置</th><th>关键需求</th><th>技术要点</th></tr></thead>
+        <tbody>
+          <tr><td>家庭路由器</td><td>2x2 三频 WiFi 7</td><td>性价比、覆盖</td><td>MLO 提升覆盖稳定性</td></tr>
+          <tr><td>游戏/电竞</td><td>4x4 WiFi 7</td><td>低延迟、高速率</td><td>MLO 多链路低延迟</td></tr>
+          <tr><td>企业 Mesh AP</td><td>4x4/8x8 WiFi 7</td><td>高并发、多用户</td><td>16×16 MU-MIMO</td></tr>
+          <tr><td>AR/VR 无线</td><td>2x2 WiFi 7</td><td>超低延迟 (<5ms)</td><td>320MHz + MLO</td></tr>
+          <tr><td>IoT 终端</td><td>1x1 WiFi 6</td><td>超低功耗</td><td>20MHz BW 够用</td></tr>
+          <tr><td>智能手机</td><td>2x2 WiFi 7</td><td>低功耗、三频</td><td>智能省电模式</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>💡 AE 工程直觉：</strong>"WiFi 7 的最大价值不是速率翻倍，而是 MLO 带来的可靠性提升和高密度场景下的用户体验改善。4096QAM 在实时网络中极少用满——但在信号好时能显著提升吞吐，让用户感知到'快'。射频芯片设计的核心是在成本、功耗和线性度之间找到最佳工作点。"
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<div class="footer">
+AE 知识文档 · WiFi 射频收发芯片 (WiFi RF Transceiver)<br>
+  覆盖原理、框图、指标、影响因素、测试方法与选型指南 · 文档版本 v2.0 · 生成时间：2026-06-19<br>
+  原始 MD 版本 v1.0 · <a href="../../docs/02_无线通信/03_WIFI射频收发芯片.md">查看原始 Markdown</a>
+</div>
+
+</body>
+</html>

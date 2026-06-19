@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>400G/800G Retimer 高速信号再生芯片 — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #1a56db; --primary-dark: #0e3a8e; --accent: #e74c3c;
+    --accent2: #27ae60; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+    --optical: #1a56db; --wireless: #e74c3c; --industrial: #27ae60;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  /* HERO */
+  .hero { background: linear-gradient(135deg, #0e3a8e 0%, #1a56db 50%, #0891b2 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  /* NAV */
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  /* CONTAINER */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  /* CARD */
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #1a56db11, #1a56db05); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #2563eb); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #e8f0fe; }
+  /* DIAGRAM */
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  /* BOXES */
+  .info-box { border-left: 4px solid var(--primary); background: #eff6ff; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  /* METRIC CARD */
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #1e40af, #1a56db); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  /* STEPS */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  /* CAUTION */
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  /* FORMULA */
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  /* CHIPS */
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  /* COMPARE */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #eff6ff; border: 2px solid var(--primary); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  /* FOOTER */
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  /* MISC */
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>🔷 400G & 800G Retimer</h1>
+  <div class="subtitle">高速信号再生芯片 — 彻底消除累积抖动，CDR重定时引擎</div>
+  <div class="badge-row">
+    <span class="badge">📡 8ch Retimer</span>
+    <span class="badge">⚡ CDR重定时</span>
+    <span class="badge">🔗 400GAUI-8/800GAUI-8</span>
+    <span class="badge">📊 JTF &lt;0.1dB peak</span>
+    <span class="badge">🧪 &lt;50us 锁定</span>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <a href="#sec1">一、产品概述</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 核心模块深度解析</a>
+  <a href="#sec3">三、芯片框图</a>
+  <a href="#sec4">四、Retimer vs Redriver</a>
+  <a href="#sec5">五、关键指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ Section 1: 产品概述 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div><div class="icon">📖</div><h2>产品概述与定位</h2>
+    </div>
+    <div class="card-body">
+      <p>Retimer（重定时器）是一种<strong>高速信号再生芯片</strong>，位于两个高速SerDes链路之间。与Redriver（仅信号放大/均衡）不同，Retimer执行完整的<strong>CDR（时钟数据恢复）和信号重新发送</strong>，彻底消除累积抖动。它是数据中心背板互联、长距离PCB走线和光模块Host侧信号清洁的关键组件。</p>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col blue">
+          <h3>📌 产品定位</h3>
+          <p><strong>产业链位置：</strong>两个SerDes链路之间，信号中继/再生节点</p>
+          <p><strong>核心价值：</strong>彻底消除累积抖动，而非仅放大信号</p>
+          <p><strong>本质功能：</strong>CDR重定时 + 信号重新发送</p>
+        </div>
+        <div class="compare-col green">
+          <h3>🎯 典型应用场景</h3>
+          <ul>
+            <li>数据中心交换机背板互联</li>
+            <li>长距离PCB trace信号延伸（>15 inch）</li>
+            <li>线缆/背板中继</li>
+            <li>光模块Host侧信号清洁</li>
+            <li>PCIe 5.0/6.0 Retimer</li>
+            <li>400GAUI-8/800GAUI-8 信号再生</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">技术路线</h4>
+      <table>
+        <thead><tr><th>维度</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>制程节点</strong></td><td>7nm/5nm FinFET CMOS</td><td>先进工艺支撑高集成度和低功耗</td></tr>
+          <tr><td><strong>调制格式</strong></td><td>PAM4 为主；向下兼容 NRZ</td><td>每符号 2bit / 1bit</td></tr>
+          <tr><td><strong>封装形式</strong></td><td>FC-BGA (Flip-Chip BGA)</td><td>高密度互连，低寄生</td></tr>
+          <tr><td><strong>接口标准</strong></td><td>400GAUI-8 / 800GAUI-8, OIF-CEI-112G</td><td>行业标准电气接口</td></tr>
+          <tr><td><strong>通道数</strong></td><td>8 lanes</td><td>支持完整 8 通道重定时</td></tr>
+          <tr><td><strong>单通道速率</strong></td><td>53.125 / 106.25 Gbaud PAM4</td><td>覆盖 400G 和 800G</td></tr>
+          <tr><td><strong>CDR 架构</strong></td><td>Baud-rate CDR, Hogge/Linear PD 或 MM-PD</td><td>快速锁定 (<50us)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2: 工作原理 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div><div class="icon">⚙️</div><h2>核心工作原理</h2>
+    </div>
+    <div class="card-body">
+      <p>Retimer 的核心任务是<strong>恢复纯净时钟 + 重新定时发送</strong>。与 oDSP 或 Redriver 不同，Retimer 的设计重心在于 CDR 的抖动消除能力和极低转发延迟。</p>
+
+      <h4>📥 Retimer 信号处理流程</h4>
+      <div class="diagram-title">图 2-1 | Retimer 信号处理流水线（单通道）</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 100" width="790" height="100" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrRet" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <text x="10" y="55" fill="#1e40af" font-size="10" font-weight="700">RX In</text>
+          <line x1="35" y1="50" x2="55" y2="50" stroke="#1a56db" stroke-width="2" marker-end="url(#arrRet)"/>
+          <rect x="60" y="25" width="95" height="50" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="107" y="46" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">CTLE</text>
+          <text x="107" y="62" fill="#3b82f6" font-size="8" text-anchor="middle">0~15dB peaking</text>
+          <line x1="155" y1="50" x2="175" y2="50" stroke="#1a56db" stroke-width="2" marker-end="url(#arrRet)"/>
+          <rect x="180" y="25" width="95" height="50" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="227" y="46" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">CDR</text>
+          <text x="227" y="62" fill="#b45309" font-size="8" text-anchor="middle">Baud-rate 恢复</text>
+          <line x1="275" y1="50" x2="295" y2="50" stroke="#1a56db" stroke-width="2" marker-end="url(#arrRet)"/>
+          <rect x="300" y="25" width="95" height="50" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="347" y="46" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">DFE</text>
+          <text x="347" y="62" fill="#16a34a" font-size="8" text-anchor="middle">3-tap Adaptive</text>
+          <line x1="395" y1="50" x2="415" y2="50" stroke="#1a56db" stroke-width="2" marker-end="url(#arrRet)"/>
+          <rect x="420" y="25" width="95" height="50" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+          <text x="467" y="46" fill="#6b21a8" font-size="10" font-weight="700" text-anchor="middle">FIFO</text>
+          <text x="467" y="62" fill="#7c3aed" font-size="8" text-anchor="middle">Elastic Buffer</text>
+          <line x1="515" y1="50" x2="535" y2="50" stroke="#1a56db" stroke-width="2" marker-end="url(#arrRet)"/>
+          <rect x="540" y="25" width="95" height="50" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="587" y="46" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">TX FIR</text>
+          <text x="587" y="62" fill="#3b82f6" font-size="8" text-anchor="middle">5-tap Pre-emp</text>
+          <line x1="635" y1="50" x2="670" y2="50" stroke="#1a56db" stroke-width="2"/>
+          <text x="680" y="55" fill="#1e40af" font-size="10" font-weight="700">TX Out</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>处理步骤详解：</strong>1) CTLE: 模拟域补偿Nyquist频率附近信道损耗；2) CDR: 从输入数据恢复纯净时钟，消除输入抖动（含RJ和DJ）；3) DFE: 数字域消除残留ISI；4) Elastic Buffer: 跨时钟域同步（恢复时钟→本地发送时钟）；5) TX FIR: 预加重补偿输出信道损耗；6) 输出驱动下游信道。</p>
+
+      <h4 style="margin-top:18px;">🔑 抖动消除机制 — Retimer的核心价值</h4>
+      <p><strong>Retimer的抖动传递函数（JTF, Jitter Transfer Function）：</strong></p>
+      <div class="formula">Jitter_Out = JTF &times; Jitter_In + Jitter_Generated</div>
+      <p>其中 <strong>JTF</strong> 由 CDR 的低通特性决定：</p>
+      <ul>
+        <li><strong>f &lt;&lt; CDR_BW：</strong>JTF &asymp; 0 dB — 低频抖动通过（CDR 可跟踪）</li>
+        <li><strong>f &gt;&gt; CDR_BW：</strong>JTF &rarr; &minus;40 dB/dec — 高频抖动被大幅抑制</li>
+        <li><strong>Jitter_Generated：</strong>Retimer 自身产生的底噪抖动（RJ &lt;250fs RMS）</li>
+      </ul>
+
+      <div class="info-box"><strong>💡 关键认知：</strong>Retimer 的 CDR 带宽就是抖动抑制的性能边界。CDR_BW 越高（如 5~10MHz），对低频抖动跟踪越好但高频抑制变弱；CDR_BW 越低（如 1~2MHz），高频抑制更好但低频抖动可能积累。工程上需在跟踪能力和抑制能力之间权衡。</div>
+
+      <h4 style="margin-top:18px;">实测抖动改善数据</h4>
+      <table>
+        <thead><tr><th>抖动类型</th><th>输入 (Retimer前)</th><th>输出 (Retimer后)</th><th>改善幅度</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>RJ (RMS)</strong></td><td>500fs</td><td>200fs</td><td style="color:#16a34a;font-weight:700;">60%</td><td>随机抖动大幅降低</td></tr>
+          <tr><td><strong>DJ (pk-pk)</strong></td><td>0.3UI</td><td>0.1UI</td><td style="color:#16a34a;font-weight:700;">67%</td><td>确定性抖动显著改善</td></tr>
+          <tr><td><strong>TJ @1e-15</strong></td><td>0.5UI</td><td>0.25UI</td><td style="color:#16a34a;font-weight:700;">50%</td><td>浴缸曲线大幅张开</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2B: 模块深度解析 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header" style="background:linear-gradient(90deg,#fef3c7,#fde68a);border-bottom:2px solid #f59e0b;">
+      <div class="section-no" style="background:#d97706;">🔬</div><div class="icon">🧠</div><h2 style="color:#92400e;">核心模块深度解析</h2>
+    </div>
+    <div class="card-body">
+
+      <!-- CTLE -->
+      <h4 style="color:#92400e;">一、CTLE (连续时间线性均衡器)</h4>
+      <p>CTLE 是一种高通滤波器，在模拟域对输入信号进行初步高频补偿，扩展 CDR 的接收范围。其频率响应提供频率相关的增益：</p>
+      <ul>
+        <li><strong>DC 增益：</strong>0dB（低频直通）</li>
+        <li><strong>高频 Peaking：</strong>6~18dB @ Nyquist 频率（可编程调节）</li>
+        <li><strong>Peaking 频率：</strong>可调，需匹配信道损耗拐点</li>
+        <li><strong>级数：</strong>通常 2~4 级级联，逐级补偿</li>
+      </ul>
+      <table>
+        <thead><tr><th>调节参数</th><th>功能</th><th>典型范围</th></tr></thead>
+        <tbody>
+          <tr><td>DC gain</td><td>低频增益调节</td><td>&minus;3 ~ +3dB</td></tr>
+          <tr><td>Peaking gain</td><td>高频补偿量</td><td>6 ~ 18dB</td></tr>
+          <tr><td>Peaking frequency</td><td>补偿频点位置</td><td>5~30GHz 可调</td></tr>
+          <tr><td>输出共模电压</td><td>匹配后端 CDR 输入</td><td>0.4~0.8V 可编程</td></tr>
+        </tbody>
+      </table>
+
+      <!-- CDR -->
+      <h4 style="color:#92400e;margin-top:20px;">二、CDR (时钟数据恢复) — Retimer 的灵魂</h4>
+      <p>CDR 是 Retimer <strong>最核心的模块</strong>，负责从含有严重抖动的输入信号中恢复出纯净时钟，并用该时钟重新采样数据，从而实现抖动消除。</p>
+
+      <p><strong>Retimer CDR 与 oDSP CDR 对比：</strong></p>
+      <table>
+        <thead><tr><th>特性</th><th>oDSP CDR</th><th>Retimer CDR</th><th>差异原因</th></tr></thead>
+        <tbody>
+          <tr><td><strong>时钟来源</strong></td><td>从 ADC 采样数字数据恢复</td><td>从模拟信号直接恢复</td><td>Retimer 无 ADC</td></tr>
+          <tr><td><strong>PD 类型</strong></td><td>MM-PD (数字)</td><td>Hogge / Linear PD (模拟) 或 MM-PD</td><td>模拟前端匹配</td></tr>
+          <tr><td><strong>抖动要求</strong></td><td>&lt;200fs RMS</td><td>&lt;250fs RMS（稍宽松）</td><td>级联场景有更多余量</td></tr>
+          <tr><td><strong>锁定范围</strong></td><td>±350ppm</td><td>±500ppm（更宽）</td><td>需兼容更多时钟源</td></tr>
+          <tr><td><strong>锁定时间</strong></td><td>&lt;100&mu;s</td><td>&lt;50&mu;s（更快）</td><td>需支持热插拔场景</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Retimer CDR 特殊考量：</strong></p>
+      <ul>
+        <li><strong>多速率支持：</strong>需支持 10G / 25G / 50G / 100G per lane 多种速率</li>
+        <li><strong>快速锁定：</strong>热插拔场景要求 CDR 在 &lt;50&mu;s 内完成锁定</li>
+        <li><strong>参考时钟不精确：</strong>可能从 Host 恢复，时钟质量不可控</li>
+        <li><strong>JTF 峰值要求：</strong>JTF 峰值 &lt;0.1dB — 这意味着 CDR PLL 不能有任何增益峰值</li>
+      </ul>
+      <div class="formula">相位误差 = e(n) &middot; d(n&minus;1) &minus; e(n&minus;1) &middot; d(n) &nbsp;&nbsp;|&nbsp;&nbsp; 二阶 PLL: Kp + Ki/s</div>
+
+      <!-- DFE -->
+      <h4 style="color:#92400e;margin-top:20px;">三、DFE (判决反馈均衡器)</h4>
+      <p>Retimer 中的 DFE 与 oDSP 类似但有所简化。由于 Retimer 面向背板/PCB trace 等较短链路，ISI 通常不如光纤信道严重：</p>
+      <ul>
+        <li>通常 <strong>1~3 tap</strong></li>
+        <li>重点补偿短距信道的后向 ISI</li>
+        <li>通常<strong>不需要 MLSD</strong>（转发延迟要求更严，MLSD 增加数十 UI 延迟）</li>
+        <li>自适应 LMS 算法收敛</li>
+      </ul>
+      <div class="formula">y[n] = x[n] &minus; &Sigma;(k=1 to 3) d[n&minus;k] &middot; b[k] &nbsp;&nbsp;|&nbsp;&nbsp; PAM4 判决阈值: &minus;2, 0, +2</div>
+
+      <!-- Elastic Buffer -->
+      <h4 style="color:#92400e;margin-top:20px;">四、弹性缓冲 (Elastic Buffer / FIFO)</h4>
+      <p>Elastic Buffer 是 Retimer <strong>区别于 Redriver 的关键模块</strong>之一。它在恢复时钟域（CDR 恢复的时钟）和本地发送时钟域（PLL/CMU 产生的 TX 时钟）之间进行数据同步，实现真正的跨时钟域重定时。</p>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>FIFO 深度</td><td>32~128 UI</td><td>决定可容忍的最大频偏和延迟</td></tr>
+          <tr><td>频率偏差容限</td><td>±500ppm</td><td>覆盖恢复时钟和 TX 时钟之间的最坏频差</td></tr>
+          <tr><td>上溢/下溢保护</td><td>插入/删除 Skip 符号</td><td>FIFO 满时删 Skip，空时插 Skip</td></tr>
+          <tr><td>延迟贡献</td><td>1~5ns</td><td>约占总延迟的 30~50%</td></tr>
+        </tbody>
+      </table>
+      <div class="warn-box"><strong>⚠️ 关键约束：</strong>FIFO 深度越大 → 可容忍频偏越大 → 但延迟也越大。对于延迟敏感应用（HPC/金融交易），需在频偏容限和延迟之间仔细权衡。</div>
+
+      <!-- TX FIR -->
+      <h4 style="color:#92400e;margin-top:20px;">五、TX FIR (发送端预加重)</h4>
+      <p>TX FIR 对输出信号预补偿，驱动下游信道。与 oDSP TX DSP 类似但更简单（无 FEC 编码、无 NLC 等）：</p>
+      <ul>
+        <li><strong>3~5-tap</strong> FIR 滤波器</li>
+        <li><strong>c_main：</strong>0~63（主抽头系数）</li>
+        <li><strong>c_pre / c_post：</strong>&minus;20 ~ +20（前/后向抽头）</li>
+        <li><strong>输出幅度：</strong>200~1200 mVppd 可编程</li>
+        <li>支持 Pre-emphasis &minus;6 ~ +12dB 范围</li>
+      </ul>
+      <div class="formula">Vout[n] = c_pre&middot;Vin[n+1] + c_main&middot;Vin[n] + c_post&middot;Vin[n&minus;1]</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 3: 芯片框图 ═══════════ -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div><div class="icon">🔲</div><h2>芯片内部电路框图</h2>
+    </div>
+    <div class="card-body">
+      <div class="diagram-title">图 3-1 | 400G/800G Retimer 芯片内部架构 (8通道)</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 480" width="790" height="465" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <rect width="820" height="480" fill="#fafafa" rx="8"/>
+
+          <!-- Title -->
+          <text x="410" y="22" font-size="13" fill="#0e3a8e" text-anchor="middle" font-weight="bold">400G / 800G Retimer — 8ch CDR + Elastic Buffer Architecture</text>
+
+          <!-- Channel 0 Row -->
+          <rect x="10" y="32" width="800" height="70" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1"/>
+          <text x="22" y="52" font-size="9" fill="#1e40af" font-weight="bold">Ch 0</text>
+
+          <rect x="52" y="42" width="95" height="35" rx="5" fill="white" stroke="#60a5fa"/>
+          <text x="99" y="58" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">CTLE</text>
+          <text x="99" y="72" font-size="7" fill="#3b82f6" text-anchor="middle">0~15dB peaking</text>
+
+          <rect x="157" y="42" width="95" height="35" rx="5" fill="white" stroke="#60a5fa"/>
+          <text x="204" y="58" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">CDR</text>
+          <text x="204" y="72" font-size="7" fill="#3b82f6" text-anchor="middle">Baud-rate / &lt;50us</text>
+
+          <rect x="262" y="42" width="95" height="35" rx="5" fill="white" stroke="#60a5fa"/>
+          <text x="309" y="58" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">DFE</text>
+          <text x="309" y="72" font-size="7" fill="#3b82f6" text-anchor="middle">3-tap Adaptive</text>
+
+          <rect x="367" y="42" width="95" height="35" rx="5" fill="white" stroke="#60a5fa"/>
+          <text x="414" y="58" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">FIFO</text>
+          <text x="414" y="72" font-size="7" fill="#3b82f6" text-anchor="middle">Elastic Buf 32~128UI</text>
+
+          <rect x="472" y="42" width="95" height="35" rx="5" fill="white" stroke="#60a5fa"/>
+          <text x="519" y="58" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">TX FIR</text>
+          <text x="519" y="72" font-size="7" fill="#3b82f6" text-anchor="middle">5-tap Pre-emp</text>
+
+          <line x1="147" y1="60" x2="155" y2="60" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrRet)"/>
+          <line x1="252" y1="60" x2="260" y2="60" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrRet)"/>
+          <line x1="357" y1="60" x2="365" y2="60" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrRet)"/>
+          <line x1="462" y1="60" x2="470" y2="60" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrRet)"/>
+          <line x1="567" y1="60" x2="575" y2="60" stroke="#1a56db" stroke-width="1.5"/>
+
+          <!-- TX/RX labels -->
+          <text x="25" y="98" font-size="7" fill="#6b7280">RXin</text>
+          <text x="595" y="98" font-size="7" fill="#6b7280">TXout</text>
+
+          <!-- Channels 1-7 abbreviated -->
+          <rect x="10" y="108" width="800" height="55" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="410" y="130" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="bold">Ch 1 ~ Ch 7 &mdash; 与 Ch 0 完全相同 (x8 Total)</text>
+          <text x="410" y="148" font-size="8" fill="#94a3b8" text-anchor="middle">CTLE &rarr; CDR &rarr; DFE &rarr; FIFO &rarr; TX FIR (每通道独立)</text>
+
+          <!-- Shared Blocks Row -->
+          <rect x="10" y="172" width="395" height="85" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="207" y="195" font-size="10" fill="#92400e" text-anchor="middle" font-weight="bold">共享 PLL / CMU Bank &times;8</text>
+          <text x="207" y="212" font-size="8" fill="#b45309" text-anchor="middle">产生各通道 TX 时钟 (53.125 / 106.25 GHz)</text>
+          <text x="207" y="228" font-size="8" fill="#b45309" text-anchor="middle">参考时钟: RefClk 156.25MHz (LVDS)</text>
+          <text x="207" y="244" font-size="8" fill="#b45309" text-anchor="middle">CDR 恢复时钟域与 TX PLL 时钟域隔离</text>
+
+          <rect x="415" y="172" width="395" height="85" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="612" y="195" font-size="10" fill="#166534" text-anchor="middle" font-weight="bold">管理与监测 (Management &amp; Monitor)</text>
+          <text x="612" y="215" font-size="8" fill="#15803d" text-anchor="middle">I2C / SPI (寄存器配置) | PRBS Gen / Chk (内置自检)</text>
+          <text x="612" y="230" font-size="8" fill="#15803d" text-anchor="middle">Eye Monitor (2D 眼图) | Temp Sensor (±2°C)</text>
+          <text x="612" y="245" font-size="8" fill="#15803d" text-anchor="middle">CDR Lock Status | FIFO 深度监测 | BER Counters</text>
+
+          <!-- Power Domains -->
+          <rect x="10" y="268" width="800" height="50" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="410" y="290" font-size="10" fill="#991b1b" text-anchor="middle" font-weight="bold">电源域 (Power Domains)</text>
+          <rect x="30" y="298" width="170" height="14" rx="3" fill="#fee2e2"/><text x="115" y="309" font-size="8" fill="#991b1b" text-anchor="middle">Vcore 0.8V (数字内核)</text>
+          <rect x="215" y="298" width="170" height="14" rx="3" fill="#fee2e2"/><text x="300" y="309" font-size="8" fill="#991b1b" text-anchor="middle">Vio 1.2V (I/O 接口)</text>
+          <rect x="400" y="298" width="170" height="14" rx="3" fill="#fee2e2"/><text x="485" y="309" font-size="8" fill="#991b1b" text-anchor="middle">Vana 1.8V (模拟前端)</text>
+          <rect x="585" y="298" width="200" height="14" rx="3" fill="#fee2e2"/><text x="685" y="309" font-size="8" fill="#991b1b" text-anchor="middle">上电时序: Vcore→Vio→Vana</text>
+
+          <!-- Signal Path Summary -->
+          <rect x="10" y="330" width="800" height="40" rx="6" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1"/>
+          <text x="410" y="348" font-size="9" fill="#475569" text-anchor="middle">RX差分输入 (8对) &rarr; CTLE均衡 &rarr; CDR时钟恢复 &rarr; DFE判决反馈 &rarr; Elastic Buffer跨时钟域 &rarr; TX FIR预加重 &rarr; TX差分输出 (8对)</text>
+
+          <!-- System Info -->
+          <rect x="10" y="380" width="800" height="35" rx="6" fill="#e8f0fe" stroke="#93c5fd" stroke-width="1"/>
+          <text x="410" y="398" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">总吞吐: 425 Gbps (400G 模式, 8×53.125G PAM4) | 850 Gbps (800G 模式, 8×106.25G PAM4)</text>
+          <text x="410" y="410" font-size="8" fill="#3b82f6" text-anchor="middle">封装: FC-BGA | 功耗: &lt;6W (400G) / &lt;10W (800G) | 转发延迟: &lt;5ns (400G) / &lt;8ns (800G)</text>
+
+          <!-- Interface markers -->
+          <text x="52" y="450" font-size="8" fill="#6b7280" text-anchor="middle">Host →</text>
+          <text x="760" y="450" font-size="8" fill="#6b7280" text-anchor="middle">→ Downstream</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>架构说明：</strong>每通道拥有独立的 CTLE&rarr;CDR&rarr;DFE&rarr;FIFO&rarr;TX FIR 流水线。8 个通道共享 PLL/CMU Bank 产生 TX 时钟。管理接口提供寄存器配置、PRBS 自检、眼图监测和温度监控功能。电源域严格隔离：Vcore(数字)、Vio(接口)、Vana(模拟) 三轨独立供电，上电/下电需遵顺序。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 4: Retimer vs Redriver ═══════════ -->
+<section id="sec4">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">4</div><div class="icon">⚖️</div><h2>Retimer vs Redriver 全面对比</h2>
+    </div>
+    <div class="card-body">
+
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>🔷 Retimer (重定时器)</h3>
+          <ul>
+            <li><strong>信号处理：</strong>CDR + 信号重新生成</li>
+            <li><strong>抖动消除：</strong>完全（CDR 重定时）</li>
+            <li><strong>延迟：</strong>1~10ns（含 FIFO）</li>
+            <li><strong>功耗：</strong>0.5~1W / lane</li>
+            <li><strong>协议感知：</strong>部分（需 CDR 锁定到协议速率）</li>
+            <li><strong>适用距离：</strong>长距延伸（>20dB 损耗）</li>
+            <li><strong>复杂度：</strong>高（含 CDR / DFE）</li>
+            <li><strong>成本：</strong>中-高</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>🟢 Redriver (重驱动器)</h3>
+          <ul>
+            <li><strong>信号处理：</strong>模拟均衡 + 放大</li>
+            <li><strong>抖动消除：</strong>有限（仅均衡）</li>
+            <li><strong>延迟：</strong>&lt;100ps</li>
+            <li><strong>功耗：</strong>&lt;0.3W / lane</li>
+            <li><strong>协议感知：</strong>无（透明传输）</li>
+            <li><strong>适用距离：</strong>短距延伸（&lt;10dB 损耗）</li>
+            <li><strong>复杂度：</strong>低</li>
+            <li><strong>成本：</strong>低</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">详细特性对比表</h4>
+      <table>
+        <thead><tr><th>特性</th><th>Redriver</th><th>Retimer</th><th>选用判断</th></tr></thead>
+        <tbody>
+          <tr><td><strong>信号处理方式</strong></td><td>模拟均衡 + 放大</td><td>CDR + 信号重新生成</td><td>需彻底消抖动 → Retimer</td></tr>
+          <tr><td><strong>抖动消除能力</strong></td><td>有限（仅均衡改善 ISI）</td><td>完全（CDR 重定时消除 RJ/DJ）</td><td>累积抖动严重 → Retimer</td></tr>
+          <tr><td><strong>转发延迟</strong></td><td>&lt;100ps</td><td>1~10ns (含 FIFO)</td><td>延迟敏感 → Redriver</td></tr>
+          <tr><td><strong>功耗</strong></td><td>&lt;0.3W / lane</td><td>0.5~1W / lane</td><td>功耗敏感 → Redriver</td></tr>
+          <tr><td><strong>协议感知</strong></td><td>无（透明，模拟域操作）</td><td>部分（需 CDR 锁定到协议速率）</td><td>多协议 → 需验证兼容性</td></tr>
+          <tr><td><strong>适用信道损耗</strong></td><td>短距（&lt;10dB）</td><td>长距（>20dB）</td><td>损耗 >15dB → Retimer</td></tr>
+          <tr><td><strong>级联能力</strong></td><td>不建议（抖动累积线性增长）</td><td>可级联 2~3 级（CDR 消除）</td><td>多段延伸 → Retimer</td></tr>
+          <tr><td><strong>复杂度</strong></td><td>低（无数字逻辑）</td><td>高（含 CDR / DFE / FIFO）</td><td>设计简化 → Redriver</td></tr>
+          <tr><td><strong>成本</strong></td><td>低</td><td>中-高</td><td>成本敏感 → Redriver</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>💡 工程决策直觉：</strong>"信号能到就 Redriver，到不了就 Retimer。Redriver 是信号放大器，Retimer 是信号再生器——本质区别在于要不要 CDR。当链路抖动预算紧张、或需要跨时钟域时，Redriver 无能为力，必须上 Retimer。"
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 5: 关键指标 ═══════════ -->
+<section id="sec5">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">5</div><div class="icon">📊</div><h2>核心性能指标汇总</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📌 5.1 系统级指标</h4>
+      <table>
+        <thead><tr><th>指标名称</th><th>400G 规格</th><th>800G 规格</th><th>单位</th><th>含义说明</th></tr></thead>
+        <tbody>
+          <tr><td>通道数</td><td>8</td><td>8</td><td>lanes</td><td>支持完整 8ch 重定时</td></tr>
+          <tr><td>每通道速率</td><td>53.125</td><td>106.25</td><td>Gbaud</td><td>PAM4 符号率</td></tr>
+          <tr><td>总吞吐量</td><td>425</td><td>850</td><td>Gbps</td><td>含 FEC 开销对应的有效载荷</td></tr>
+          <tr><td>调制格式</td><td>PAM4</td><td>PAM4</td><td>-</td><td>每符号 2bit</td></tr>
+          <tr><td>最大功耗</td><td>&lt;6</td><td>&lt;10</td><td>W</td><td>Tcase=85°C</td></tr>
+          <tr><td>转发延迟</td><td>&lt;5</td><td>&lt;8</td><td>ns</td><td>含 FIFO 延迟</td></tr>
+          <tr><td>封装</td><td colspan="2">FC-BGA</td><td>-</td><td>Flip-Chip BGA</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.2 接收性能指标</h4>
+      <table>
+        <thead><tr><th>指标</th><th>规格</th><th>测试条件</th></tr></thead>
+        <tbody>
+          <tr><td><strong>RX 灵敏度</strong></td><td>60 mVppd</td><td>BER=1e-15, PRBS31Q</td></tr>
+          <tr><td><strong>信道补偿 @Nyquist</strong></td><td>>25 dB</td><td>均衡全部开启 (CTLE + DFE)</td></tr>
+          <tr><td><strong>回波损耗</strong></td><td>&lt;&minus;10 dB</td><td>DC~Nyquist 频率范围</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.3 抖动指标</h4>
+      <div class="metric-card">
+        <div class="metric-header"><h4>输出随机抖动 · Output RJ</h4><span class="metric-abbr">RJ RMS</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">规格</span><span>&lt;250fs RMS（相噪积分 10k~100MHz）</span></div>
+          <div class="metric-row"><span class="metric-label">含义</span><span>Retimer 在消除输入抖动后自身新增的随机抖动底噪</span></div>
+          <div class="metric-row"><span class="metric-label">影响因素</span><span>CDR 恢复时钟相噪、PLL/CMU 输出相噪、电源纹波耦合</span></div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-header"><h4>抖动传递函数峰值 · JTF Peak</h4><span class="metric-abbr">JTF</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">规格</span><span>&lt;0.1 dB</span></div>
+          <div class="metric-row"><span class="metric-label">含义</span><span>JTF 曲线上任何频率点的增益不得超过 0.1dB — 否则意味着 CDR 在某频点放大了抖动</span></div>
+          <div class="metric-row"><span class="metric-label">关键性</span><span>这是 Retimer 最核心的指标之一。JTF 峰值超标 → 级联场景抖动放大 → 系统失败</span></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>指标</th><th>规格</th><th>测量方法</th></tr></thead>
+        <tbody>
+          <tr><td>输出 RJ (RMS)</td><td>&lt;250fs</td><td>相噪分析仪，积分 10k~100MHz</td></tr>
+          <tr><td>输出 TJ @1e-15</td><td>&lt;0.3UI</td><td>浴缸曲线外推</td></tr>
+          <tr><td>抖动抑制 @10MHz</td><td>>20dB</td><td>JTF 测试，SJ 注入</td></tr>
+          <tr><td>JTF 峰值</td><td>&lt;0.1dB</td><td>JTF 频率扫描 &rarr; 取最大增益</td></tr>
+          <tr><td>频偏容限</td><td>±500ppm</td><td>频偏扫描，监测 Lock 和 BER</td></tr>
+          <tr><td>CDR 锁定时间</td><td>&lt;50&mu;s</td><td>频率阶跃 &rarr; 示波器测 Lock 延迟</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">📌 5.4 TX 发射机指标</h4>
+      <table>
+        <thead><tr><th>指标</th><th>规格</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td>差分输出幅度</td><td>200~1200 mVppd</td><td>可编程调节</td></tr>
+          <tr><td>Pre-emphasis 范围</td><td>&minus;6 ~ +12 dB</td><td>覆盖预加重和去加重场景</td></tr>
+          <tr><td>RLM (电平分离度)</td><td>>0.92</td><td>PAM4 眼图均匀度</td></tr>
+          <tr><td>上升/下降时间</td><td>&lt;9ps</td><td>20%~80% 电平过渡</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 6: 影响因素 ═══════════ -->
+<section id="sec6">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">6</div><div class="icon">🔗</div><h2>指标影响因素分析</h2>
+    </div>
+    <div class="card-body">
+      <h4>📍 Retimer 关键指标影响因素网络</h4>
+      <table>
+        <thead><tr><th>关键指标</th><th>被哪些因素影响（降级）</th><th>该指标又影响哪些下游性能</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>JTF / 抖动抑制</strong></td>
+            <td><span class="chip chip-red">CDR 环路带宽设置</span><span class="chip chip-red">PLL 相位余量</span><span class="chip chip-red">参考时钟相噪</span><span class="chip chip-red">电源纹波</span><span class="chip chip-red">温度漂移</span></td>
+            <td><span class="chip chip-blue">输出抖动</span><span class="chip chip-blue">级联性能</span><span class="chip chip-blue">系统 BER</span></td>
+          </tr>
+          <tr>
+            <td><strong>转发延迟</strong></td>
+            <td><span class="chip chip-red">FIFO 深度设置</span><span class="chip chip-red">DFE tap 数</span><span class="chip chip-red">TX FIR tap 数</span><span class="chip chip-red">PVT corner</span></td>
+            <td><span class="chip chip-blue">HPC 系统延迟预算</span><span class="chip chip-blue">协议兼容性</span><span class="chip chip-blue">系统吞吐</span></td>
+          </tr>
+          <tr>
+            <td><strong>CDR 锁定时间</strong></td>
+            <td><span class="chip chip-red">PLL 带宽</span><span class="chip chip-red">频率检测算法</span><span class="chip chip-red">初始频偏大小</span><span class="chip chip-red">输入信号质量</span></td>
+            <td><span class="chip chip-blue">热插拔可靠性</span><span class="chip chip-blue">链路恢复时间</span><span class="chip chip-blue">系统可用性</span></td>
+          </tr>
+          <tr>
+            <td><strong>RX 灵敏度</strong></td>
+            <td><span class="chip chip-red">CTLE peaking 设置</span><span class="chip chip-red">DFE 收敛精度</span><span class="chip chip-red">信道 ISI/损耗</span><span class="chip chip-red">反射/阻抗失配</span><span class="chip chip-red">电源噪声</span></td>
+            <td><span class="chip chip-blue">链路预算</span><span class="chip chip-blue">最大传输距离</span><span class="chip chip-blue">系统 BER</span></td>
+          </tr>
+          <tr>
+            <td><strong>TX 眼图质量</strong></td>
+            <td><span class="chip chip-red">TX FIR 系数</span><span class="chip chip-red">输出阻抗匹配</span><span class="chip chip-red">TVO 幅度设置</span><span class="chip chip-red">电源纹波</span></td>
+            <td><span class="chip chip-blue">下游链路预算</span><span class="chip chip-blue">级联性能</span><span class="chip chip-blue">系统合规性</span></td>
+          </tr>
+          <tr>
+            <td><strong>功耗</strong></td>
+            <td><span class="chip chip-red">通道数/速率</span><span class="chip chip-red">DFE tap 数</span><span class="chip chip-red">CMU 输出频率</span><span class="chip chip-red">PVT corner</span><span class="chip chip-red">温度</span></td>
+            <td><span class="chip chip-blue">热设计</span><span class="chip chip-blue">散热方案</span><span class="chip chip-blue">系统可靠性</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="success-box" style="margin-top:16px;">
+        <strong>✅ Retimer 关键共同影响因素（所有高速重定时芯片均适用）：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>CDR 环路参数：</strong>PLL 带宽和相位余量直接影响 JTF 形状 — 带宽太高 → 高频抖动抑制不足；带宽太低 → 锁定时间长</li>
+          <li><strong>参考时钟质量：</strong>RefClk 相噪通过 CMU 放大后成为 TX 输出抖动的基底 — RefClk RJ 要求 &lt;100fs RMS</li>
+          <li><strong>电源完整性 (PDN)：</strong>模拟前端 (CTLE/CDR) 对电源纹波极度敏感 — 100&mu;V 纹波可导致数 fs RJ 恶化</li>
+          <li><strong>信号完整性 (SI)：</strong>PCB trace 阻抗失配 → 反射 → ISI → 增加 CDR 输入抖动 → Jitter_Generated 增大</li>
+          <li><strong>FIFO 深度 vs 延迟：</strong>深度越大可容忍频偏越大，但延迟也越大 — 延迟敏感场景需小深度 + 精确频率规划</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 7: 测试方法 ═══════════ -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法详解</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>📐 7.1 抖动传递测试 (Jitter Transfer) — 核心测试</h4>
+      <p><strong>测试原理：</strong>测量 Retimer 的 JTF（Jitter Transfer Function），即输出抖动与输入抖动之比随频率的变化。这是评估 Retimer 核心性能<strong>最重要</strong>的测试。</p>
+
+      <h4 style="margin-top:14px;">测试设备清单</h4>
+      <table>
+        <thead><tr><th>设备名称</th><th>推荐型号</th><th>关键规格</th><th>用途</th></tr></thead>
+        <tbody>
+          <tr><td>误码仪 (BERT)</td><td>Keysight M8040A</td><td>64GBaud PAM4, RJ&lt;150fs, SJ 注入功能</td><td>PPG 发送 + SJ 注入 + ED 检测</td></tr>
+          <tr><td>实时示波器</td><td>Keysight UXR1104A</td><td>110GHz, 256GS/s, Jitter 分析软件</td><td>输入/输出抖动精确测量</td></tr>
+          <tr><td>相噪分析仪</td><td>Keysight E5052B</td><td>10M~7GHz 相噪测量</td><td>恢复时钟相噪积分</td></tr>
+          <tr><td>可编程电源</td><td>Keysight N6705C</td><td>4ch, 低噪声 (<1mVrms)</td><td>多轨供电 (Vcore/Vio/Vana)</td></tr>
+          <tr><td>VNA</td><td>Keysight PNA-X N5247B</td><td>10M~67GHz</td><td>信道 S 参数提取</td></tr>
+          <tr><td>温控平台</td><td>MPI Thermal TA-5000</td><td>&minus;60~+200°C</td><td>三温测试</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">JTF 测试框图</h4>
+      <div class="diagram-title">图 7-1 | 抖动传递 (JTF) 测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 200" width="790" height="195" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrJTF" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <rect x="15" y="25" width="165" height="65" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="97" y="48" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle">BERT PPG + SJ</text>
+          <text x="97" y="65" fill="#3b82f6" font-size="8" text-anchor="middle">M8040A PRBS31Q</text>
+          <text x="97" y="80" fill="#3b82f6" font-size="8" text-anchor="middle">SJ: 10kHz~100MHz 扫描</text>
+          <line x1="180" y1="57" x2="225" y2="57" stroke="#1a56db" stroke-width="2" marker-end="url(#arrJTF)"/>
+          <rect x="230" y="25" width="170" height="65" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="315" y="48" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">ISI 信道</text>
+          <text x="315" y="65" fill="#b45309" font-size="8" text-anchor="middle">PCB trace / RF Cable</text>
+          <text x="315" y="80" fill="#b45309" font-size="8" text-anchor="middle">模拟实际链路损耗</text>
+          <line x1="400" y1="57" x2="445" y2="57" stroke="#1a56db" stroke-width="2" marker-end="url(#arrJTF)"/>
+          <rect x="450" y="25" width="170" height="65" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="535" y="48" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle">DUT Retimer</text>
+          <text x="535" y="65" fill="#3b82f6" font-size="8" text-anchor="middle">供电: Vcore/Vio/Vana</text>
+          <text x="535" y="80" fill="#3b82f6" font-size="8" text-anchor="middle">CDR Lock确认</text>
+          <line x1="620" y1="40" x2="655" y2="40" stroke="#1a56db" stroke-width="2" marker-end="url(#arrJTF)"/>
+          <rect x="660" y="20" width="140" height="55" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="730" y="43" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">BERT ED</text>
+          <text x="730" y="60" fill="#16a34a" font-size="8" text-anchor="middle">PRBS Checker</text>
+          <!-- Branch to scope -->
+          <line x1="535" y1="90" x2="535" y2="115" stroke="#e74c3c" stroke-width="1.5"/>
+          <line x1="430" y1="115" x2="640" y2="115" stroke="#e74c3c" stroke-width="1.5"/>
+          <line x1="430" y1="115" x2="430" y2="135" stroke="#e74c3c" stroke-width="1.5" marker-end="url(#arrJTF)"/>
+          <rect x="340" y="138" width="180" height="45" rx="8" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="430" y="158" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">实时示波器</text>
+          <text x="430" y="174" fill="#b91c1c" font-size="8" text-anchor="middle">UXR1104A — 测量输入/输出抖动</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:14px;">JTF 测试步骤</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>系统校准与预热</h5><p>BERT + 示波器预热 >30min；校准电缆损耗（去嵌入 S 参数）；确认 DUT 供电正常，CDR Lock Status=1。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>基准抖动测量（无 SJ）</h5><p>SJ 关闭，测量 Retimer 输入和输出的固有抖动（RJ + DJ），作为 JTF 计算的基准参考。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>SJ 频率扫描</h5><p>SJ 频率扫描: 10kHz, 50k, 100k, 500k, 1M, 5M, 10M, 50M, 100MHz；每个频点 SJ 幅度 0.1~0.5UI（保证 CDR 不脱锁）。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>每个频点测量</h5><p>测量 Retimer 输出抖动 Jitter_Out(f) 和输入抖动 Jitter_In(f)；计算 JTF(f) = 20&middot;log₁₀(Jitter_Out / Jitter_In) [dB]。</p></div></div>
+        <div class="step"><div class="step-no">5</div><div class="step-content"><h5>绘制 JTF 曲线 &amp; 判定</h5><p>绘制 JTF vs 频率曲线（双对数或半对数）；判定：JTF 峰值 &lt;0.1dB；高频 (@10MHz) 抑制 >20dB；CDR_BW 处过渡平滑无 peaking。</p></div></div>
+        <div class="step"><div class="step-no">6</div><div class="step-content"><h5>三温重复</h5><p>在 &minus;40°C / +25°C / +85°C 三温下重复 JTF 扫描，验证温度对 CDR 环路参数（BW、相位余量）的影响。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">🔴 7.2 抖动容限测试 (JTOL) — 级联场景</h4>
+      <p>类似 oDSP CDR 抖动容限测试，但需额外验证<strong>Retimer 级联场景</strong>：</p>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 80" width="790" height="80" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="15" width="120" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="70" y="40" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">BERT PPG</text>
+          <line x1="130" y1="35" x2="155" y2="35" stroke="#1a56db" stroke-width="2" marker-end="url(#arrJTF)"/>
+          <rect x="160" y="15" width="100" height="40" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="210" y="40" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">ISI Ch #1</text>
+          <line x1="260" y1="35" x2="285" y2="35" stroke="#1a56db" stroke-width="2" marker-end="url(#arrJTF)"/>
+          <rect x="290" y="15" width="100" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="340" y="40" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">Retimer #1</text>
+          <line x1="390" y1="35" x2="415" y2="35" stroke="#1a56db" stroke-width="2" marker-end="url(#arrJTF)"/>
+          <rect x="420" y="15" width="100" height="40" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="470" y="40" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">ISI Ch #2</text>
+          <line x1="520" y1="35" x2="545" y2="35" stroke="#1a56db" stroke-width="2" marker-end="url(#arrJTF)"/>
+          <rect x="550" y="15" width="100" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="600" y="40" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">Retimer #2</text>
+          <line x1="650" y1="35" x2="675" y2="35" stroke="#1a56db" stroke-width="2" marker-end="url(#arrJTF)"/>
+          <rect x="680" y="15" width="120" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="740" y="40" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">BERT ED</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>级联验证要求：</strong>两个 Retimer 串联后，级联抖动不累积超过单个 Retimer 抖动预算的 2&times;。如果每个 Retimer 的 JTF 峰值 &lt;0.1dB，理论上级联 JTF &lt;0.2dB。</p>
+
+      <h4 style="margin-top:18px;">🟡 7.3 转发延迟测试</h4>
+      <p><strong>方法：</strong>使用示波器的 TDR/TDT 模式测量 Retimer 的转发延迟。</p>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>激励信号</h5><p>阶跃信号或窄脉冲注入差分输入端；阶跃上升时间 &lt;20ps（远小于 Retimer 延迟）。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>时间差测量</h5><p>示波器双通道同时监测输入和输出；测量输入阶跃的 50% 点到输出阶跃的 50% 点时间差。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>判定标准</h5><p>400G 模式: &lt;5ns；800G 模式: &lt;8ns；多次测量取最大/均值/标准差。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">🟢 7.4 多速率兼容性测试</h4>
+      <p>Retimer 需支持多种协议速率，验证 CDR 在各速率下均能正常锁定：</p>
+      <table>
+        <thead><tr><th>测试速率</th><th>调制格式</th><th>对应协议</th><th>验证要点</th></tr></thead>
+        <tbody>
+          <tr><td>25.78 Gbaud</td><td>NRZ</td><td>25GE / CPRI</td><td>CDR 锁定、JTF、输出眼图</td></tr>
+          <tr><td>53.125 Gbaud</td><td>PAM4</td><td>100GE per lane / 400G</td><td>CDR 锁定、BER@1e-15、JTF</td></tr>
+          <tr><td>106.25 Gbaud</td><td>PAM4</td><td>200GE per lane / 800G</td><td>CDR 锁定、BER@1e-15、JTF</td></tr>
+        </tbody>
+      </table>
+      <div class="warn-box"><strong>⚠️ 注意：</strong>不同速率切换时 CDR 需重新锁定。验证速率切换（如 25G &rarr; 53G &rarr; 106G）时锁定时间是否仍满足 &lt;50&mu;s。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 8: 注意事项 ═══════════ -->
+<section id="sec8">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">8</div><div class="icon">⚠️</div><h2>测试与使用注意事项</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>⚡ Retimer 通用注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">🔌 上电时序（绝对关键！）</div><p>上电: Vcore(0.8V) &rarr; 等待 >10ms &rarr; Vio(1.2V) &rarr; 等待 >10ms &rarr; Vana(1.8V)；断电: 反向！绝对禁止颠倒，否则可能永久损坏芯片！</p></div>
+        <div class="caution-item"><div class="ci-title">🕐 参考时钟质量</div><p>频率: 156.25MHz LVDS；相噪: &minus;150dBc/Hz @10kHz；RJ: &lt;100fs RMS (12k~20MHz)；精度: ±50ppm。RefClk 质量直接影响 CDR 抖动底噪。</p></div>
+        <div class="caution-item"><div class="ci-title">🎯 CDR 锁定确认</div><p>测试前务必确认 CDR Lock Status=1；未锁定时 BER 和 JTF 测试完全无意义；锁定后等待 >50&mu;s 让 DFE 系数完成自适应收敛。</p></div>
+        <div class="caution-item"><div class="ci-title">🔗 级联抖动监控</div><p>多级 Retimer 级联时，每级输出抖动需分开监测；JTF 峰值超标 0.1dB 即可能导致级联失败；建议每级设置相同的 CDR 环路参数。</p></div>
+        <div class="caution-item"><div class="ci-title">⏱ 延迟敏感设计</div><p>HPC/金融交易等延迟敏感应用需仔细评估 FIFO 深度；FIFO 深度从 128UI 降到 32UI 可节省 ~2ns 延迟但频偏容限降为 ±125ppm。</p></div>
+        <div class="caution-item"><div class="ci-title">🔄 多速率兼容验证</div><p>不同速率下 CDR_PLL 参数可能需分别优化；25G/53G/106G 三档速率切换时验证 CDR 锁定时间和稳定性；检查速率自动检测功能是否可靠。</p></div>
+      </div>
+
+      <h4 style="margin-top:20px;">🔵 Retimer 专项注意事项</h4>
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">📡 输入信号质量要求</div><p>Retimer 不是"万能修复器"—输入信号眼图需至少张开 30mV/0.1UI；完全闭合的眼图 Retimer 也无法恢复；CDR 需要最小摆幅来锁定。</p></div>
+        <div class="caution-item"><div class="ci-title">🔍 电缆/PCB 去嵌入</div><p>JTF 测试中电缆和 PCB trace 会引入额外抖动；使用 VNA 提取 S 参数 → 示波器去嵌入功能补偿；否则 JTF 测量结果偏悲观。</p></div>
+        <div class="caution-item"><div class="ci-title">⚡ 电源隔离与去耦</div><p>AVDD 与 DVDD 分开供电；模拟前端 CTLE/CDR 就近放 100nF+10&mu;F 去耦；数字 I/O 开关噪声通过衬底耦合到模拟前端 → RJ 恶化。</p></div>
+        <div class="caution-item"><div class="ci-title">🌡️ 温度对 JTF 的影响</div><p>高温 → CDR PLL 环路参数漂移 → JTF 形状变化；全温范围 (&minus;40~+85°C) JTF 峰值仍需 &lt;0.1dB；温漂补偿电路是必备设计。</p></div>
+      </div>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🚨 Retimer 测试最常见错误：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>CDR 未锁定时测 JTF/BER：</strong>结果完全无意义，数据如同随机噪声</li>
+          <li><strong>SJ 幅度过大导致 CDR 脱锁：</strong>JTF 测试中 SJ 幅度应控制在 0.1~0.3UI 以内</li>
+          <li><strong>忽略 FIFO 溢出/空：</strong>频偏超出 FIFO 深度时出现 Skip 符号 → BER 虚高，实际不是信道问题</li>
+          <li><strong>测试电缆未去嵌入：</strong>测出的是"Retimer + 电缆"的组合 JTF，不是 Retimer 自身的 JTF</li>
+          <li><strong>未区分 Retimer 自身抖动和输入残留抖动：</strong>输出抖动 = 输入抖动 &times; JTF + 自身抖动；不做 SJ 扫描分离不出两个分量</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 9: 选型指南 ═══════════ -->
+<section id="sec9">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">9</div><div class="icon">🧭</div><h2>选型与应用指南</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>🔷 何时选用 Retimer？何时选用 Redriver？</h4>
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>✅ 选用 Retimer 的场景</h3>
+          <ul>
+            <li>信道损耗 >15dB（需 CDR 重新定时）</li>
+            <li>链路抖动预算紧张，需消除累积抖动</li>
+            <li>需要跨时钟域同步（FIFO / Elastic Buffer）</li>
+            <li>多级级联延伸场景</li>
+            <li>400GAUI-8 / 800GAUI-8 标准接口</li>
+            <li>协议速率需 CDR 主动锁定（非透明传输）</li>
+            <li>输出信号质量要求高（RLM>0.92, RJ<250fs）</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>✅ 选用 Redriver 的场景</h3>
+          <ul>
+            <li>信道损耗 &lt;10dB（模拟均衡+放大足够）</li>
+            <li>延迟敏感应用（<100ps），如 HPC 互联</li>
+            <li>功耗预算极紧张（<0.3W/lane）</li>
+            <li>协议透明传输需求（无需 CDR 锁定）</li>
+            <li>成本敏感，可接受有限抖动改善</li>
+            <li>PCB trace 短距延伸（<10 inch）</li>
+            <li>多协议同时通过（Redriver 无协议感知）</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">400G vs 800G Retimer 选择速查</h4>
+      <table>
+        <thead><tr><th>应用场景</th><th>推荐型号</th><th>速率</th><th>功耗预算</th><th>延迟要求</th><th>关键考量</th></tr></thead>
+        <tbody>
+          <tr><td>400G 交换机背板</td><td>400G Retimer</td><td>8×53G PAM4</td><td>&lt;6W</td><td>&lt;5ns</td><td>成熟方案，成本可控</td></tr>
+          <tr><td>800G 交换机背板</td><td>800G Retimer</td><td>8×106G PAM4</td><td>&lt;10W</td><td>&lt;8ns</td><td>高密度互联，下一代平台</td></tr>
+          <tr><td>光模块 Host 侧</td><td>400G Retimer</td><td>8×53G PAM4</td><td>&lt;6W</td><td>&lt;5ns</td><td>信号清洁，提升模块性能</td></tr>
+          <tr><td>线缆中继</td><td>根据线缆速率</td><td>灵活</td><td>参考规格</td><td>参考规格</td><td>关注多速率兼容</td></tr>
+          <tr><td>PCIe 5.0/6.0</td><td>对应 Retimer</td><td>32GT/s / 64GT/s</td><td>按需</td><td>&lt;10ns</td><td>PCIe 协议特定需求</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>💡 AE 工程直觉 — Retimer 选型口诀：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>"抖动是敌人，CDR 是武器"</strong> — Retimer 的核心价值永远在抖动消除，不是信号放大</li>
+          <li><strong>"JTF 是 Retimer 的体检报告"</strong> — JTF 峰值 &lt;0.1dB 是硬指标，超标即不合格</li>
+          <li><strong>"级联要谨慎"</strong> — 两个 Retimer 串联 ≈ JTF 平方，峰值 0.1dB &rarr; 级联峰值 &lt;0.2dB</li>
+          <li><strong>"延迟和频偏不可兼得"</strong> — 小 FIFO = 低延迟 + 低频偏容限；大 FIFO = 高延迟 + 高频偏容限</li>
+          <li><strong>"时钟是天花板"</strong> — RefClk 相噪决定了 TX 输出抖动的下限，选 Retimer 先看 RefClk 规格</li>
+        </ul>
+      </div>
+
+      <h4 style="margin-top:18px;">级联评估速算</h4>
+      <table>
+        <thead><tr><th>级联级数</th><th>输出 RJ (fs)</th><th>输出 TJ @1e-15 (UI)</th><th>评估</th></tr></thead>
+        <tbody>
+          <tr><td>单级 Retimer</td><td>&lt;250fs</td><td>&lt;0.3UI</td><td>✅ 合格</td></tr>
+          <tr><td>两级级联 (JTF peak=0.05dB)</td><td>~280fs (√(250²+125²))</td><td>~0.35UI</td><td>✅ 可行</td></tr>
+          <tr><td>两级级联 (JTF peak=0.1dB)</td><td>~320fs</td><td>~0.42UI</td><td>⚠️ 边界</td></tr>
+          <tr><td>三级级联</td><td>不推荐</td><td>通常超标</td><td>❌ 不建议，除非每级 JTF peak &lt;0.05dB</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<div class="footer">
+AE 知识文档 · 400G/800G Retimer 高速信号再生芯片<br>
+  覆盖原理、框图、指标、影响因素、测试方法与选型指南 · 文档版本 v1.0 · 生成时间：2026-06-18<br>
+  原始 MD 版本 v1.0 · <a href="../../docs/01_光通信/04_400G_800G_Retimer.md">查看原始 Markdown</a>
+</div>
+
+</body>
+</html>

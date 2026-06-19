@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAR ADC 逐次逼近寄存器模数转换器 — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #27ae60; --primary-dark: #166534; --accent: #e74c3c;
+    --accent2: #0891b2; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  /* HERO */
+  .hero { background: linear-gradient(135deg, #166534 0%, #27ae60 50%, #0891b2 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  /* NAV */
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  /* CONTAINER */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  /* CARD */
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #27ae6011, #27ae6005); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #16a34a); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #dcfce7; }
+  /* DIAGRAM */
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  /* BOXES */
+  .info-box { border-left: 4px solid var(--primary); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #ecfeff; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  /* METRIC CARD */
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #166534, #27ae60); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  /* STEPS */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  /* CAUTION */
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  /* FORMULA */
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  /* CHIPS */
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  /* COMPARE */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #eff6ff; border: 2px solid var(--primary); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  /* FOOTER */
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  /* MISC */
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>🔄 SAR ADC</h1>
+  <div class="subtitle">逐次逼近寄存器模数转换器 (Successive Approximation Register ADC) — 中高精度、中低速、超低功耗的通用型 ADC</div>
+  <div class="badge-row">
+    <span class="badge">🎯 8~18 bit</span>
+    <span class="badge">⏱️ DC~10 MSPS</span>
+    <span class="badge">⚡ nW~mW 功耗</span>
+    <span class="badge">🧱 CDAC 架构</span>
+    <span class="badge">🔌 无静态功耗</span>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 核心模块深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、核心对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ Section 1: 背景与定位 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div><div class="icon">📖</div><h2>背景与应用定位</h2>
+    </div>
+    <div class="card-body">
+      <p>SAR ADC (Successive Approximation Register ADC) 是<strong>应用最广泛的奈奎斯特速率 ADC 架构</strong>，通过二分搜索算法将模拟电压逐次逼近转换为数字码。它在功耗、面积、精度和速度之间取得了极优的平衡，是 IoT 传感器、工业控制、医疗电子、电池管理、触摸屏等中低速高精度场景的首选方案。</p>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col blue">
+          <h3>📌 产品定位</h3>
+          <p><strong>产业链位置：</strong>传感器/模拟前端与数字处理器之间，承担模拟量到数字量的转换</p>
+          <p><strong>核心价值：</strong>以极低功耗（fJ/conv-step）实现中高精度转换，无静态偏置电流</p>
+          <p><strong>本质功能：</strong>N-bit 逐次逼近量化：电容阵列采样 + 比较器判决 + SAR 逻辑控制</p>
+        </div>
+        <div class="compare-col green">
+          <h3>🎯 典型应用场景</h3>
+          <ul>
+            <li>工业传感器数据采集 (温度/压力/流量)</li>
+            <li>电池管理系统 (BMS AFE) 电压监测</li>
+            <li>便携医疗设备 (ECG/EEG/血糖仪)</li>
+            <li>触摸屏控制器 (Touch Screen Controller)</li>
+            <li>IoT 无线传感器节点 (低占空比采样)</li>
+            <li>电机控制电流检测</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">技术路线</h4>
+      <table>
+        <thead><tr><th>维度</th><th>规格</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>分辨率</strong></td><td>8~18 bit</td><td>由 CDAC 匹配精度和比较器噪声决定</td></tr>
+          <tr><td><strong>采样率</strong></td><td>DC~10 MSPS</td><td>逐次逼近：N bit 需 N+α 个时钟周期</td></tr>
+          <tr><td><strong>DAC 架构</strong></td><td>电容 DAC (CDAC)</td><td>二进制权重电容阵列 / 分段式 (Split CDAC)</td></tr>
+          <tr><td><strong>比较器</strong></td><td>动态锁存比较器</td><td>无静态功耗，噪声和速度的折中</td></tr>
+          <tr><td><strong>采样开关</strong></td><td>Bootstrapped 开关</td><td>保证 Ron 恒定以实现高线性度</td></tr>
+          <tr><td><strong>工艺</strong></td><td>CMOS (180nm~7nm)</td><td>几乎全数字化趋势，先进工艺受益于开关速度</td></tr>
+          <tr><td><strong>功耗特性</strong></td><td>仅动态功耗 (αCV²f)</td><td>无静态电流，kSPS 级别可做到 nW</td></tr>
+          <tr><td><strong>通道数</strong></td><td>1/2/4/8/16 通道可选</td><td>内置 MUX，适合多传感器系统</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2: 工作原理 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div><div class="icon">⚙️</div><h2>核心工作原理</h2>
+    </div>
+    <div class="card-body">
+      <p>SAR ADC 的核心是<strong>二分搜索算法</strong>（Binary Search）：从 MSB 到 LSB 逐位确定数字码。每次转换包括采样阶段（Acquisition）和转换阶段（Conversion），期间 DAC 输出逐次逼近输入信号。</p>
+
+      <div class="diagram-title">图 2-1 | SAR ADC 系统级信号流向</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 140" width="800" height="140" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <defs><marker id="arrGrn" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker>
+          <marker id="arrRed" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#e74c3c"/></marker></defs>
+          <rect width="820" height="140" fill="#fafafa" rx="8"/>
+          <!-- Input -->
+          <text x="25" y="72" font-size="10" fill="#475569" text-anchor="middle" font-weight="bold">VIN</text>
+          <line x1="50" y1="68" x2="72" y2="68" stroke="#27ae60" stroke-width="2" marker-end="url(#arrGrn)"/>
+          <!-- S/H -->
+          <rect x="78" y="45" width="80" height="46" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="118" y="63" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">采样保持</text>
+          <text x="118" y="79" font-size="8" fill="#ef4444" text-anchor="middle">S/H (Boot)</text>
+          <line x1="158" y1="68" x2="185" y2="68" stroke="#27ae60" stroke-width="2" marker-end="url(#arrGrn)"/>
+          <!-- CDAC -->
+          <rect x="190" y="40" width="100" height="56" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="240" y="58" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">N-bit CDAC</text>
+          <text x="240" y="74" font-size="7" fill="#ef4444" text-anchor="middle">二进制权重电容</text>
+          <text x="240" y="88" font-size="7" fill="#ef4444" text-anchor="middle">Ctotal=2^N·Cu</text>
+          <line x1="290" y1="68" x2="317" y2="68" stroke="#27ae60" stroke-width="2" marker-end="url(#arrGrn)"/>
+          <!-- Comparator -->
+          <rect x="322" y="43" width="90" height="50" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="367" y="61" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">动态比较器</text>
+          <text x="367" y="77" font-size="7" fill="#b45309" text-anchor="middle">StrongARM</text>
+          <text x="367" y="89" font-size="7" fill="#b45309" text-anchor="middle">Vn~50-200μV</text>
+          <line x1="412" y1="68" x2="439" y2="68" stroke="#27ae60" stroke-width="2" marker-end="url(#arrGrn)"/>
+          <!-- SAR Logic -->
+          <rect x="444" y="40" width="110" height="56" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="499" y="58" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">SAR 控制逻辑</text>
+          <text x="499" y="74" font-size="7" fill="#3b82f6" text-anchor="middle">同步/异步FSM</text>
+          <text x="499" y="88" font-size="7" fill="#3b82f6" text-anchor="middle">MSB→LSB逐位试探</text>
+          <line x1="554" y1="68" x2="581" y2="68" stroke="#27ae60" stroke-width="2" marker-end="url(#arrGrn)"/>
+          <!-- Output -->
+          <rect x="586" y="45" width="75" height="46" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="623" y="63" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">输出寄存</text>
+          <text x="623" y="79" font-size="8" fill="#16a34a" text-anchor="middle">N-bit码</text>
+          <line x1="661" y1="68" x2="683" y2="68" stroke="#27ae60" stroke-width="2"/>
+          <text x="700" y="72" font-size="10" fill="#475569" font-weight="bold">DOUT</text>
+          <!-- Feedback: SAR -> CDAC -->
+          <path d="M499,96 L499,110 L240,110 L240,96" fill="none" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrRed)"/>
+          <text x="370" y="122" font-size="9" fill="#e74c3c" text-anchor="middle">DAC 切换反馈 (逐次逼近)</text>
+          <!-- VREF -->
+          <rect x="720" y="17" width="85" height="35" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="762" y="32" font-size="8" fill="#991b1b" text-anchor="middle" font-weight="bold">VREF 基准</text>
+          <text x="762" y="45" font-size="7" fill="#ef4444" text-anchor="middle">Bandgap+Buf</text>
+          <line x1="762" y1="52" x2="762" y2="66" stroke="#fca5a5" stroke-width="1.5" stroke-dasharray="4,2"/>
+        </svg>
+      </div>
+
+      <h4>📐 逐次逼近算法 (4-bit 示例, V<sub>IN</sub>=0.65V, V<sub>REF</sub>=1V)</h4>
+      <table>
+        <thead><tr><th>周期</th><th>试探位</th><th>DAC 输出</th><th>比较结果</th><th>判决</th><th>当前码</th></tr></thead>
+        <tbody>
+          <tr><td>1 (MSB)</td><td>1000 (0.5V)</td><td>V<sub>DAC</sub>=0.5V</td><td>V<sub>IN</sub>&gt;V<sub>DAC</sub></td><td><strong>保留 MSB=1</strong></td><td>1000</td></tr>
+          <tr><td>2</td><td>1100 (0.75V)</td><td>V<sub>DAC</sub>=0.75V</td><td>V<sub>IN</sub>&lt;V<sub>DAC</sub></td><td><strong>清零 2nd=0</strong></td><td>1000</td></tr>
+          <tr><td>3</td><td>1010 (0.625V)</td><td>V<sub>DAC</sub>=0.625V</td><td>V<sub>IN</sub>&gt;V<sub>DAC</sub></td><td><strong>保留 3rd=1</strong></td><td>1010</td></tr>
+          <tr><td>4 (LSB)</td><td>1011 (0.6875V)</td><td>V<sub>DAC</sub>=0.6875V</td><td>V<sub>IN</sub>&lt;V<sub>DAC</sub></td><td><strong>清零 LSB=0</strong></td><td>1010</td></tr>
+        </tbody>
+      </table>
+      <div class="formula">最终码: 1010<sub>2</sub> = 10<sub>10</sub> &nbsp;&nbsp; V<sub>量化值</sub> = 10 × V<sub>REF</sub> / 16 = 0.625V &nbsp;&nbsp; 量化误差: +0.025V (0.25 LSB)</div>
+
+      <h4>⚡ 转换时序</h4>
+      <div class="formula">T<sub>total</sub> = T<sub>acq</sub> + N × T<sub>bit</sub> + T<sub>overhead</sub></div>
+      <p>其中 <span class="formula-inline">T<sub>acq</sub></span> 是采样/捕获时间（由 CDAC 总容值和开关 R<sub>on</sub> 决定 RC 时间常数；需 ≥ 8~10·τ 以达所需精度），<span class="formula-inline">T<sub>bit</sub></span> 是每位判决时间（包括 DAC 建立 + 比较器再生 + SAR 逻辑延迟）。</p>
+
+      <h4>🧱 CDAC 操作原理 (电荷守恒)</h4>
+      <p>电容 DAC 是 SAR ADC 的核心：采样阶段，所有电容下极板接 V<sub>IN</sub>，上极板接共模电压 V<sub>CM</sub>；转换阶段，从 MSB 电容开始逐次切换下极板到 V<sub>REF</sub> 或 GND，比较器监测上极板电压变化——<strong>电荷守恒自动完成减法运算</strong>。</p>
+      <p>对 N-bit CDAC：总电容 C<sub>total</sub> = 2<sup>N</sup>·C<sub>unit</sub>。MSB 电容 = 2<sup>N−1</sup>·C<sub>unit</sub> = C<sub>total</sub>/2。每位切换后，上极板电压变化量 ΔV = V<sub>REF</sub>·(被切换电容 / C<sub>total</sub>)。</p>
+
+      <div class="info-box"><strong>💡 AE 核心认知：</strong>SAR ADC 的精度由 CDAC 匹配精度直接决定。不校准条件下，单位电容标准差 σ(C) 决定 INL/DNL 上限；数字校准技术可将分辨率推至 16~18 bit。SAR ADC 是"最少模拟电路 + 最多数字逻辑"理念的典范——仅需一个比较器、一个 CDAC 和数字控制逻辑即可实现完整 ADC 功能。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2B: 模块深度解析 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header" style="background:linear-gradient(90deg,#fef3c7,#fde68a);border-bottom:2px solid #f59e0b;">
+      <div class="section-no" style="background:#d97706;">🔬</div><div class="icon">🧠</div><h2 style="color:#92400e;">核心模块深度解析</h2>
+    </div>
+    <div class="card-body">
+
+      <h4 style="color:#92400e;">一、电容 DAC (CDAC) — 精度的物理载体</h4>
+      <p>CDAC 是 SAR ADC 的<strong>核心精度决定模块</strong>。由 N 个二进制权重电容组成，版图使用共质心 (Common-Centroid) 布局以减小梯度误差。</p>
+      <div class="formula">C<sub>k</sub> = 2<sup>k-1</sup> · C<sub>unit</sub> &nbsp;&nbsp;|&nbsp;&nbsp; k = 1 (LSB) … N (MSB)</div>
+      <table>
+        <thead><tr><th>参数</th><th>公式/关系</th><th>工程权衡</th></tr></thead>
+        <tbody>
+          <tr><td>单位电容 C<sub>unit</sub></td><td>由 kT/C 噪声和匹配决定</td><td>C↑ → 噪声↓ 匹配↑ / 面积↑ 速度↓</td></tr>
+          <tr><td>kT/C 噪声</td><td>v<sub>n,rms</sub> = √(kT/C<sub>total</sub>)</td><td>需 &lt; LSB/√12 以保证 SNR</td></tr>
+          <tr><td>电容匹配 σ</td><td>σ(ΔC/C) ∝ 1/√area</td><td>分段结构 (Split CDAC) 可减小总电容比</td></tr>
+          <tr><td>建立时间</td><td>τ = R<sub>on</sub>·C<sub>total</sub></td><td>每位建立需 ≥ τ·ln(2<sup>N+1</sup>) ≈ τ·(N+1)·ln2</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="color:#92400e;margin-top:20px;">二、动态锁存比较器 — 速度与噪声的博弈</h4>
+      <p>现代 SAR ADC 几乎全部使用<strong>动态锁存比较器</strong> (StrongARM Latch)，无静态功耗。核心是时钟沿触发再生正反馈：</p>
+      <div class="formula">V<sub>o</sub>(t) = V<sub>i</sub> · e<sup>t/τ<sub>reg</sub></sup> &nbsp;&nbsp;|&nbsp;&nbsp; τ<sub>reg</sub> = C<sub>L</sub>/g<sub>m</sub></div>
+      <table>
+        <thead><tr><th>关键参数</th><th>典型值</th><th>设计要点</th></tr></thead>
+        <tbody>
+          <tr><td>输入参考噪声</td><td>50~200 μV<sub>rms</sub></td><td>与 g<sub>m</sub> 和再生时间常数相关；噪声 &lt; ½ LSB</td></tr>
+          <tr><td>失调电压</td><td>5~20 mV (未校准)</td><td>输入管 V<sub>th</sub> 失配主因；校准或冗余可容忍</td></tr>
+          <tr><td>再生时间常数</td><td>10~30 ps (先进工艺)</td><td>∝ (C<sub>L</sub>/g<sub>m</sub>)，先进工艺下 g<sub>m</sub>/I<sub>D</sub> 更高</td></tr>
+          <tr><td>亚稳态概率</td><td>~10<sup>−6</sup> ~ 10<sup>−9</sup></td><td>输入接近判决阈值时产生，需冗余时间</td></tr>
+          <tr><td>回踢噪声</td><td>mV 级</td><td>再生瞬间通过寄生电容耦合到 CDAC</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="color:#92400e;margin-top:20px;">三、SAR 控制逻辑 — 同步 vs 异步</h4>
+      <p><strong>同步 SAR</strong>：每位固定周期，外部高速时钟驱动。简单但时钟频率需涵盖最坏情况 DAC 建立。<strong>异步 SAR</strong>：每位转换完成后自动触发下一位，不需要外部高频时钟，速度可提升 2~4×。</p>
+      <div class="compare-grid">
+        <div class="compare-col blue"><h3>同步 SAR</h3><p>✅ 时序简单，设计易验证<br>✅ 对 PVT 变化不敏感<br>❌ 需要 f<sub>clk</sub> &gt; (N+α)/T<sub>conv</sub><br>❌ 每位等待最坏建立<br>❌ 高时钟频率 → 高功耗</p></div>
+        <div class="compare-col green"><h3>异步 SAR</h3><p>✅ 自适应建立时间<br>✅ 不需要高频时钟，降低功耗<br>✅ 速度提升显著<br>❌ 需要 Ready 检测电路<br>❌ PVT 变化需留余量<br>❌ 时序验证复杂</p></div>
+      </div>
+
+      <h4 style="color:#92400e;margin-top:20px;">四、自举采样开关 (Bootstrapped Switch)</h4>
+      <p>栅源电压 V<sub>GS</sub> 恒定的开关技术，使导通电阻 R<sub>on</sub> 不随输入信号变化，是实现高线性度采样的关键：</p>
+      <div class="formula">R<sub>on</sub> = 1 / [μ<sub>n</sub>C<sub>ox</sub>(W/L)(V<sub>GS</sub> − V<sub>th</sub>)] &nbsp;&nbsp;|&nbsp;&nbsp; 当 V<sub>GS</sub>=V<sub>DD</sub> 恒定 → R<sub>on</sub> 仅取决于 V<sub>th</sub></div>
+
+      <h4 style="color:#92400e;margin-top:20px;">五、校准技术概览</h4>
+      <table>
+        <thead><tr><th>校准类型</th><th>校准对象</th><th>方法</th><th>复杂度</th></tr></thead>
+        <tbody>
+          <tr><td>数字校准</td><td>电容失配</td><td>测量权重误差 → 存储校正系数 → 输出时补偿</td><td>中</td></tr>
+          <tr><td>模拟校准</td><td>比较器失调</td><td>输入对管体偏置 / 可调电流源</td><td>低</td></tr>
+          <tr><td>冗余 SAR</td><td>建立不完全</td><td>子基 (sub-radix-2) 搜索 + 数字纠错</td><td>中</td></tr>
+          <tr><td>前台校准</td><td>全局非线性</td><td>注入已知信号 → 测量畸变 → 建立 LUT</td><td>高</td></tr>
+          <tr><td>背景校准</td><td>PVT 漂移</td><td>PN 注入 / Split ADC / 相关性检测</td><td>很高</td></tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 3: 电路框图 ===== -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div><div class="icon">🔲</div><h2>芯片内部电路框图</h2>
+    </div>
+    <div class="card-body">
+      <div class="diagram-title">图 3-1 | SAR ADC 芯片内部架构</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 400" width="800" height="400" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <defs>
+            <marker id="arrGrn2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker>
+            <marker id="arrBlu2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker>
+          </defs>
+          <rect width="820" height="400" fill="#fafafa" rx="8"/>
+
+          <!-- ▀▀▀▀▀ 模拟域 ▀▀▀▀▀ -->
+          <rect x="15" y="15" width="530" height="220" rx="8" fill="none" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="8,4"/>
+          <text x="25" y="35" font-size="10" fill="#e74c3c" font-weight="bold">模拟域 (Analog Domain)</text>
+
+          <!-- 输入引脚 -->
+          <rect x="25" y="55" width="55" height="28" rx="5" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="52" y="72" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">VIN</text>
+
+          <!-- Bootstrapped Switch -->
+          <rect x="100" y="45" width="85" height="48" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="142" y="63" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">自举开关</text>
+          <text x="142" y="78" font-size="7" fill="#ef4444" text-anchor="middle">VGS=VDD 恒定</text>
+          <text x="142" y="89" font-size="7" fill="#ef4444" text-anchor="middle">Ron~50-200Ω</text>
+
+          <line x1="80" y1="69" x2="98" y2="69" stroke="#e74c3c" stroke-width="1.5" marker-end="url(#arrGrn2)"/>
+
+          <!-- CDAC Array -->
+          <rect x="205" y="40" width="140" height="58" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="275" y="58" font-size="10" fill="#991b1b" text-anchor="middle" font-weight="bold">N-bit CDAC 阵列</text>
+          <text x="275" y="74" font-size="8" fill="#ef4444" text-anchor="middle">上极板: VCM → 比较器</text>
+          <text x="275" y="88" font-size="8" fill="#ef4444" text-anchor="middle">下极板: VIN→ VREF/GND 切换</text>
+
+          <line x1="185" y1="69" x2="203" y2="69" stroke="#e74c3c" stroke-width="1.5" marker-end="url(#arrGrn2)"/>
+
+          <!-- CDAC detail -->
+          <rect x="355" y="42" width="100" height="54" rx="6" fill="#fff1f1" stroke="#fca5a5" stroke-width="1"/>
+          <text x="405" y="58" font-size="8" fill="#991b1b" text-anchor="middle" font-weight="bold">电容权重</text>
+          <text x="405" y="72" font-size="7" fill="#ef4444" text-anchor="middle">CMSB=2^N-1·Cu</text>
+          <text x="405" y="84" font-size="7" fill="#ef4444" text-anchor="middle">CLSB=2^0·Cu</text>
+          <text x="405" y="96" font-size="7" fill="#ef4444" text-anchor="middle">共质心版图</text>
+
+          <!-- Comparator -->
+          <rect x="100" y="130" width="110" height="55" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="155" y="150" font-size="10" fill="#92400e" text-anchor="middle" font-weight="bold">动态比较器</text>
+          <text x="155" y="165" font-size="8" fill="#b45309" text-anchor="middle">StrongARM Latch</text>
+          <text x="155" y="178" font-size="7" fill="#b45309" text-anchor="middle">噪声 &lt; ½ LSB</text>
+
+          <line x1="275" y1="98" x2="275" y2="120" stroke="#e74c3c" stroke-width="1"/>
+          <line x1="275" y1="120" x2="155" y2="120" stroke="#e74c3c" stroke-width="1"/>
+          <line x1="155" y1="120" x2="155" y2="128" stroke="#e74c3c" stroke-width="1" marker-end="url(#arrGrn2)"/>
+
+          <!-- VREF -->
+          <rect x="25" y="190" width="130" height="35" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="90" y="205" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">VREF + Bandgap</text>
+          <text x="90" y="218" font-size="7" fill="#ef4444" text-anchor="middle">10μF+0.1μF 去耦</text>
+
+          <line x1="155" y1="190" x2="155" y2="207" stroke="#fca5a5" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+          <!-- ▀▀▀▀▀ 数字域 ▀▀▀▀▀ -->
+          <rect x="15" y="245" width="530" height="140" rx="8" fill="none" stroke="#1a56db" stroke-width="1.5" stroke-dasharray="8,4"/>
+          <text x="25" y="265" font-size="10" fill="#1a56db" font-weight="bold">数字域 (Digital Domain)</text>
+
+          <!-- SAR Logic -->
+          <rect x="40" y="278" width="160" height="52" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="120" y="296" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">SAR 控制逻辑 (FSM)</text>
+          <text x="120" y="312" font-size="8" fill="#3b82f6" text-anchor="middle">同步/异步 逐次逼近</text>
+          <text x="120" y="324" font-size="7" fill="#3b82f6" text-anchor="middle">MSB→LSB 逐位试探判决</text>
+
+          <line x1="155" y1="185" x2="155" y2="240" stroke="#1a56db" stroke-width="1.5"/>
+          <line x1="155" y1="240" x2="120" y2="240" stroke="#1a56db" stroke-width="1.5"/>
+          <line x1="120" y1="240" x2="120" y2="276" stroke="#1a56db" stroke-width="1.5" marker-end="url(#arrBlu2)"/>
+
+          <!-- Feedback -->
+          <line x1="200" y1="304" x2="240" y2="304" stroke="#e74c3c" stroke-width="1.5"/>
+          <line x1="240" y1="304" x2="240" y2="98" stroke="#e74c3c" stroke-width="1.5"/>
+          <line x1="240" y1="98" x2="275" y2="98" stroke="#e74c3c" stroke-width="1.5" marker-end="url(#arrGrn2)"/>
+          <text x="255" y="200" font-size="8" fill="#e74c3c" transform="rotate(-90,255,200)">DAC切换控制</text>
+
+          <!-- Calibration -->
+          <rect x="220" y="278" width="130" height="52" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1"/>
+          <text x="285" y="296" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">数字校准</text>
+          <text x="285" y="312" font-size="7" fill="#3b82f6" text-anchor="middle">电容失配校正LUT</text>
+          <text x="285" y="324" font-size="7" fill="#3b82f6" text-anchor="middle">冗余SAR 子基搜索</text>
+
+          <!-- Output Register -->
+          <rect x="370" y="278" width="100" height="52" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="420" y="296" font-size="10" fill="#166534" text-anchor="middle" font-weight="bold">输出寄存器</text>
+          <text x="420" y="312" font-size="8" fill="#16a34a" text-anchor="middle">锁存N-bit码</text>
+          <text x="420" y="324" font-size="8" fill="#16a34a" text-anchor="middle">并行/串行输出</text>
+
+          <line x1="120" y1="330" x2="120" y2="355" stroke="#1a56db" stroke-width="1"/>
+          <line x1="120" y1="355" x2="420" y2="355" stroke="#1a56db" stroke-width="1"/>
+          <line x1="420" y1="355" x2="420" y2="276" stroke="#1a56db" stroke-width="1" marker-end="url(#arrBlu2)"/>
+
+          <!-- ▀▀▀▀▀ 时钟与电源 ▀▀▀▀▀ -->
+          <rect x="560" y="15" width="245" height="370" rx="8" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="8,4"/>
+          <text x="570" y="35" font-size="10" fill="#f59e0b" font-weight="bold">时钟与电源域</text>
+
+          <rect x="575" y="55" width="110" height="40" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="630" y="72" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">CLK 时钟</text>
+          <text x="630" y="87" font-size="7" fill="#b45309" text-anchor="middle">fs DC~10 MHz</text>
+
+          <rect x="695" y="55" width="100" height="40" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="745" y="72" font-size="9" fill="#92400e" text-anchor="middle" font-weight="bold">VREF Buffer</text>
+          <text x="745" y="87" font-size="7" fill="#b45309" text-anchor="middle">高速驱动</text>
+
+          <line x1="630" y1="95" x2="630" y2="110" stroke="#f59e0b" stroke-width="1"/>
+          <line x1="630" y1="110" x2="120" y2="110" stroke="#f59e0b" stroke-width="1"/>
+          <line x1="120" y1="110" x2="120" y2="128" stroke="#f59e0b" stroke-width="1"/>
+
+          <rect x="575" y="130" width="215" height="45" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="682" y="148" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">电源管理</text>
+          <text x="682" y="164" font-size="7" fill="#ef4444" text-anchor="middle">AVDD (模拟) | DVDD (数字)</text>
+
+          <text x="682" y="200" font-size="9" fill="#b45309" text-anchor="middle" font-weight="bold">关键时序</text>
+          <text x="682" y="218" font-size="8" fill="#92400e" text-anchor="middle">Tconv = Tacq + N×Tbit</text>
+          <text x="682" y="234" font-size="8" fill="#92400e" text-anchor="middle">Tbit: DAC建立+CMP再生+逻辑</text>
+
+          <text x="682" y="270" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">输出接口</text>
+          <text x="682" y="286" font-size="8" fill="#475569" text-anchor="middle">SPI / I²C / 并行</text>
+          <text x="682" y="300" font-size="8" fill="#475569" text-anchor="middle">数据就绪信号 RDY</text>
+
+          <!-- Bottom labels -->
+          <text x="280" y="395" font-size="9" fill="#475569" text-anchor="middle">模拟输入 → CDAC采样 → 逐次逼近 → N-bit数字输出</text>
+          <text x="682" y="395" font-size="8" fill="#6b7280" text-anchor="middle">CMOS 工艺 180nm~7nm</text>
+        </svg>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);"><strong>说明：</strong>SAR ADC 仅需一个比较器、一个 CDAC 和数字控制逻辑即可实现完整 ADC 功能。模拟域的核心是 CDAC 匹配精度和比较器噪声；数字域实现二分搜索算法；异步 SAR 通过 Ready 检测自适应每位时长，无需外部高频时钟。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 4: 核心对比 ===== -->
+<section id="sec4"><div class="card"><div class="card-header"><div class="section-no">4</div><div class="icon">X</div><h2>核心对比：ADC 架构全景</h2></div><div class="card-body">
+<h4>四大 ADC 架构对比</h4>
+<table><thead><tr><th>维度</th><th>SAR</th><th>Sigma-Delta</th><th>Pipeline</th><th>Flash</th></tr></thead><tbody>
+<tr><td>分辨率</td><td>8~18 bit</td><td>16~32 bit</td><td>8~16 bit</td><td>4~8 bit</td></tr>
+<tr><td>采样率</td><td>DC~10 MSPS</td><td>DC~100 kHz</td><td>10M~1 GSPS</td><td>100M~10 GSPS</td></tr>
+<tr><td>功耗</td><td>nW~mW</td><td>uW~mW</td><td>mW~W</td><td>W</td></tr>
+<tr><td>面积</td><td>小</td><td>中(数字)</td><td>大(级联)</td><td>极大</td></tr>
+<tr><td>延迟</td><td>N 周期</td><td>大(滤波)</td><td>6~12</td><td>1</td></tr>
+<tr><td>误差源</td><td>电容失配/CMP噪声</td><td>量化噪声</td><td>级间增益</td><td>CMP失调</td></tr>
+<tr><td>校准</td><td>>12b需</td><td>天然好</td><td>需要</td><td>需要</td></tr>
+<tr><td>静态功耗</td><td>无</td><td>有(运放)</td><td>有(级间)</td><td>有(预放)</td></tr>
+<tr><td>抗混叠</td><td>高</td><td>低(OSR)</td><td>高</td><td>高</td></tr>
+</tbody></table>
+<div class="info-box"><strong>决策树：</strong>BW&lt;100k+&gt;16b -> Sigma-Delta | 100k~10M+10~16b -> SAR | &gt;10M+10~14b -> Pipeline | &gt;1G -> Flash/TI-SAR</div>
+<h4>SAR 代际演进</h4>
+<table><thead><tr><th>节点</th><th>工艺</th><th>分辨率</th><th>f_s</th><th>功耗</th><th>技术</th></tr></thead><tbody>
+<tr><td>传统</td><td>0.18~0.35um</td><td>8~12b</td><td>&lt;1M</td><td>mW</td><td>简单CDAC</td></tr>
+<tr><td>现代</td><td>65~40nm</td><td>12~14b</td><td>1~5M</td><td>uW~mW</td><td>异步/分段/自举</td></tr>
+<tr><td>先进</td><td>28~7nm</td><td>14~18b</td><td>5~100M</td><td>fJ/step</td><td>校准/TI-SAR/冗余</td></tr>
+</tbody></table>
+</div></div></section>
+
+<!-- ===== Section 5: 核心指标 ===== -->
+<section id="sec5"><div class="card"><div class="card-header"><div class="section-no">5</div><div class="icon">X</div><h2>核心指标</h2></div><div class="card-body">
+<h4>关键参数</h4>
+<table><thead><tr><th>参数</th><th>范围</th><th>说明</th></tr></thead><tbody>
+<tr><td>分辨率</td><td>8~18 bit</td><td>由CDAC匹配+CMP噪声决定</td></tr>
+<tr><td>采样率 f<sub>s</sub></td><td>DC~10 MSPS</td><td>Nyquist=f<sub>s</sub>/2</td></tr>
+<tr><td>功耗</td><td>10nW~10mW</td><td>仅动态功耗，与f<sub>s</sub>线性</td></tr>
+<tr><td>SNDR</td><td>50~100 dB</td><td>f<sub>in</sub>近Nyquist</td></tr>
+<tr><td>ENOB</td><td>8.0~16.3 bit</td><td>(SNDR-1.76)/6.02</td></tr>
+<tr><td>SFDR</td><td>60~110 dBc</td><td>最差谐波</td></tr>
+<tr><td>INL</td><td>+/-0.5~+/-4 LSB</td><td>最佳拟合线</td></tr>
+<tr><td>DNL</td><td>+/-0.2~+/-1 LSB</td><td>无失码(DNL>-1)</td></tr>
+<tr><td>Walden FoM</td><td>&lt;100 fJ/step</td><td>P/(2^ENOB x f<sub>s</sub>)</td></tr>
+<tr><td>Schreier FoM</td><td>170~185 dB</td><td>SNDR+10log(BW/P)</td></tr>
+</tbody></table>
+<div class="metric-card"><div class="metric-header"><h4>ENOB</h4><span class="metric-abbr">核心</span></div><div class="metric-body">
+<div class="metric-row"><span class="metric-label">定义</span><span>从SNDR反算的等效分辨率</span></div>
+<div class="metric-row"><span class="metric-label">公式</span><span>ENOB=(SNDR<sub>dB</sub>-1.76)/6.02</span></div>
+<div class="metric-row"><span class="metric-label">典型</span><span>12b SAR: 10.5~11.5 bit@低频</span></div>
+</div></div>
+</div></div></section>
+
+<!-- ===== Section 6: 影响因素 ===== -->
+<section id="sec6"><div class="card"><div class="card-header"><div class="section-no">6</div><div class="icon">X</div><h2>影响因素分析</h2></div><div class="card-body">
+<table><thead><tr><th>指标</th><th>影响因素</th><th>影响下游</th></tr></thead><tbody>
+<tr><td>ENOB</td><td><span class="chip chip-red">CDAC匹配</span> <span class="chip chip-yellow">CMP噪声</span> <span class="chip chip-blue">VREF</span> <span class="chip chip-red">kT/C</span></td><td>SNR, 精度</td></tr>
+<tr><td>INL/DNL</td><td><span class="chip chip-red">电容失配</span> <span class="chip chip-yellow">CMP失调</span> <span class="chip chip-green">版图</span></td><td>ENOB, SFDR</td></tr>
+<tr><td>SFDR</td><td><span class="chip chip-red">开关非线性</span> <span class="chip chip-yellow">CDAC电压系数</span> <span class="chip chip-blue">纹波</span></td><td>EVM, 杂散</td></tr>
+<tr><td>f<sub>s,max</sub></td><td><span class="chip chip-yellow">RC建立</span> <span class="chip chip-blue">逻辑速度</span> <span class="chip chip-yellow">CMP再生</span></td><td>信号带宽</td></tr>
+<tr><td>功耗</td><td><span class="chip chip-blue">f<sub>s</sub></span> <span class="chip chip-green">N</span> <span class="chip chip-yellow">VDD</span></td><td>电池寿命</td></tr>
+</tbody></table>
+<div class="info-box"><strong>总结：</strong>SAR性能是模拟物理(匹配/噪声)与数字时序(速度/建立)的博弈。数字校准打破硬折中。</div>
+</div></div></section>
+
+<!-- ===== Section 7: 测试方法 ===== -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法</h2>
+    </div>
+    <div class="card-body">
+
+      <h4>⓵ INL/DNL — 正弦码密度直方图法</h4>
+      <p>施加低失真正弦波 (THD 比 DUT 高 2~3 bit，幅度覆盖 −0.5 dBFS) → 采集 >1M 点 → 统计各输出码出现频次 → 与理想正弦码密度函数对比 → 计算 DNL/INL。</p>
+
+      <div class="diagram-title">图 7-1 | INL/DNL 码密度测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 150" width="800" height="150" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <defs><marker id="arrT1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker></defs>
+          <rect width="820" height="150" fill="#fafafa" rx="8"/>
+          <rect x="15" y="35" width="110" height="50" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="70" y="55" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">低噪声信号源</text>
+          <text x="70" y="72" font-size="7" fill="#3b82f6" text-anchor="middle">Keysight 33500B</text>
+          <text x="70" y="83" font-size="7" fill="#3b82f6" text-anchor="middle">THD &lt; −100 dBc</text>
+          <line x1="125" y1="60" x2="155" y2="60" stroke="#27ae60" stroke-width="2" marker-end="url(#arrT1)"/>
+          <rect x="160" y="30" width="100" height="60" rx="6" fill="#fef2f2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="210" y="50" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">带通滤波器</text>
+          <text x="210" y="68" font-size="7" fill="#ef4444" text-anchor="middle">BPF 滤除谐波</text>
+          <text x="210" y="82" font-size="7" fill="#ef4444" text-anchor="middle">(可选)</text>
+          <line x1="260" y1="60" x2="290" y2="60" stroke="#27ae60" stroke-width="2" marker-end="url(#arrT1)"/>
+          <rect x="295" y="30" width="90" height="60" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="340" y="50" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">DUT</text>
+          <text x="340" y="68" font-size="8" fill="#16a34a" text-anchor="middle">SAR ADC</text>
+          <text x="340" y="82" font-size="7" fill="#16a34a" text-anchor="middle">fs=目标速率</text>
+          <line x1="385" y1="60" x2="415" y2="60" stroke="#27ae60" stroke-width="2" marker-end="url(#arrT1)"/>
+          <rect x="420" y="30" width="120" height="60" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="480" y="50" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">逻辑分析仪</text>
+          <text x="480" y="68" font-size="7" fill="#3b82f6" text-anchor="middle">Keysight 16860A</text>
+          <text x="480" y="82" font-size="7" fill="#3b82f6" text-anchor="middle">>1M 采样点</text>
+          <line x1="540" y1="60" x2="570" y2="60" stroke="#27ae60" stroke-width="2" marker-end="url(#arrT1)"/>
+          <rect x="575" y="35" width="100" height="50" rx="6" fill="#f8f9fc" stroke="#475569" stroke-width="1.5"/>
+          <text x="625" y="55" font-size="9" fill="#475569" text-anchor="middle" font-weight="bold">PC 分析</text>
+          <text x="625" y="72" font-size="7" fill="#6b7280" text-anchor="middle">码密度 → DNL/INL</text>
+          <rect x="695" y="35" width="105" height="50" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="747" y="55" font-size="8" fill="#991b1b" text-anchor="middle" font-weight="bold">低噪声电源</text>
+          <text x="747" y="72" font-size="7" fill="#ef4444" text-anchor="middle">E36313A</text>
+          <line x1="747" y1="35" x2="747" y2="25" stroke="#fca5a5" stroke-width="1"/>
+          <line x1="747" y1="25" x2="340" y2="25" stroke="#fca5a5" stroke-width="1"/>
+          <line x1="340" y1="25" x2="340" y2="28" stroke="#fca5a5" stroke-width="1"/>
+          <text x="340" y="105" font-size="9" fill="#475569" text-anchor="middle">判定: DNL &lt; ±1 LSB, INL &lt; ±2 LSB (12b) | &gt;1M 采样点 | 相干采样 fin/fs = M/Nrec</text>
+        </svg>
+      </div>
+
+      <h4>⓶ 动态性能 — FFT 频谱法 (SNR/SNDR/SFDR)</h4>
+      <p>施加低相噪正弦波 → 相干采样 (f<sub>in</sub>/f<sub>s</sub> = M/N<sub>record</sub>, M 与 N<sub>record</sub> 互质) → 采集 N<sub>record</sub> 点 (≥65536) → 加窗 FFT (7-Term Blackman-Harris) → 计算 SNR/SNDR/SFDR/THD。</p>
+
+      <div class="diagram-title">图 7-2 | 动态性能 FFT 测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 130" width="800" height="130" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <defs><marker id="arrT2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#27ae60"/></marker></defs>
+          <rect width="820" height="130" fill="#fafafa" rx="8"/>
+          <rect x="10" y="30" width="125" height="55" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="72" y="50" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">超低相噪信号源</text>
+          <text x="72" y="68" font-size="7" fill="#3b82f6" text-anchor="middle">R&amp;S SMA100B</text>
+          <text x="72" y="80" font-size="7" fill="#3b82f6" text-anchor="middle">相噪 &lt;−140 dBc/Hz</text>
+          <line x1="135" y1="57" x2="160" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrT2)"/>
+          <rect x="165" y="35" width="80" height="45" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="205" y="55" font-size="9" fill="#166534" text-anchor="middle" font-weight="bold">DUT</text>
+          <text x="205" y="70" font-size="8" fill="#16a34a" text-anchor="middle">SAR ADC</text>
+          <line x1="245" y1="57" x2="270" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrT2)"/>
+          <rect x="275" y="30" width="110" height="55" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="330" y="50" font-size="9" fill="#1e40af" text-anchor="middle" font-weight="bold">采集卡</text>
+          <text x="330" y="68" font-size="7" fill="#3b82f6" text-anchor="middle">Nrec ≥ 65536</text>
+          <text x="330" y="80" font-size="7" fill="#3b82f6" text-anchor="middle">相干采样</text>
+          <line x1="385" y1="57" x2="410" y2="57" stroke="#27ae60" stroke-width="2" marker-end="url(#arrT2)"/>
+          <rect x="415" y="35" width="100" height="45" rx="6" fill="#f8f9fc" stroke="#475569" stroke-width="1.5"/>
+          <text x="465" y="55" font-size="9" fill="#475569" text-anchor="middle" font-weight="bold">FFT 分析</text>
+          <text x="465" y="70" font-size="7" fill="#6b7280" text-anchor="middle">SNR/SNDR/SFDR</text>
+          <rect x="530" y="35" width="105" height="45" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+          <text x="582" y="52" font-size="8" fill="#991b1b" text-anchor="middle" font-weight="bold">低噪声电源</text>
+          <text x="582" y="68" font-size="7" fill="#ef4444" text-anchor="middle">E36313A</text>
+          <line x1="582" y1="35" x2="582" y2="20" stroke="#fca5a5" stroke-width="1"/>
+          <line x1="582" y1="20" x2="205" y2="20" stroke="#fca5a5" stroke-width="1"/>
+          <line x1="205" y1="20" x2="205" y2="33" stroke="#fca5a5" stroke-width="1"/>
+          <text x="205" y="100" font-size="9" fill="#475569" text-anchor="middle">判定: SNR ≥ 标称−3dB | SNDR ≥ 标称−3dB | SFDR ≥ 标称−5dBc | fin 近 Nyquist 最严苛</text>
+        </svg>
+      </div>
+
+      <h4>⓷ 功耗与 FoM 测试</h4>
+      <p>使用精密源表测量各电源轨 (AVDD/DVDD/V<sub>IO</sub>) 的电流 → P<sub>total</sub> = Σ V<sub>i</sub>×I<sub>i</sub>。分别测量静态功耗 (f<sub>s</sub>=0) 和动态功耗 (目标 f<sub>s</sub>) → 计算 Walden FoM = P/(2<sup>ENOB</sup>×f<sub>s</sub>) 和 Schreier FoM = SNDR + 10log<sub>10</sub>(BW/P)。</p>
+      <p><strong>设备：</strong>Keysight B2902A SMU / N6705C 直流电源分析仪 + 低噪声电源。</p>
+      <p><strong>判定：</strong>Walden FoM &lt; 100 fJ/conv-step (12b SAR 典型值 10~50 fJ/step)，Schreier FoM &gt; 170 dB。</p>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 8: 注意事项 ===== -->
+<section id="sec8"><div class="card"><div class="card-header"><div class="section-no">8</div><div class="icon">X</div><h2>注意事项</h2></div><div class="card-body">
+<div class="caution-grid">
+<div class="caution-item"><div class="ci-title">输入驱动</div><p>CDAC开关电容负载->缓冲器GBW需>N*ln2*f<sub>s</sub>/beta。驱动不足->建立误差。</p></div>
+<div class="caution-item"><div class="ci-title">VREF噪声</div><p>V<sub>REF</sub>噪声直接耦合->10uF+0.1uF去耦。缓冲器噪声<1/2 LSB/sqrt(BW)。</p></div>
+<div class="caution-item"><div class="ci-title">kT/C下限</div><p>物理下限->C<sub>total</sub>>12kT/V<sub>ref</sub><sup>2</sup>*2<sup>2N</sup>。大C->噪声小速度慢。</p></div>
+<div class="caution-item"><div class="ci-title">回踢噪声</div><p>CMP再生->寄生耦合到CDAC->需中和电容或预放隔离。</p></div>
+<div class="caution-item"><div class="ci-title">数字耦合</div><p>SAR逻辑开关->衬底/电源耦合->AVDD/DVDD分离+Guard Ring。</p></div>
+<div class="caution-item"><div class="ci-title">亚稳态</div><p>V<sub>IN</sub>约等于V<sub>DAC</sub>时CMP亚稳态->冗余SAR+纠错可容忍。</p></div>
+</div>
+<div class="danger-box"><strong>TOP 5 错误：</strong><br>1.输入阻抗过大->建立不足<br>2.VREF去耦不足->SNDR恶化<br>3.f<sub>s</sub>过高->CDAC未建立->ENOB降<br>4.数字走线平行模拟->SFDR降<br>5.忽略共模范围->失码</div>
+</div></div></section>
+
+<!-- ===== Section 9: 选型指南 ===== -->
+<section id="sec9"><div class="card"><div class="card-header"><div class="section-no">9</div><div class="icon">X</div><h2>选型指南</h2></div><div class="card-body">
+<div class="compare-grid"><div class="compare-col blue"><h3>选用 SAR</h3><ul>
+<li>BW DC~5 MHz</li><li>10~16 bit</li><li>严格功耗限制</li><li>多通道轮询(MUX)</li><li>零静态功耗</li><li>延迟不敏感</li><li>成本/面积敏感</li></ul></div>
+<div class="compare-col red"><h3>不适合 SAR</h3><ul>
+<li>>10MHz+>12b -> Pipeline</li><li>>18b -> Sigma-Delta</li><li>>100MSPS -> Pipeline/TI</li><li><1 cycle延迟 -> Flash</li><li>强抗混叠 -> Sigma-Delta</li></ul></div></div>
+<h4>按场景选型</h4>
+<table><thead><tr><th>场景</th><th>分辨率</th><th>f<sub>s</sub></th><th>通道</th></tr></thead><tbody>
+<tr><td>BMS</td><td>12~14b</td><td>10~100k</td><td>6~18</td></tr>
+<tr><td>工业传感器</td><td>12~16b</td><td>1~100k</td><td>4~8</td></tr>
+<tr><td>医疗(ECG/EEG)</td><td>16~18b</td><td>100~1k</td><td>2~8</td></tr>
+<tr><td>触摸屏</td><td>10~12b</td><td>100~500k</td><td>4~16</td></tr>
+<tr><td>电机电流</td><td>12b</td><td>1~5M</td><td>2~4</td></tr>
+<tr><td>IoT</td><td>10~14b</td><td>1~100k</td><td>1~4</td></tr>
+<tr><td>通用采集</td><td>12~16b</td><td>100k~5M</td><td>8~16</td></tr>
+</tbody></table>
+<div class="info-box"><strong>AE认知：</strong>选型关键是确认输入驱动和CDAC建立时间匹配目标f<sub>s</sub>。对BMS/工业传感器，SAR通常最优。</div>
+</div></div></section>
+
+<div class="footer">
+AE 知识文档 · SAR ADC 逐次逼近寄存器模数转换器<br>
+  覆盖原理、框图、指标、影响因素、测试方法与选型指南 · 文档版本 v2.0 · 生成时间：2026-06-19<br>
+</div>
+
+</body>
+</html>
