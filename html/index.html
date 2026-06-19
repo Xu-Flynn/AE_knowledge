@@ -46,10 +46,10 @@
 
 <div class="hero">
   <h1>📚 AE 产品知识文档集</h1>
-  <div class="subtitle">覆盖光通信 · 无线通信 · 工业&汽车 · ADC 四大产品线的完整技术培训资料</div>
+  <div class="subtitle">覆盖光通信 · 无线通信 · 工业&汽车 · ADC · 电源管理 五大产品线的完整技术培训资料</div>
   <div class="stat-row">
-    <div class="stat-item"><div class="num">14</div><div class="label">产品文档</div></div>
-    <div class="stat-item"><div class="num">4</div><div class="label">产品线</div></div>
+    <div class="stat-item"><div class="num">17</div><div class="label">产品文档</div></div>
+    <div class="stat-item"><div class="num">5</div><div class="label">产品线</div></div>
     <div class="stat-item"><div class="num">9+</div><div class="label">章节/文档</div></div>
     <div class="stat-item"><div class="num">SVG</div><div class="label">交互框图</div></div>
   </div>
@@ -308,6 +308,59 @@
         <span class="tag tag-green">8~14 bit</span>
         <span class="tag tag-green">100M~100+ GSPS</span>
         <span class="tag tag-green">偏斜 &lt;50fs</span>
+      </div>
+    </div>
+  </a>
+</div>
+
+<!-- ═══════════ 电源管理 ═══════════ -->
+<h2 class="section-title industrial">🟢 五、电源管理</h2>
+<div class="card-grid">
+
+  <a href="05_POWER/BUCK_Converter.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🔻</div>
+      <h3>BUCK 降压转换器</h3>
+      <div class="eng">Step-Down (Buck) DC-DC Converter</div>
+    </div>
+    <div class="card-body">
+      <p>非隔离 PWM 降压拓扑，V<sub>out</sub> < V<sub>in</sub>，同步/异步整流，电压模式/电流模式控制，CCM/DCM 工作模式</p>
+      <div class="tags">
+        <span class="tag tag-green">PWM 降压</span>
+        <span class="tag tag-green">LC 滤波</span>
+        <span class="tag tag-green">>90% 效率</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="05_POWER/BOOST_Converter.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🔺</div>
+      <h3>BOOST 升压转换器</h3>
+      <div class="eng">Step-Up (Boost) DC-DC Converter</div>
+    </div>
+    <div class="card-body">
+      <p>非隔离 PWM 升压拓扑，V<sub>out</sub> > V<sub>in</sub>，电感储能 + 输出电容滤波，右半平面零点补偿，CCM/DCM 模式</p>
+      <div class="tags">
+        <span class="tag tag-green">PWM 升压</span>
+        <span class="tag tag-green">RHPZ 补偿</span>
+        <span class="tag tag-green">同步整流</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="05_POWER/BUCK_BOOST_Converter.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🔄</div>
+      <h3>BUCK-BOOST 升降压转换器</h3>
+      <div class="eng">Buck-Boost (Inverting) DC-DC Converter</div>
+    </div>
+    <div class="card-body">
+      <p>非隔离 PWM 升降压拓扑，V<sub>out</sub> 可高于或低于 V<sub>in</sub>（反相输出），单电感四开关或 SEPIC 架构，升降压无缝切换</p>
+      <div class="tags">
+        <span class="tag tag-green">升降压</span>
+        <span class="tag tag-green">反相输出</span>
+        <span class="tag tag-green">四开关</span>
       </div>
     </div>
   </a>

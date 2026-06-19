@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOOST 升压转换器 — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #27ae60; --primary-dark: #166534; --accent: #e74c3c;
+    --accent2: #27ae60; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .hero { background: linear-gradient(135deg, #166534 0%, #27ae60 50%, #0891b2 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #27ae6011, #27ae6005); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  .card-header.deep { background: linear-gradient(90deg, #fef3c7, #fffbeb); border-bottom: 2px solid #f59e0b; }
+  .card-header.deep h2 { color: #92400e; }
+  .card-header.deep .section-no { background: #f59e0b; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #16a34a); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #d1fae5; }
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  .info-box { border-left: 4px solid var(--primary); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #166534, #27ae60); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  .chip-gray { background: #f1f5f9; color: #475569; }
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #eff6ff; border: 2px solid var(--primary); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>🔺 BOOST 升压转换器</h1>
+  <div class="subtitle">DC-DC Step-Up Converter (升压型开关电源) — 将低电压提升至更高电压的核心拓扑</div>
+  <div class="badge-row">
+    <span class="badge">📈 升压 Vout &gt; Vin</span>
+    <span class="badge">🎯 效率 ≥93%</span>
+    <span class="badge">⚙️ PWM/PFM 双模式</span>
+    <span class="badge">🔌 同步/异步整流</span>
+    <span class="badge">📐 D = 1 − Vin/Vout</span>
+    <span class="badge">🔋 电池供电设备必备</span>
+  </div>
+</div>
+
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、核心对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<section id="sec1">
+  <div class="card">
+    <div class="card-header"><div class="section-no">1</div><div class="icon">📖</div><h2>背景与应用定位</h2></div>
+    <div class="card-body">
+      <p>BOOST 转换器是<strong>将较低的直流输入电压转换为较高的稳定输出电压</strong>的非隔离式 DC-DC 开关电源拓扑。与 BUCK 相反，其输出电压始终大于输入电压。BOOST 是电池供电设备中不可或缺的电源架构，能将单节锂电池 (3.0~4.2V) 提升到 5V、12V 甚至更高来驱动负载。</p>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col blue">
+          <h3>📌 产品定位</h3>
+          <p><strong>产业链位置：</strong>位于低电压电源（电池/USB/能量采集）之后、高压负载之前，提供升压与稳压功能。</p>
+          <p><strong>核心价值：</strong>使低电压电源能驱动高电压负载，是实现便携设备小型化、高效率供电的关键技术。</p>
+          <p><strong>本质功能：</strong>电感储能 + 开关控制，通过伏秒平衡实现 Vin × t<sub>on</sub> = (Vout − Vin) × t<sub>off</sub>，从而获得 Vout > Vin。</p>
+        </div>
+        <div class="compare-col green">
+          <h3>🎯 典型应用场景</h3>
+          <ul>
+            <li><strong>智能手机/平板</strong>：锂电池 3.7V→5V USB OTG、背光 LED 驱动</li>
+            <li><strong>USB-C PD</strong>：5V→9V/12V/15V/20V 升压输出</li>
+            <li><strong>汽车 LED 照明</strong>：12V 电池→30~60V LED 灯串</li>
+            <li><strong>能量采集</strong>：热电/光伏 mV~V 级升压到可用电压</li>
+            <li><strong>音响功放</strong>：电池→±15V 以上双轨供电</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">技术路线</h4>
+      <table>
+        <thead><tr><th>维度</th><th>规格/选择</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>拓扑</strong></td><td>异步 BOOST (二极管整流)</td><td>低成本，适合 <1A 输出；二极管 V<sub>F</sub> 影响效率</td></tr>
+          <tr><td><strong>拓扑</strong></td><td>同步 BOOST (MOSFET 整流)</td><td>高效率，需高侧 FET 驱动（自举或电荷泵）</td></tr>
+          <tr><td><strong>控制模式</strong></td><td>电流模式 (CMC)</td><td>主流，逐周期限流，右半平面零点 (RHPZ) 需特殊处理</td></tr>
+          <tr><td><strong>控制模式</strong></td><td>电压模式 (VMC)</td><td>简单，但 RHPZ 补偿更困难</td></tr>
+          <tr><td><strong>控制模式</strong></td><td>COT (恒定关断时间)</td><td>快速瞬态，简单补偿；轻载效率好</td></tr>
+          <tr><td><strong>输入电压</strong></td><td>0.5V ~ 40V</td><td>低压启动 (Cold-Start) 需特殊设计；能量采集可低至 20mV</td></tr>
+          <tr><td><strong>输出电压</strong></td><td>Vin ~ 60V+</td><td>受限于开关管耐压和电感饱和</td></tr>
+          <tr><td><strong>工艺</strong></td><td>BCD / CMOS</td><td>高压 DMOS 集成开关管</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="sec2">
+  <div class="card">
+    <div class="card-header"><div class="section-no">2</div><div class="icon">⚙️</div><h2>核心工作原理</h2></div>
+    <div class="card-body">
+      <p>BOOST 转换器通过<strong>电感储能和释放</strong>实现升压：开关管 (SW) 导通时，电感电流线性上升存储能量；SW 关断时，电感通过整流管（二极管/同步 FET）向输出释放能量，电感上的反电动势与输入电压叠加，使 Vout 高于 Vin。</p>
+
+      <h4>📥 BOOST 系统级信号流</h4>
+      <div class="diagram-title">图 2-1 | BOOST 转换器功率级与反馈环路</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 245" width="800" height="245" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrPwr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#333"/></marker><marker id="arrFb" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#e74c3c"/></marker></defs>
+          <!-- Power path: Vin -> L -> SW -> Rectifier -> Vout -->
+          <rect x="12" y="52" width="56" height="32" rx="5" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="40" y="72" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">Vin</text>
+          <line x1="68" y1="68" x2="106" y2="68" stroke="#333" stroke-width="2" marker-end="url(#arrPwr)"/>
+          <!-- Input capacitor Cin (BOOST input ripple is significant) -->
+          <line x1="40" y1="84" x2="40" y2="106" stroke="#333" stroke-width="1"/>
+          <rect x="18" y="106" width="44" height="20" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+          <text x="40" y="120" fill="#166534" font-size="6" font-weight="700" text-anchor="middle">C<tspan baseline-shift="sub" font-size="0.75em">in</tspan></text>
+          <line x1="62" y1="116" x2="82" y2="116" stroke="#333" stroke-width="1"/>
+          <rect x="82" y="108" width="16" height="16" rx="2" fill="#ddd" stroke="#999" stroke-width="1"/>
+          <!-- Inductor L -->
+          <rect x="110" y="46" width="90" height="44" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text x="155" y="64" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">电感 L</text>
+          <text x="155" y="78" fill="#92400e" font-size="7" text-anchor="middle">4.7µH / I<tspan baseline-shift="sub" font-size="0.75em">SAT</tspan>=6A</text>
+          <line x1="200" y1="68" x2="240" y2="68" stroke="#333" stroke-width="2" marker-end="url(#arrPwr)"/>
+          <!-- SW node -->
+          <circle cx="254" cy="68" r="4" fill="#333"/>
+          <text x="265" y="60" fill="#555" font-size="8" font-weight="700">SW</text>
+          <!-- SW-FET from SW to GND -->
+          <line x1="254" y1="72" x2="254" y2="118" stroke="#333" stroke-width="2"/>
+          <rect x="200" y="118" width="72" height="34" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="236" y="137" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">SW-FET</text>
+          <text x="236" y="150" fill="#1e40af" font-size="6" text-anchor="middle">(N-MOS)</text>
+          <line x1="272" y1="135" x2="300" y2="135" stroke="#333" stroke-width="1"/>
+          <rect x="300" y="123" width="24" height="24" rx="3" fill="#ddd" stroke="#999" stroke-width="1"/>
+          <text x="312" y="138" fill="#666" font-size="7" text-anchor="middle">GND</text>
+          <!-- Rectifier -->
+          <line x1="258" y1="68" x2="296" y2="68" stroke="#333" stroke-width="2" marker-end="url(#arrPwr)"/>
+          <rect x="300" y="46" width="72" height="44" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="2"/>
+          <text x="336" y="64" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">整流管</text>
+          <text x="336" y="78" fill="#991b1b" font-size="7" text-anchor="middle">肖特基/Sync-FET</text>
+          <line x1="372" y1="68" x2="440" y2="68" stroke="#333" stroke-width="2" marker-end="url(#arrPwr)"/>
+          <!-- Vout node -->
+          <circle cx="454" cy="68" r="4" fill="#e74c3c"/>
+          <text x="465" y="60" fill="#e74c3c" font-size="9" font-weight="700">Vout</text>
+          <text x="465" y="76" fill="#e74c3c" font-size="7">(&gt;Vin)</text>
+          <!-- Output cap SHUNT to GND -->
+          <line x1="454" y1="72" x2="454" y2="128" stroke="#333" stroke-width="1.5"/>
+          <rect x="420" y="128" width="68" height="34" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="454" y="150" fill="#166534" font-size="8" font-weight="700" text-anchor="middle">C<tspan baseline-shift="sub" font-size="0.75em">out</tspan></text>
+          <line x1="488" y1="145" x2="518" y2="145" stroke="#333" stroke-width="1"/>
+          <rect x="518" y="133" width="26" height="24" rx="3" fill="#ddd" stroke="#999" stroke-width="1"/>
+          <text x="531" y="148" fill="#666" font-size="7" text-anchor="middle">GND</text>
+          <!-- Load -->
+          <line x1="458" y1="68" x2="510" y2="68" stroke="#333" stroke-width="2" marker-end="url(#arrPwr)"/>
+          <rect x="514" y="52" width="60" height="32" rx="5" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="544" y="72" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">R<tspan baseline-shift="sub" font-size="0.75em">LOAD</tspan></text>
+          <!-- Feedback tap point from Vout -->
+          <line x1="484" y1="68" x2="484" y2="85" stroke="#e74c3c" stroke-width="1" stroke-dasharray="3,3"/>
+          <circle cx="484" cy="68" r="2.5" fill="#e74c3c"/>
+          <!-- Feedback loop -->
+          <path d="M 484 85 Q 484 210 470 210" stroke="#e74c3c" stroke-width="1.8" fill="none" stroke-dasharray="5,3" marker-end="url(#arrFb)"/>
+          <rect x="388" y="198" width="110" height="24" rx="5" fill="#fff5f5" stroke="#fca5a5" stroke-width="1.5"/>
+          <text x="443" y="214" fill="#991b1b" font-size="8" font-weight="700" text-anchor="middle">FB 反馈分压网络</text>
+          <line x1="388" y1="210" x2="345" y2="210" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <rect x="250" y="198" width="95" height="24" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="297" y="214" fill="#92400e" font-size="8" font-weight="700" text-anchor="middle">EA + RHPZ补偿</text>
+          <line x1="250" y1="210" x2="210" y2="210" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <rect x="115" y="198" width="95" height="24" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="162" y="214" fill="#92400e" font-size="8" font-weight="700" text-anchor="middle">PWM + 栅极驱动</text>
+          <line x1="115" y1="210" x2="55" y2="210" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <path d="M 55 210 Q 45 210 45 100 Q 45 68 200 68" stroke="#e74c3c" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrFb)"/>
+          <text x="470" y="42" fill="#e74c3c" font-size="7" font-weight="700">反馈环路 (红色虚线)</text>
+          <!-- Key formula -->
+          <text x="600" y="60" fill="#555" font-size="8">V<tspan baseline-shift="sub" font-size="0.75em">out</tspan> = V<tspan baseline-shift="sub" font-size="0.75em">in</tspan> / (1−D)</text>
+          <text x="600" y="76" fill="#555" font-size="8">I<tspan baseline-shift="sub" font-size="0.75em">L(peak)</tspan> = I<tspan baseline-shift="sub" font-size="0.75em">out</tspan>/(1−D) + ΔI<tspan baseline-shift="sub" font-size="0.75em">L</tspan>/2</text>
+          <rect x="590" y="46" width="215" height="42" rx="6" fill="none" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+          <!-- BOOST operating mode annotation -->
+          <rect x="15" y="228" width="310" height="14" rx="4" fill="#fee2e2" stroke="#e74c3c" stroke-width="1"/>
+          <text x="170" y="238" fill="#991b1b" font-size="7" font-weight="700" text-anchor="middle">BOOST升压: Vin &lt; Vout, D=1−Vin/Vout, RHPZ限制带宽, 电感峰值电流=Iout/(1−D)</text>
+        </svg>
+      </div>
+
+      <h4>⚡ 核心关系公式</h4>
+      <div class="formula">
+        V<sub>out</sub> = V<sub>in</sub> / (1 − D)&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;ΔI<sub>L</sub> = V<sub>in</sub> × D × T<sub>s</sub> / L
+      </div>
+      <div class="formula">
+        I<sub>out(max)</sub> = I<sub>L(avg)</sub> × (1 − D)&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;I<sub>L(peak)</sub> = I<sub>in</sub> + ΔI<sub>L</sub> / 2
+      </div>
+      <p>其中 <span class="formula-inline">D</span> 为开关管导通占空比。当 <span class="formula-inline">D→1</span> 时理论 Vout→∞，但受寄生参数限制，实际升压比通常 ≤5~8×。</p>
+
+      <h4>🔑 关键设计挑战</h4>
+      <ul>
+        <li><strong>右半平面零点 (RHPZ)</strong>：BOOST 特有的非最小相位特性，限制环路带宽必须远低于 RHPZ 频率，导致瞬态响应慢</li>
+        <li><strong>启动浪涌电流</strong>：上电瞬间输出电容未充电，通过电感和二极管直通形成大电流，需软启动/预充电</li>
+        <li><strong>无负载过压</strong>：轻载时若未跳过脉冲，输出电容持续充电导致 Vout 飙升，需 OVP 或强制 PWM 跳脉冲</li>
+        <li><strong>同步整流驱动</strong>：高侧 FET 需要浮动驱动（自举或电荷泵），复杂度高于 BUCK</li>
+        <li><strong>输入电流纹波</strong>：电感直接连接 Vin，输入电流纹波大，输入电容需承受高 RMS 电流</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header deep"><div class="section-no">🔬</div><div class="icon">🔬</div><h2>核心模块深度解析</h2></div>
+    <div class="card-body">
+
+      <h4 style="color:#92400e;">1. 右半平面零点 (RHPZ) — BOOST 的根本设计约束</h4>
+      <p>BOOST 控制的 CCM 模式中，功率级传递函数含有一个<strong>右半平面零点</strong>，这是其与 BUCK 最本质的区别：</p>
+      <div class="formula">
+        f<sub>RHPZ</sub> = V<sub>out</sub> × (1−D)<sup>2</sup> / (2π × L × I<sub>out</sub>)
+      </div>
+      <p>RHPZ 对环路设计的影响是根本性的：环路带宽 <span class="formula-inline">f<sub>c</sub></span> 必须 ≤ f<sub>RHPZ</sub>/3 ~ f<sub>RHPZ</sub>/5，否则不稳定。RHPZ 在重载 (I<sub>out</sub>↑)、小电感 (L↓)、高占空比 (D↑) 时频率最低，是带宽的瓶颈。</p>
+      <blockquote>工程直觉：RHPZ 的本质物理原因是——当负载增大导致 Vout 下降时，控制器增大 D 让电感储能更多，但增大 D 意味着电感向输出释能的时间 (1−D) 缩短，瞬时会进一步降低输出电流。这种"先恶化再改善"的非最小相位响应是 BOOST 瞬态较差的根源。</blockquote>
+
+      <h4 style="color:#92400e;">2. 电感选型 — 峰值电流限制与饱和</h4>
+      <p>BOOST 的电感峰值电流远大于输出电流，这是 BOOST 区别于 BUCK 的重要特征：</p>
+      <div class="formula">
+        I<sub>L(peak)</sub> = I<sub>out</sub> / (1−D) + V<sub>in</sub> × D / (2 × f<sub>s</sub> × L)
+      </div>
+      <p>例如：Vin=5V, Vout=12V, Iout=2A→D≈0.583，I<sub>L(avg)</sub>=4.8A。电感需承受的峰值电流可能是输出电流的 3~5×。电感饱和电流 I<sub>SAT</sub> 必须 > I<sub>L(peak)</sub>，并考虑高温退化。</p>
+
+      <h4 style="color:#92400e;">3. 同步 BOOST 高侧驱动</h4>
+      <p>同步 BOOST 中，整流 MOSFET 的源极连接 Vout（高电位），栅极需要 Vout + V<sub>gs</sub> 的驱动电压。常见方案：</p>
+      <table>
+        <thead><tr><th>方案</th><th>原理</th><th>优点</th><th>缺点</th></tr></thead>
+        <tbody>
+          <tr><td>自举电容</td><td>LS 导通时对 C<sub>BOOT</sub> 充电</td><td>简单、成本低</td><td>100% 占空比不可用</td></tr>
+          <tr><td>电荷泵</td><td>振荡器 + 多级倍压</td><td>可 100% 占空比</td><td>驱动能力有限</td></tr>
+          <tr><td>隔离电源</td><td>独立隔离 DC-DC</td><td>最可靠</td><td>成本高、面积大</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="color:#92400e;">4. 输出断开 (True Load Disconnect)</h4>
+      <p>异步 BOOST 在关断时，输入通过电感和二极管仍连接到输出（"直通"状态），负载无法完全断开。同步 BOOST 可通过关断高侧 FET 实现<strong>真负载断开 (True Load Disconnect)</strong>，这对电池供电设备的安全性至关重要。部分芯片内置背靠背 P-MOS 开关或在 Vout 端串联隔离 FET。</p>
+    </div>
+  </div>
+</section>
+
+<section id="sec3">
+  <div class="card">
+    <div class="card-header"><div class="section-no">3</div><div class="icon">📐</div><h2>电路框图 — 同步 BOOST 内部架构</h2></div>
+    <div class="card-body">
+      <div class="diagram-title">图 3-1 | 同步 BOOST 转换器内部架构框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 520" width="800" height="520" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrA" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0, 7 2.5, 0 5" fill="#666"/></marker></defs>
+          <!-- ===== POWER STAGE (Left) ===== -->
+          <rect x="12" y="20" width="395" height="310" rx="10" fill="#fff5f5" stroke="#fca5a5" stroke-width="2" stroke-dasharray="8,4"/>
+          <text x="210" y="42" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">功率级 Power Stage (BOOST)</text>
+          <rect x="30" y="62" width="48" height="30" rx="5" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="54" y="81" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">Vin</text>
+          <line x1="78" y1="77" x2="108" y2="77" stroke="#333" stroke-width="2" marker-end="url(#arrA)"/>
+          <rect x="112" y="58" width="65" height="38" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text x="144" y="74" fill="#92400e" font-size="8" font-weight="700" text-anchor="middle">电感 L</text>
+          <text x="144" y="88" fill="#92400e" font-size="6" text-anchor="middle">4.7µH</text>
+          <line x1="177" y1="77" x2="202" y2="77" stroke="#333" stroke-width="2" marker-end="url(#arrA)"/>
+          <circle cx="210" cy="77" r="3.5" fill="#333"/>
+          <text x="220" y="70" fill="#555" font-size="7" font-weight="700">SW</text>
+          <!-- LS SW-FET to GND -->
+          <line x1="210" y1="80" x2="210" y2="128" stroke="#333" stroke-width="2"/>
+          <rect x="168" y="128" width="58" height="34" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="197" y="147" fill="#1e40af" font-size="8" font-weight="700" text-anchor="middle">SW-FET</text>
+          <text x="197" y="157" fill="#1e40af" font-size="6" text-anchor="middle">R<tspan baseline-shift="sub" font-size="0.75em">DS(on)</tspan>=8mΩ</text>
+          <line x1="226" y1="145" x2="258" y2="145" stroke="#333" stroke-width="1.2"/>
+          <rect x="258" y="133" width="22" height="24" rx="3" fill="#ddd" stroke="#999" stroke-width="1"/>
+          <text x="269" y="148" fill="#666" font-size="7" text-anchor="middle">GND</text>
+          <!-- HS-FET (Sync Rectifier) -->
+          <line x1="214" y1="77" x2="248" y2="77" stroke="#333" stroke-width="2" marker-end="url(#arrA)"/>
+          <rect x="252" y="58" width="58" height="38" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="2"/>
+          <text x="281" y="74" fill="#1e40af" font-size="8" font-weight="700" text-anchor="middle">HS-FET</text>
+          <text x="281" y="88" fill="#1e40af" font-size="6" text-anchor="middle">同步整流</text>
+          <line x1="310" y1="77" x2="340" y2="77" stroke="#333" stroke-width="2" marker-end="url(#arrA)"/>
+          <circle cx="348" cy="77" r="3.5" fill="#e74c3c"/>
+          <text x="358" y="70" fill="#e74c3c" font-size="8" font-weight="700">Vout</text>
+          <text x="358" y="85" fill="#e74c3c" font-size="6">(&gt;Vin)</text>
+          <!-- Cout shunt -->
+          <rect x="298" y="108" width="48" height="28" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="322" y="126" fill="#166534" font-size="7" font-weight="700" text-anchor="middle">C<tspan baseline-shift="sub" font-size="0.75em">out</tspan></text>
+          <line x1="348" y1="81" x2="322" y2="108" stroke="#333" stroke-width="1.2"/>
+          <line x1="322" y1="136" x2="322" y2="156" stroke="#333" stroke-width="1"/>
+          <rect x="311" y="156" width="22" height="16" rx="3" fill="#ddd" stroke="#999" stroke-width="1"/>
+          <text x="322" y="168" fill="#666" font-size="6" text-anchor="middle">GND</text>
+          <!-- Load -->
+          <line x1="352" y1="77" x2="388" y2="77" stroke="#333" stroke-width="2" marker-end="url(#arrA)"/>
+          <rect x="392" y="62" width="52" height="30" rx="5" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="418" y="81" fill="#991b1b" font-size="8" font-weight="700" text-anchor="middle">R<tspan baseline-shift="sub" font-size="0.75em">LOAD</tspan></text>
+          <!-- True disconnect -->
+          <rect x="360" y="105" width="100" height="20" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="1"/>
+          <text x="410" y="117" fill="#92400e" font-size="7" font-weight="700" text-anchor="middle">真关断 Load Disconnect</text>
+
+          <!-- ===== GATE DRIVER ===== -->
+          <rect x="430" y="20" width="155" height="125" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="2" stroke-dasharray="8,4"/>
+          <text x="508" y="42" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">栅极驱动器 Gate Driver</text>
+          <rect x="445" y="56" width="125" height="72" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="508" y="72" fill="#1e40af" font-size="8" font-weight="700" text-anchor="middle">半桥驱动 + HS浮动</text>
+          <text x="508" y="86" fill="#1e40af" font-size="7" text-anchor="middle">自举/电荷泵/死区控制</text>
+          <text x="508" y="100" fill="#1e40af" font-size="7" text-anchor="middle">HS Gate = Vout + 5V</text>
+          <text x="508" y="114" fill="#1e40af" font-size="7" text-anchor="middle">UVLO 欠压锁定</text>
+          <!-- Gate drive lines -->
+          <line x1="445" y1="74" x2="310" y2="77" stroke="#1a56db" stroke-width="1.2" stroke-dasharray="4,2"/>
+          <text x="360" y="68" fill="#1a56db" font-size="6">HS Gate</text>
+          <line x1="445" y1="92" x2="226" y2="145" stroke="#1a56db" stroke-width="1.2" stroke-dasharray="4,2"/>
+          <text x="320" y="136" fill="#1a56db" font-size="6">LS Gate</text>
+
+          <!-- ===== FEEDBACK PATH ===== -->
+          <line x1="348" y1="250" x2="490" y2="250" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="6,3"/>
+          <rect x="400" y="235" width="62" height="30" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.2"/>
+          <text x="431" y="248" fill="#92400e" font-size="7" font-weight="700" text-anchor="middle">反馈分压</text>
+          <text x="431" y="260" fill="#92400e" font-size="6" text-anchor="middle">R<tspan baseline-shift="sub" font-size="0.75em">FB1</tspan>/R<tspan baseline-shift="sub" font-size="0.75em">FB2</tspan></text>
+          <line x1="431" y1="81" x2="420" y2="235" stroke="#16a34a" stroke-width="1.2" stroke-dasharray="4,3"/>
+          <line x1="431" y1="265" x2="431" y2="300" stroke="#16a34a" stroke-width="1.2" stroke-dasharray="4,3"/>
+
+          <!-- ===== CONTROL LOOP ===== -->
+          <rect x="430" y="200" width="195" height="130" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="2" stroke-dasharray="8,4"/>
+          <text x="528" y="222" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">控制环路 (RHPZ补偿)</text>
+          <rect x="445" y="235" width="80" height="36" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="485" y="250" fill="#166534" font-size="8" font-weight="700" text-anchor="middle">EA + RHPZ</text>
+          <text x="485" y="263" fill="#166534" font-size="6" text-anchor="middle">补偿网络</text>
+          <rect x="535" y="235" width="78" height="36" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="574" y="250" fill="#166534" font-size="8" font-weight="700" text-anchor="middle">PWM比较器</text>
+          <text x="574" y="263" fill="#166534" font-size="6" text-anchor="middle">EA vs RAMP</text>
+          <line x1="525" y1="253" x2="535" y2="253" stroke="#333" stroke-width="1.5" marker-end="url(#arrA)"/>
+          <!-- FB line into EA -->
+          <line x1="431" y1="300" x2="445" y2="300" stroke="#16a34a" stroke-width="1.2" stroke-dasharray="4,3"/>
+          <line x1="445" y1="300" x2="445" y2="253" stroke="#16a34a" stroke-width="1.2" stroke-dasharray="4,3"/>
+          <text x="438" y="312" fill="#16a34a" font-size="6">FB</text>
+          <!-- OSC + Ramp -->
+          <rect x="445" y="282" width="80" height="32" rx="5" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.2"/>
+          <text x="485" y="296" fill="#92400e" font-size="8" font-weight="700" text-anchor="middle">OSC + 斜坡</text>
+          <text x="485" y="308" fill="#92400e" font-size="6" text-anchor="middle">f<tspan baseline-shift="sub" font-size="0.75em">SW</tspan>=2MHz</text>
+          <line x1="485" y1="282" x2="574" y2="271" stroke="#333" stroke-width="1.2" stroke-dasharray="4,2"/>
+          <!-- Current Sense -->
+          <rect x="535" y="282" width="78" height="32" rx="5" fill="#dbeafe" stroke="#1a56db" stroke-width="1.2"/>
+          <text x="574" y="296" fill="#1e40af" font-size="8" font-weight="700" text-anchor="middle">电流检测</text>
+          <text x="574" y="308" fill="#1e40af" font-size="6" text-anchor="middle">I<tspan baseline-shift="sub" font-size="0.75em">SENSE</tspan></text>
+          <line x1="210" y1="83" x2="210" y2="292" stroke="#1a56db" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="210" y1="292" x2="535" y2="298" stroke="#1a56db" stroke-width="1" stroke-dasharray="3,2"/>
+          <!-- PWM output to gate driver -->
+          <line x1="574" y1="235" x2="574" y2="215" stroke="#333" stroke-width="1"/>
+          <line x1="574" y1="215" x2="508" y2="145" stroke="#333" stroke-width="1.2" stroke-dasharray="4,2"/>
+          <text x="544" y="185" fill="#666" font-size="6">PWM</text>
+
+          <!-- ===== ANALOG SUPPORT ===== -->
+          <rect x="650" y="20" width="152" height="180" rx="10" fill="#fff7ed" stroke="#fdba74" stroke-width="2" stroke-dasharray="8,4"/>
+          <text x="726" y="42" fill="#c2410c" font-size="10" font-weight="700" text-anchor="middle">模拟基准与偏置</text>
+          <rect x="665" y="55" width="122" height="32" rx="5" fill="#fff5f5" stroke="#fca5a5" stroke-width="1.2"/>
+          <text x="726" y="69" fill="#991b1b" font-size="8" font-weight="700" text-anchor="middle">Bandgap 基准</text>
+          <text x="726" y="82" fill="#991b1b" font-size="6" text-anchor="middle">V<tspan baseline-shift="sub" font-size="0.75em">ref</tspan> = 0.6V / 0.8V</text>
+          <line x1="726" y1="87" x2="485" y2="235" stroke="#991b1b" stroke-width="1" stroke-dasharray="3,2"/>
+          <text x="590" y="180" fill="#991b1b" font-size="6" text-anchor="middle">V<tspan baseline-shift="sub" font-size="0.75em">ref</tspan></text>
+          <rect x="665" y="100" width="122" height="45" rx="5" fill="#fff5f5" stroke="#fca5a5" stroke-width="1.2"/>
+          <text x="726" y="116" fill="#991b1b" font-size="8" font-weight="700" text-anchor="middle">内部 LDO 偏置</text>
+          <text x="726" y="130" fill="#991b1b" font-size="6" text-anchor="middle">V<tspan baseline-shift="sub" font-size="0.75em">CC</tspan> 供控制/驱动</text>
+          <text x="726" y="141" fill="#991b1b" font-size="6" text-anchor="middle">上电复位 POR</text>
+          <rect x="665" y="158" width="122" height="30" rx="5" fill="#fff5f5" stroke="#fca5a5" stroke-width="1.2"/>
+          <text x="726" y="172" fill="#991b1b" font-size="8" font-weight="700" text-anchor="middle">软启动 + 限流</text>
+          <text x="726" y="185" fill="#991b1b" font-size="6" text-anchor="middle">防启动浪涌直通</text>
+
+          <!-- ===== PROTECTION & LOGIC ===== -->
+          <rect x="650" y="215" width="152" height="115" rx="10" fill="#fff5f5" stroke="#fca5a5" stroke-width="2" stroke-dasharray="8,4"/>
+          <text x="726" y="237" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">保护与逻辑</text>
+          <rect x="665" y="250" width="122" height="50" rx="5" fill="#fff5f5" stroke="#fca5a5" stroke-width="1.2"/>
+          <text x="726" y="265" fill="#991b1b" font-size="8" font-weight="700" text-anchor="middle">故障保护</text>
+          <text x="726" y="278" fill="#991b1b" font-size="6" text-anchor="middle">OVP / OCP / OTP / SCP</text>
+          <text x="726" y="290" fill="#991b1b" font-size="6" text-anchor="middle">无负载过压保护 / UVLO</text>
+          <rect x="665" y="308" width="122" height="14" rx="4" fill="#fff5f5" stroke="#fca5a5" stroke-width="1"/>
+          <text x="726" y="318" fill="#991b1b" font-size="8" font-weight="700" text-anchor="middle">EN / PG / 模式选择</text>
+
+          <text x="410" y="480" fill="#999" font-size="8" text-anchor="middle">▲ 同步 BOOST 完整内部架构：功率级(红) + 栅极驱动(蓝) + RHPZ控制环路(绿) + 基准偏置(橙) + 保护逻辑(红)</text>
+        </svg>
+      </div>
+      <p>同步 BOOST 的内部架构与 BUCK 类似但功率级拓扑不同：<strong>电感在输入端（而非输出端）</strong>；LS-FET 为主动开关管，HS-FET 为同步整流管（替代二极管）。栅极驱动需处理 HS-FET 的浮动源极（连接 Vout）。控制环路必须应对 RHPZ 约束。</p>
+    </div>
+  </div>
+</section>
+
+<section id="sec4">
+  <div class="card">
+    <div class="card-header"><div class="section-no">4</div><div class="icon">⚖️</div><h2>核心对比 — BUCK vs BOOST vs BUCK-BOOST</h2></div>
+    <div class="card-body">
+      <table>
+        <thead><tr><th>对比维度</th><th>BUCK (降压)</th><th>BOOST (升压)</th><th>BUCK-BOOST (升降压)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Vout 范围</strong></td><td>0 &lt; Vout &lt; Vin</td><td>Vout &gt; Vin</td><td>Vout 可高可低</td></tr>
+          <tr><td><strong>占空比公式</strong></td><td>D = Vout/Vin</td><td>D = 1 − Vin/Vout</td><td>D = Vout/(Vin+Vout)</td></tr>
+          <tr><td><strong>电感位置</strong></td><td>输出端滤波</td><td>输入端储能</td><td>中间储能</td></tr>
+          <tr><td><strong>输入电流</strong></td><td>断续 (脉冲)</td><td>连续 (有纹波)</td><td>断续 (脉冲)</td></tr>
+          <tr><td><strong>输出电流</strong></td><td>连续 (有纹波)</td><td>断续 (脉冲)</td><td>断续 (脉冲)</td></tr>
+          <tr><td><strong>环路特性</strong></td><td>LC 双极点，无 RHPZ</td><td>有 RHPZ，带宽受限</td><td>有 RHPZ，带宽受限</td></tr>
+          <tr><td><strong>峰值效率</strong></td><td>最高 (~97%)</td><td>较高 (~93%)</td><td>中等 (~90%)</td></tr>
+          <tr><td><strong>复杂度</strong></td><td>最低</td><td>中等</td><td>最高 (4开关)</td></tr>
+        </tbody>
+      </table>
+
+      <h4>异步 vs 同步 BOOST</h4>
+      <table style="margin-top:16px;">
+        <thead><tr><th>维度</th><th>异步 BOOST</th><th>同步 BOOST</th></tr></thead>
+        <tbody>
+          <tr><td><strong>整流器件</strong></td><td>肖特基二极管</td><td>P-MOS 或 N-MOS (高侧)</td></tr>
+          <tr><td><strong>效率</strong></td><td>~88% (V<sub>F</sub> 损耗)</td><td>~93%</td></tr>
+          <tr><td><strong>真关断</strong></td><td>否 (Vin 直通 Vout)</td><td>是 (关断 HS-FET)</td></tr>
+          <tr><td><strong>驱动复杂度</strong></td><td>简单</td><td>需浮动 HS 驱动</td></tr>
+          <tr><td><strong>适用电流</strong></td><td>&lt;1~2A</td><td>无上限</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="sec5">
+  <div class="card">
+    <div class="card-header"><div class="section-no">5</div><div class="icon">📊</div><h2>核心指标与规格</h2></div>
+    <div class="card-body">
+      <h4>系统级指标</h4>
+      <table>
+        <thead><tr><th>参数</th><th>典型值范围</th><th>单位</th><th>测试条件/含义</th></tr></thead>
+        <tbody>
+          <tr><td>输入电压范围 V<sub>IN</sub></td><td>0.5 ~ 40</td><td>V</td><td>低至 20mV 需能量采集专用 IC</td></tr>
+          <tr><td>输出电压范围 V<sub>OUT</sub></td><td>Vin ~ 60</td><td>V</td><td>受 FET 耐压限制</td></tr>
+          <tr><td>最大输出电流 I<sub>OUT</sub></td><td>0.1 ~ 10</td><td>A</td><td>受 I<sub>L(peak)</sub> = Iout/(1-D) 约束</td></tr>
+          <tr><td>峰值效率 η<sub>peak</sub></td><td>88 ~ 95</td><td>%</td><td>Vin=3.7V, Vout=5V, Iout=1A</td></tr>
+          <tr><td>开关频率 f<sub>SW</sub></td><td>500k ~ 3M</td><td>Hz</td><td>高频缩小电感，但开关损耗增加</td></tr>
+          <tr><td>启动电压</td><td>0.7 ~ 2.5</td><td>V</td><td>UVLO 释放后的最低启动 Vin</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:16px;">输出质量指标</h4>
+      <table>
+        <thead><tr><th>参数</th><th>典型值</th><th>单位</th><th>测试条件</th></tr></thead>
+        <tbody>
+          <tr><td>输出电压纹波</td><td>10 ~ 50</td><td>mV<sub>pp</sub></td><td>20MHz BW，输出端 ESR 影响大</td></tr>
+          <tr><td>负载调整率</td><td>0.2 ~ 1.0</td><td>%</td><td>I<sub>OUT</sub>: 0→100% 变化</td></tr>
+          <tr><td>线性调整率</td><td>0.05 ~ 0.2</td><td>%/V</td><td>V<sub>IN</sub> 全范围变化</td></tr>
+          <tr><td>瞬态 Undershoot</td><td>50 ~ 200</td><td>mV</td><td>负载突增，受 RHPZ 限制带宽</td></tr>
+          <tr><td>启动时间 t<sub>SS</sub></td><td>0.5 ~ 10</td><td>ms</td><td>软启动电容可编程</td></tr>
+        </tbody>
+      </table>
+
+      <div class="metric-card">
+        <div class="metric-header"><h4>RHPZ 频率 f<sub>RHPZ</sub></h4><span class="metric-abbr">关键指标 #1</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>BOOST 功率级传递函数中右半平面零点的频率，限制了最大可用环路带宽</span></div>
+          <div class="metric-row"><span class="metric-label">公式</span><span>f<sub>RHPZ</sub> = V<sub>out</sub>×(1−D)<sup>2</sup> / (2π×L×I<sub>out</sub>) = V<sub>in</sub><sup>2</sup> / (2π×L×I<sub>out</sub>×V<sub>out</sub>)</span></div>
+          <div class="metric-row"><span class="metric-label">影响分析</span><span>环路带宽需 ≤ f<sub>RHPZ</sub>/5；重载时 f<sub>RHPZ</sub> 最低——意味着重载瞬态最差</span></div>
+          <div class="metric-row"><span class="metric-label">典型值</span><span>Vin=5V, Vout=12V, L=10µH, Iout=2A: f<sub>RHPZ</sub>≈8kHz → f<sub>c</sub>≤1.6kHz</span></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header"><h4>峰值电感电流 I<sub>L(peak)</sub></h4><span class="metric-abbr">关键指标 #2</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>电感在开关周期内达到的最大瞬时电流</span></div>
+          <div class="metric-row"><span class="metric-label">公式</span><span>I<sub>L(peak)</sub> = I<sub>out</sub>/(1−D) + V<sub>in</sub>×D/(2×f<sub>s</sub>×L)</span></div>
+          <div class="metric-row"><span class="metric-label">影响分析</span><span>直接决定电感饱和裕量需求、SW FET 导通损耗和电流检测范围</span></div>
+          <div class="metric-row"><span class="metric-label">典型值</span><span>5V→12V/2A: I<sub>L(peak)</sub>≈5.5A (是Iout的2.75x)；2.7V→5V/2A: I<sub>L(peak)</sub>≈5.5A</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="sec6">
+  <div class="card">
+    <div class="card-header"><div class="section-no">6</div><div class="icon">🔗</div><h2>影响因素分析</h2></div>
+    <div class="card-body">
+      <table>
+        <thead><tr><th>关键指标</th><th>被哪些因素影响</th><th>该指标又影响哪些下游性能</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>RHPZ 频率</strong></td>
+            <td><span class="chip chip-red">I<sub>OUT</sub></span> <span class="chip chip-green">L</span> <span class="chip chip-blue">D</span> <span class="chip chip-yellow">V<sub>out</sub></span></td>
+            <td>环路带宽、瞬态响应速度、系统稳定性</td>
+          </tr>
+          <tr>
+            <td><strong>效率 η</strong></td>
+            <td><span class="chip chip-red">f<sub>SW</sub></span> <span class="chip chip-blue">R<sub>DS(on)</sub></span> <span class="chip chip-green">DCR</span> <span class="chip chip-yellow">V<sub>F</sub></span> <span class="chip chip-gray">D</span></td>
+            <td>热耗、电池续航、封装选择</td>
+          </tr>
+          <tr>
+            <td><strong>I<sub>L(peak)</sub></strong></td>
+            <td><span class="chip chip-red">V<sub>out</sub>/V<sub>in</sub> 比</span> <span class="chip chip-blue">I<sub>OUT</sub></span> <span class="chip chip-green">L</span> <span class="chip chip-yellow">f<sub>SW</sub></span></td>
+            <td>电感饱和裕量、FET 导通损耗、电流检测范围</td>
+          </tr>
+          <tr>
+            <td><strong>输出纹波</strong></td>
+            <td><span class="chip chip-green">C<sub>out</sub></span> <span class="chip chip-blue">ESR</span> <span class="chip chip-red">I<sub>OUT</sub></span> <span class="chip chip-yellow">D</span> <span class="chip chip-gray">f<sub>SW</sub></span></td>
+            <td>后级 PSRR、音频噪声、EMI</td>
+          </tr>
+          <tr>
+            <td><strong>启动浪涌</strong></td>
+            <td><span class="chip chip-green">C<sub>out</sub></span> <span class="chip chip-red">C<sub>SS</sub></span> <span class="chip chip-blue">限流值</span> <span class="chip chip-gray">Vin</span></td>
+            <td>可靠性、输入电源跌落、OCP 误触发</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>📌 跨领域共同影响因素总结：</strong>
+        BOOST 的 <strong>RHPZ</strong> 是所有设计决策的"隐形天花板"。提高 f<sub>SW</sub> 可缩小 L（进而提高 RHPZ），但增加开关损耗。占空比 D 越大（升压比越高），RHPZ 越低且 I<sub>L(peak)</sub> 越大——这是高升压比 BOOST 设计的两难困境。AO (Always-On) 产品需特别关注<strong>真关断</strong>能力。
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="sec7">
+  <div class="card">
+    <div class="card-header"><div class="section-no">7</div><div class="icon">🔬</div><h2>测试方法与验证</h2></div>
+    <div class="card-body">
+
+      <h4>测试一：效率曲线测试</h4>
+      <p><strong>测试原理：</strong>与 BUCK 类似，四线 Kelvin 接法测量 V<sub>IN</sub>/I<sub>IN</sub>/V<sub>OUT</sub>/I<sub>OUT</sub>。需特别关注两个区域：(1) 高升压比 + 重载区（I<sub>L(peak)</sub> 最大，RHPZ 最低）；(2) 轻载 PFM 区（效率易骤降）。</p>
+      <table>
+        <thead><tr><th>设备</th><th>推荐型号</th><th>关键规格</th></tr></thead>
+        <tbody>
+          <tr><td>直流电源</td><td>Keysight E36313A</td><td>0-25V/10A</td></tr>
+          <tr><td>电子负载</td><td>Chroma 6314A</td><td>CR/CC/CV 模式</td></tr>
+          <tr><td>万用表</td><td>Keysight 34465A (x4)</td><td>6.5 digit, Kelvin</td></tr>
+        </tbody>
+      </table>
+      <div class="diagram-title">图 7-1 | 效率测试框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 700 110" width="680" height="110" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arrT2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#555"/></marker></defs>
+          <rect x="10" y="30" width="80" height="35" rx="5" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="50" y="52" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">DC 电源</text>
+          <line x1="90" y1="47" x2="120" y2="47" stroke="#555" stroke-width="1.5" marker-end="url(#arrT2)"/>
+          <text x="102" y="35" fill="#666" font-size="7" text-anchor="middle">V1/A1</text>
+          <rect x="125" y="30" width="120" height="35" rx="5" fill="#dcfce7" stroke="#27ae60" stroke-width="2"/>
+          <text x="185" y="52" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">DUT (BOOST)</text>
+          <line x1="245" y1="47" x2="275" y2="47" stroke="#555" stroke-width="1.5" marker-end="url(#arrT2)"/>
+          <text x="258" y="35" fill="#666" font-size="7" text-anchor="middle">V2/A2</text>
+          <rect x="280" y="30" width="100" height="35" rx="5" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="330" y="52" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">电子负载</text>
+          <text x="400" y="90" fill="#999" font-size="8" text-anchor="middle">▲ 注意：BOOST 输入电流大，输入线径和 Kelvin 接法尤其重要</text>
+        </svg>
+      </div>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>接线与预热</h5><p>Kelvin 四线接法；输入线径需能承载 I<sub>in</sub> = I<sub>out</sub>×Vout/(Vin×η)。满载预热 10min。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>多点扫描</h5><p>覆盖 I<sub>OUT</sub>=0~I<sub>max</sub>；至少测试 2~3 组 Vin/Vout 组合（如 3.7V→5V, 5V→12V, 5V→20V）。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>判定</h5><p>η<sub>peak</sub> ≥ 规格书 −1%；全负载范围内无异常效率跌落（可能暗示电感饱和）。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:24px;">测试二：SW 节点波形与振铃</h4>
+      <p><strong>测试原理：</strong>BOOST 的 SW 节点在关断时电压跳变至 Vout + V<sub>F</sub>（或更高），寄生 LC 谐振会引起振铃。用示波器（≥200MHz BW）测量 SW 对 GND 波形。</p>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>探头设置</h5><p>使用探头 x10 档（最小化负载效应），弹簧地线；或使用差分探头。带宽 ≥ 200MHz。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>测量点</h5><p>SW 引脚（电感与 FET 连接点），关注关断瞬间的电压过冲和振铃频率/幅值。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>判定</h5><p>SW 过冲 ≤ FET V<sub>DS</sub> 额定值的 80%；振铃在 3 个周期内衰减到 10% 以下。否则需加 RC Snubber。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:24px;">测试三：启动与关断行为</h4>
+      <p><strong>测试原理：</strong>BOOST 启动和关断行为因直通路径和浪涌电流而特殊。用双通道示波器同时捕捉 Vin、Vout、EN 和 SW 节点。</p>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>启动测试</h5><p>EN 拉高瞬间触发，记录 Vout 单调上升无台阶/回沟，I<sub>in</sub> 峰值 ≤ 限流值。软启动时间可编程。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>关断测试</h5><p>EN 拉低后 Vout 应在规定时间内下降到安全电平。异步 BOOST（有直通）Vout≈Vin−V<sub>F</sub>；同步 BOOST（真关断）Vout→0。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>判定</h5><p>启动无 OCP 误触发；Vout 单调性正常；关断后 Vout 满足安全要求（真关断类 <0.5V）。</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="sec8">
+  <div class="card">
+    <div class="card-header"><div class="section-no">8</div><div class="icon">⚠️</div><h2>注意事项与踩坑经验</h2></div>
+    <div class="card-body">
+      <div class="caution-grid">
+        <div class="caution-item"><div class="ci-title">📐 RHPZ 带宽约束</div><p>BOOST 环路带宽必须远低于 RHPZ 频率（≤1/5）。带宽过高会导致振荡失稳。如果瞬态响应不满足，需增大输出电容（而不是试图提高带宽来提高响应速度）。</p></div>
+        <div class="caution-item"><div class="ci-title">⚡ 电感饱和</div><p>BOOST 电感峰值电流 >80% 占空比时可达 I<sub>out</sub> 的 5×+。务必检查 I<sub>SAT</sub> 在全温范围的退化（铁氧体磁芯 −20~−30% @125°C）。饱和后电感量骤降→I<sub>L</sub> 急剧上升→烧 FET。</p></div>
+        <div class="caution-item"><div class="ci-title">🔄 真关断需求</div><p>异步 BOOST 关断时 Vin 通过电感和二极管直通 Vout，无法完全切断负载。若应用需要真正断电，必须选同步 BOOST（含真关断功能）。</p></div>
+        <div class="caution-item"><div class="ci-title">📊 输出电容 ESR</div><p>BOOST 输出电流为脉冲形式（HS 导通时），输出电容承受的 RMS 纹波电流远超 BUCK。需选用低 ESR 电容并校核 RMS 电流额定值。</p></div>
+        <div class="caution-item"><div class="ci-title">🔌 输入电容选型</div><p>BOOST 电感在输入端，输入电流为三角波（连续但有大纹波），输入电容需承受 RMS 纹波 I<sub>Cin(rms)</sub> ≈ ΔI<sub>L</sub>/√12。推荐 MLCC + 电解并联。</p></div>
+        <div class="caution-item"><div class="ci-title">🌡️ 占空比极限</div><p>D ≥ 85% 时效率急剧下降（I<sub>L(peak)</sub> 极大）且 RHPZ 极低。高升压比（如 3V→48V）应优先用 Flyback、SEPIC 或两级方案，而非单级 BOOST。</p></div>
+      </div>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🔥 最常见错误 TOP 5：</strong>
+        <ol>
+          <li><strong>电感饱和电流计算遗漏 (1−D) 因子</strong>：习惯用 BUCK 思维选电感，忽略 I<sub>L</sub> = Iout/(1−D) 的关系</li>
+          <li><strong>未评估 RHPZ 影响</strong>：直接套用 BUCK 补偿设计，导致带宽过高引发振荡</li>
+          <li><strong>真关断需求遗漏</strong>：异步 BOOST 无法关断输出，导致电池漏电或负载损坏</li>
+          <li><strong>输出电容 RMS 电流超额定值</strong>：BOOST 输出脉动电流对电容 ESR 要求高于 BUCK</li>
+          <li><strong>SW 节点振铃未处理</strong>：振铃电压尖峰可能超过 FET 耐压并显著增加 EMI</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="sec9">
+  <div class="card">
+    <div class="card-header"><div class="section-no">9</div><div class="icon">✅</div><h2>选型指南与决策建议</h2></div>
+    <div class="card-body">
+      <div class="compare-grid">
+        <div class="compare-col green">
+          <h3>✅ 选用 BOOST 的场景</h3>
+          <ul>
+            <li>Vin 固定低于所需 Vout（如 3.7V 电池→5V/12V）</li>
+            <li>输入为电池/超级电容等低压源</li>
+            <li>LED 灯串驱动（需高压恒流）</li>
+            <li>升压比 ≤5~6×（单级可满足）</li>
+            <li>对真关断有需求→选同步 BOOST</li>
+          </ul>
+        </div>
+        <div class="compare-col red">
+          <h3>❌ 避免用 BOOST 的场景</h3>
+          <ul>
+            <li>Vin 可能高于 Vout→用 BUCK-BOOST</li>
+            <li>升压比 >8×→用 Flyback/SEPIC</li>
+            <li>输入输出需要隔离→用 Flyback</li>
+            <li>需要多路隔离输出→用 Flyback</li>
+            <li>超低功耗待机（同步 BOOST 真关断功耗优于异步）</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">选型决策表</h4>
+      <table>
+        <thead><tr><th>应用场景</th><th>V<sub>IN</sub></th><th>V<sub>OUT</sub></th><th>I<sub>OUT</sub></th><th>推荐方案</th></tr></thead>
+        <tbody>
+          <tr><td>手机 OTG 5V</td><td>3.0~4.4V</td><td>5V</td><td>0.5~2A</td><td>同步 BOOST，PFM/PWM，真关断</td></tr>
+          <tr><td>USB-C PD 输出</td><td>5~12V</td><td>9~20V</td><td>1~3A</td><td>同步 BOOST，电流模式</td></tr>
+          <tr><td>汽车 LED 背光</td><td>9~16V</td><td>30~50V</td><td>0.1~0.5A</td><td>异步 BOOST（高电压），电流模式</td></tr>
+          <tr><td>能量采集</td><td>20mV~0.5V</td><td>1.8~3.3V</td><td>µA~mA</td><td>低压启动 BOOST IC，变压器耦合</td></tr>
+          <tr><td>音响功放升压</td><td>3.7V</td><td>±12~15V</td><td>0.5~2A</td><td>同步 BOOST + 电荷泵反相</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>🧠 AE 核心认知：</strong>
+        BOOST 的核心约束是<strong>RHPZ 对环路带宽的刚性限制</strong>——这不是靠更好的补偿网络就能"优化"掉的，而是拓扑自带的物理约束。AE 在面对客户的瞬态响应抱怨时，第一反应不应是"调补偿"，而应检查：(1) RHPZ 是否已经成为瓶颈？(2) 输出电容是否足够？(3) 是否需要降低升压比？理解 RHPZ 的频率位置和重载关系，是评估 BOOST 方案可行性的第一步。
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div class="footer">
+  <p>AE 知识库 · BOOST 升压转换器 · v2.0 · 生成日期 2026-06-19</p>
+  <p>本文档仅供内部培训与知识沉淀使用</p>
+</div>
+
+</body>
+</html>

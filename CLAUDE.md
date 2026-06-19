@@ -13,7 +13,7 @@ This is the **AE (Application Engineer) Knowledge Documentation Repository** for
 
 ## Product Lines
 
-Four product families, each with its own directory in both `docs/` and `html/`:
+Five product families, each with its own directory under `html/` (and most under `docs/`):
 
 | # | Product Line | Theme Color | Products |
 |---|-------------|-------------|----------|
@@ -21,8 +21,10 @@ Four product families, each with its own directory in both `docs/` and `html/`:
 | 02 | 无线通信 (Wireless) | Red `#e74c3c` | 基站/卫星/WiFi 射频收发 |
 | 03 | 工业汽车 (Industrial) | Green `#27ae60` | 储能/车规 BMS AFE |
 | 04 | ADC | Green `#27ae60` | SAR, Sigma-Delta, Pipeline, Time-Interleaved |
+| 05 | POWER (Power Mgmt) | Green `#27ae60` | BUCK, BOOST, BUCK-BOOST converters |
 
-The `04_ADC/` family exists only in `html/` — it has no `docs/` markdown counterpart. The `docs/README.md` lists only 3 product lines (光通信/无线通信/工业汽车), while `html/index.html` includes ADC as a 4th category.
+- `04_ADC/` and `05_POWER/` exist only under `html/` — they have no `docs/` markdown counterparts. The `docs/README.md` lists only 3 product lines (光通信/无线通信/工业汽车).
+- `05_POWER` documents are named by converter topology (e.g., `BUCK_Converter.html`), not the `{number}_{description}.html` convention used in other families.
 
 ## HTML Document System (`html/`)
 
