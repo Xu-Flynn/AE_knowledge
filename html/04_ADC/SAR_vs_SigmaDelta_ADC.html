@@ -1,0 +1,1892 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAR ADC 与 Σ-Δ ADC 技术深度对比学习文档</title>
+<style>
+  :root {
+    --primary: #1a56db;
+    --primary-dark: #0e3a8e;
+    --accent: #e74c3c;
+    --accent2: #27ae60;
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #dee2e6;
+    --text: #212529;
+    --text-muted: #6c757d;
+    --code-bg: #f1f3f5;
+    --sar-color: #1a56db;
+    --sd-color: #e74c3c;
+    --highlight: #fff3cd;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  /* ===== 顶部 HERO ===== */
+  .hero {
+    background: linear-gradient(135deg, #0e3a8e 0%, #1a56db 50%, #0b5394 100%);
+    color: white;
+    padding: 52px 40px 42px;
+    text-align: center;
+  }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 5px 16px; border-radius: 20px; font-size: 0.85rem;
+  }
+
+  /* ===== 导航 ===== */
+  .nav {
+    background: white;
+    border-bottom: 2px solid var(--primary);
+    padding: 0 40px;
+    display: flex; gap: 0; overflow-x: auto;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .nav a {
+    padding: 14px 18px; text-decoration: none; color: var(--text-muted);
+    font-size: 0.9rem; font-weight: 500; white-space: nowrap;
+    border-bottom: 3px solid transparent; transition: all 0.2s;
+  }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+
+  /* ===== 主体布局 ===== */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+
+  /* ===== 卡片 ===== */
+  .card {
+    background: var(--card); border-radius: 12px;
+    border: 1px solid var(--border); margin-bottom: 28px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden;
+  }
+  .card-header {
+    background: linear-gradient(90deg, #1a56db11, #1a56db05);
+    border-bottom: 2px solid var(--primary);
+    padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+  }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no {
+    background: var(--primary); color: white;
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
+  }
+  .card-body { padding: 24px; }
+
+  /* ===== 双列对比布局 ===== */
+  .compare-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  }
+  .compare-col {
+    border-radius: 8px; padding: 18px;
+  }
+  .compare-col.sar { background: #eff6ff; border: 2px solid var(--sar-color); }
+  .compare-col.sd { background: #fff5f5; border: 2px solid var(--sd-color); }
+  .compare-col h3 {
+    font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px;
+    border-bottom: 1px solid currentColor; display: flex; align-items: center; gap: 8px;
+  }
+  .compare-col.sar h3 { color: var(--sar-color); }
+  .compare-col.sd h3 { color: var(--sd-color); }
+  .tag-sar {
+    background: var(--sar-color); color: white;
+    padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;
+  }
+  .tag-sd {
+    background: var(--sd-color); color: white;
+    padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;
+  }
+
+  /* ===== 表格 ===== */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th {
+    background: linear-gradient(90deg, var(--primary), #2563eb);
+    color: white; padding: 10px 14px; text-align: left;
+  }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #e8f0fe; }
+  .sar-val { color: var(--sar-color); font-weight: 600; }
+  .sd-val { color: var(--sd-color); font-weight: 600; }
+
+  /* ===== SVG 框图容器 ===== */
+  .diagram-container {
+    background: #fafafa; border: 1px solid #e0e0e0;
+    border-radius: 8px; padding: 16px; margin: 16px 0;
+    overflow-x: auto; text-align: center;
+  }
+  .diagram-title {
+    font-size: 0.85rem; color: var(--text-muted);
+    text-align: center; margin-bottom: 8px; font-weight: 600;
+  }
+
+  /* ===== 高亮框 ===== */
+  .info-box {
+    border-left: 4px solid var(--primary); background: #eff6ff;
+    padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0;
+  }
+  .warn-box {
+    border-left: 4px solid #f59e0b; background: #fffbeb;
+    padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0;
+  }
+  .danger-box {
+    border-left: 4px solid var(--accent); background: #fff5f5;
+    padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0;
+  }
+  .success-box {
+    border-left: 4px solid var(--accent2); background: #f0fdf4;
+    padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0;
+  }
+
+  /* ===== 列表 ===== */
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+
+  /* ===== 公式 ===== */
+  .formula {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace;
+    font-size: 0.95rem; margin: 10px 0; text-align: center;
+    letter-spacing: 0.5px;
+  }
+  .formula-inline {
+    background: var(--code-bg); border-radius: 4px;
+    padding: 1px 6px; font-family: monospace; font-size: 0.92em;
+  }
+
+  /* ===== 指标详情 ===== */
+  .metric-card {
+    border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .metric-header {
+    background: linear-gradient(90deg, #1e40af, #1a56db);
+    color: white; padding: 10px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr {
+    background: rgba(255,255,255,0.2); padding: 2px 10px;
+    border-radius: 12px; font-size: 0.8rem;
+  }
+  .metric-body { padding: 16px; }
+  .metric-row {
+    display: grid; grid-template-columns: 130px 1fr; gap: 8px;
+    margin: 6px 0; font-size: 0.88rem;
+  }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+
+  /* ===== 测试方法步骤 ===== */
+  .steps { counter-reset: step; }
+  .step {
+    display: flex; gap: 14px; margin: 12px 0;
+    padding: 12px; background: #f8f9fc; border-radius: 8px;
+    align-items: flex-start;
+  }
+  .step-no {
+    background: var(--primary); color: white; width: 28px; height: 28px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+  }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+
+  /* ===== 注意事项 ===== */
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item {
+    background: #fffbeb; border: 1px solid #f59e0b;
+    border-radius: 8px; padding: 12px 14px;
+  }
+  .caution-item .ci-title {
+    font-weight: 700; color: #b45309; font-size: 0.9rem;
+    margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+  }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+
+  /* ===== 响应 ===== */
+  @media (max-width: 700px) {
+    .compare-grid { grid-template-columns: 1fr; }
+    .caution-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 1.5rem; }
+    .container { padding: 20px 14px 40px; }
+  }
+
+  /* ===== 页脚 ===== */
+  .footer {
+    text-align: center; color: var(--text-muted); font-size: 0.82rem;
+    padding: 28px; border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+
+  /* ===== section 间距 ===== */
+  section { margin-bottom: 10px; }
+
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+
+  .chip {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 0.78rem; font-weight: 600; margin: 2px;
+  }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  .chip-gray { background: #f1f5f9; color: #475569; }
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <h1>⚡ SAR ADC vs Σ-Δ ADC</h1>
+  <div class="subtitle">两种主流 ADC 架构深度对比 · 原理 · 电路框图 · 核心指标 · 测试方法</div>
+  <div class="badge-row">
+    <span class="badge">🔵 SAR：逐次逼近型</span>
+    <span class="badge">🔴 Σ-Δ：过采样噪声整形</span>
+    <span class="badge">📐 电路框图</span>
+    <span class="badge">📊 核心指标</span>
+    <span class="badge">🧪 测试方法</span>
+  </div>
+</div>
+
+<!-- ===== 导航 ===== -->
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 Σ-Δ 深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、核心对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ===== Section 1: 背景与定位 ===== -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div>
+      <div class="icon">📖</div>
+      <h2>背景与应用定位</h2>
+    </div>
+    <div class="card-body">
+      <p>ADC（模数转换器）是连接模拟世界与数字系统的桥梁。按架构分，市面上最主流的中高精度 ADC 主要分为两大家族：<strong>SAR ADC</strong> 与 <strong>Σ-Δ ADC</strong>，二者设计哲学截然不同。</p>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col sar">
+          <h3><span class="tag-sar">SAR</span> Successive Approximation Register ADC</h3>
+          <p><strong>中文名：</strong>逐次逼近寄存器型 ADC</p>
+          <p style="margin-top:8px;"><strong>诞生背景：</strong>1970s 随 CMOS 工艺成熟而普及，利用二分搜索算法将 N 次比较等效为 N-bit 分辨率，实现中等速度与高精度的平衡。</p>
+          <p style="margin-top:8px;"><strong>典型应用：</strong></p>
+          <ul>
+            <li>数据采集系统（DAQ）</li>
+            <li>电池管理系统（BMS / AFE）</li>
+            <li>工业传感器信号链</li>
+            <li>便携仪器（万用表、示波器前端）</li>
+            <li>MCU 内置 ADC（8–12bit）</li>
+          </ul>
+          <p style="margin-top:8px;"><strong>代表精度范围：</strong>8 ~ 20-bit，采样率 1 kSPS ~ 10 MSPS</p>
+        </div>
+        <div class="compare-col sd">
+          <h3><span class="tag-sd">Σ-Δ</span> Sigma-Delta ADC</h3>
+          <p><strong>中文名：</strong>Σ-Δ（西格玛-德尔塔）ADC，也写作 ΔΣ</p>
+          <p style="margin-top:8px;"><strong>诞生背景：</strong>1960s 理论提出，1980s 随 DSP 普及而实用化，通过过采样（Oversampling）+噪声整形（Noise Shaping）+数字抽取滤波（Decimation Filtering）将低分辨率量化器转化为高精度输出。</p>
+          <p style="margin-top:8px;"><strong>典型应用：</strong></p>
+          <ul>
+            <li>音频编解码（Hi-Fi、麦克风阵列）</li>
+            <li>精密仪器（应变计、热电偶测量）</li>
+            <li>智能电表（电能质量检测）</li>
+            <li>医疗设备（ECG、EEG 采集）</li>
+            <li>工业过程控制（慢变量高精度）</li>
+          </ul>
+          <p style="margin-top:8px;"><strong>代表精度范围：</strong>16 ~ 32-bit，采样率 1 SPS ~ 几 MSPS（音频级）</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 2: 工作原理 ===== -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div>
+      <div class="icon">⚙️</div>
+      <h2>核心工作原理</h2>
+    </div>
+    <div class="card-body">
+      <div class="compare-grid">
+        <div class="compare-col sar">
+          <h3><span class="tag-sar">SAR</span> 二分搜索算法</h3>
+          <p><strong>本质：</strong>用硬件实现"猜数字"二分法。</p>
+          <p style="margin-top:10px;"><strong>转换流程（N-bit 需 N 个时钟周期）：</strong></p>
+          <ol style="margin-top:8px;">
+            <li><strong>采样保持（S&H）：</strong>在采样阶段将模拟输入 V<sub>IN</sub> 锁存到采样电容</li>
+            <li><strong>MSB 试探：</strong>将 DAC 输出置为 V<sub>REF</sub>/2，比较器判断 V<sub>IN</sub> 与 DAC 输出大小</li>
+            <li><strong>逐位收敛：</strong>若 V<sub>IN</sub> > DAC，该位为 1，否则为 0，DAC 调整后继续比较下一位</li>
+            <li><strong>输出数字码：</strong>N 次比较后寄存器中的 N-bit 二进制码即为结果</li>
+          </ol>
+          <div class="formula" style="margin-top:12px;">D[N-1:0] = round(V<sub>IN</sub> / V<sub>REF</sub> × 2<sup>N</sup>)</div>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-top:6px;">关键约束：转换过程中 V<sub>IN</sub> 必须保持稳定 → 需要 S&H 电路</p>
+        </div>
+
+        <div class="compare-col sd">
+          <h3><span class="tag-sd">Σ-Δ</span> 过采样 + 噪声整形</h3>
+          <p><strong>本质：</strong>用时间换精度，把量化噪声推向高频后滤除。</p>
+          <p style="margin-top:10px;"><strong>三步工作机制：</strong></p>
+          <ol style="margin-top:8px;">
+            <li><strong>过采样：</strong>以 OSR（过采样率）× f<sub>N</sub> 的高频率对信号采样，把量化噪声分散到更宽带宽，信号带内噪声降低 3dB/octave</li>
+            <li><strong>噪声整形：</strong>调制器内的积分器+比较器环路将量化噪声整形到高频（一阶：20 dB/decade；高阶：更陡），信号带内噪声大幅降低</li>
+            <li><strong>数字抽取滤波：</strong>低通滤波器滤除高频噪声，再以奈奎斯特率降采样，获得高分辨率输出</li>
+          </ol>
+          <div class="formula" style="margin-top:12px;">SNR<sub>理论</sub> = 6.02×N + 1.76 + 10×log(OSR) × (2L+1) dB</div>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-top:6px;">N=量化位数，L=调制器阶数，OSR=过采样率</p>
+        </div>
+      </div>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>💡 关键视角差异：</strong>SAR 是<em>精确量化</em>（每次用高分辨率 DAC 比较），Σ-Δ 是<em>统计均值</em>（用低分辨率量化器高速采样，靠滤波求均值）。前者适合捕捉瞬态/多通道，后者适合低速高精度稳态测量。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 2B: Σ-Δ 深度原理解析 ===== -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header" style="background:linear-gradient(90deg,#fef3c7,#fde68a);border-bottom:2px solid #f59e0b;">
+      <div class="section-no" style="background:#d97706;">🔬</div>
+      <div class="icon">🧠</div>
+      <h2 style="color:#92400e;">Σ-Δ 核心原理深度图解</h2>
+    </div>
+    <div class="card-body">
+
+      <p style="font-size:0.95rem;color:#78350f;margin-bottom:16px;">
+        用<strong>"一把尺子量书本"</strong>的直觉类比理解 Σ-Δ 的三层机制：过采样（OSR）、噪声整形（阶数 L）、1-bit 量化如何"魔法般"实现 20+ bit 精度。
+      </p>
+
+      <!-- 一、书本类比与电路对应 -->
+      <h4 style="color:#92400e;">一、书本叠放类比 —— 建立直觉</h4>
+      <p style="font-size:0.88rem;">
+        你提到的类比非常精准，以下是精确版及其电路对应关系：
+      </p>
+      <blockquote style="background:#fefce8;border-left:4px solid #f59e0b;padding:10px 16px;border-radius:0 6px 6px 0;margin:8px 0;">
+        <strong>类比：</strong>用一把固定长度（如 30cm）的尺子测量一本书的厚度（约 2cm）。<br>
+        → 把<strong>100 本书</strong>叠在一起，叠高约 200cm<br>
+        → 用尺子量出约 <strong>6.67 把尺子</strong>的叠高<br>
+        → 每本书厚度 = (6.67 × 30) / 100 = <strong>2.0cm</strong>，精度随书数增加而提高
+      </blockquote>
+
+      <div class="diagram-title">图 🔬-1 | 书本类比 ↔ Σ-Δ 电路对应关系</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 310" width="760" height="310" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="hdrGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#d97706"/>
+              <stop offset="100%" stop-color="#f59e0b"/>
+            </linearGradient>
+          </defs>
+          <!-- 两列表格 -->
+          <rect x="30" y="20" width="720" height="270" rx="10" fill="#fff" stroke="#e5e7eb" stroke-width="1"/>
+          <!-- 表头 -->
+          <rect x="30" y="20" width="720" height="42" rx="10" fill="url(#hdrGrad)"/>
+          <rect x="30" y="40" width="720" height="22" fill="url(#hdrGrad)"/>
+          <text x="225" y="47" fill="white" font-size="15" font-weight="700" text-anchor="middle">📚 书本叠放类比</text>
+          <line x1="390" y1="20" x2="390" y2="62" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+          <text x="585" y="47" fill="white" font-size="15" font-weight="700" text-anchor="middle">🔌 Σ-Δ 电路实现</text>
+
+          <!-- Row 1 -->
+          <rect x="40" y="70" width="350" height="36" rx="4" fill="#fffbeb"/>
+          <text x="60" y="93" fill="#92400e" font-size="13" font-weight="700">尺子（固定长度 30cm）</text>
+          <text x="410" y="93" fill="#92400e" font-size="13">1-bit DAC 的参考电平（±Vref）</text>
+
+          <!-- Row 2 -->
+          <rect x="40" y="108" width="350" height="36" rx="4" fill="#fefce8"/>
+          <text x="60" y="131" fill="#92400e" font-size="13" font-weight="700">书的厚度（未知 ≈ 2cm）</text>
+          <text x="410" y="131" fill="#92400e" font-size="13">模拟输入电压 Vin（未知，待测量）</text>
+
+          <!-- Row 3 -->
+          <rect x="40" y="146" width="350" height="36" rx="4" fill="#fffbeb"/>
+          <text x="60" y="169" fill="#92400e" font-size="13" font-weight="700">叠放的书本数（100 本）</text>
+          <text x="410" y="169" fill="#92400e" font-size="13">过采样次数 OSR（采样频率 / 奈奎斯特频率）</text>
+
+          <!-- Row 4 -->
+          <rect x="40" y="184" width="350" height="36" rx="4" fill="#fefce8"/>
+          <text x="60" y="207" fill="#92400e" font-size="13" font-weight="700">测量过程中持续叠书、修正读数</text>
+          <text x="410" y="207" fill="#92400e" font-size="13">积分器：累加 Vin 与 DAC 反馈的差值</text>
+
+          <!-- Row 5 -->
+          <rect x="40" y="222" width="350" height="36" rx="4" fill="#fffbeb"/>
+          <text x="60" y="245" fill="#92400e" font-size="13" font-weight="700">B/A = 尺子数/书数 → 单本书厚度</text>
+          <text x="410" y="245" fill="#92400e" font-size="13">数字LPF求平均 → N-bit 高精度输出</text>
+
+          <!-- 核心洞察 -->
+          <rect x="30" y="265" width="720" height="25" rx="0 0 10 10" fill="#fef3c7"/>
+          <text x="390" y="282" fill="#92400e" font-size="12" font-weight="700" text-anchor="middle">
+            💡 核心洞察：不是单次量得准，而是用"测量次数"和"历史修正"换来精度
+          </text>
+        </svg>
+      </div>
+
+      <!-- 二、1-bit 量化器和 1-bit DAC 时序工作原理 -->
+      <h4 style="color:#92400e;margin-top:24px;">二、1-bit 量化器 + 1-bit DAC 的逐拍工作机制</h4>
+      <p style="font-size:0.88rem;">
+        很多人困惑："只有 0 和 1，怎么可能表示任意模拟电压？"答案就在<strong>密度调制</strong>。
+      </p>
+      <p style="font-size:0.88rem;">
+        以下以 <span class="formula-inline">Vin = 0.3 × Vref</span> 为例，展示一阶调制器的前 5 个时钟周期：
+      </p>
+
+      <div class="diagram-title">图 🔬-2 | 1-bit Σ-Δ 调制器逐拍时序（Vin = 0.3 Vref）</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 900 360" width="760" height="310" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="tblHdr" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#1e40af"/>
+              <stop offset="100%" stop-color="#3b82f6"/>
+            </linearGradient>
+          </defs>
+          <!-- 表头 -->
+          <rect x="15" y="20" width="870" height="36" rx="6" fill="url(#tblHdr)"/>
+          <text x="58" y="44" fill="white" font-size="12" font-weight="700">时钟周期</text>
+          <text x="155" y="44" fill="white" font-size="12" font-weight="700">输入 Vin</text>
+          <text x="265" y="44" fill="white" font-size="12" font-weight="700">DAC 反馈</text>
+          <text x="395" y="44" fill="white" font-size="12" font-weight="700">误差 e</text>
+          <text x="515" y="44" fill="white" font-size="12" font-weight="700">积分器累加值</text>
+          <text x="670" y="44" fill="white" font-size="12" font-weight="700">比较器判断</text>
+          <text x="805" y="44" fill="white" font-size="12" font-weight="700">输出位</text>
+
+          <!-- 列分隔线 -->
+          <line x1="120" y1="20" x2="120" y2="56" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+          <line x1="215" y1="20" x2="215" y2="56" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+          <line x1="345" y1="20" x2="345" y2="56" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+          <line x1="455" y1="20" x2="455" y2="56" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+          <line x1="605" y1="20" x2="605" y2="56" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+          <line x1="755" y1="20" x2="755" y2="56" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+
+          <!-- Row 1 -->
+          <rect x="15" y="58" width="870" height="48" rx="0" fill="#f0f9ff"/>
+          <text x="50" y="82" fill="#0369a1" font-size="14" font-weight="700">1</text>
+          <text x="145" y="82" fill="#333" font-size="14">+0.3</text>
+          <text x="235" y="75" fill="#e74c3c" font-size="12">-1.0</text>
+          <text x="235" y="93" fill="#e74c3c" font-size="10" opacity="0.8">(初始 → -Vref)</text>
+          <text x="385" y="82" fill="#d97706" font-size="14">-0.7</text>
+          <text x="510" y="82" fill="#166534" font-size="14" font-weight="700">-0.7</text>
+          <text x="675" y="82" fill="#2563eb" font-size="13">-0.7 &lt; 0 →</text>
+          <text x="820" y="82" fill="#e74c3c" font-size="18" font-weight="700">0</text>
+
+          <!-- Row 2 -->
+          <rect x="15" y="108" width="870" height="48" rx="0" fill="#f8fafc"/>
+          <text x="50" y="132" fill="#0369a1" font-size="14" font-weight="700">2</text>
+          <text x="145" y="132" fill="#333" font-size="14">+0.3</text>
+          <text x="235" y="125" fill="#27ae60" font-size="12">+1.0</text>
+          <text x="235" y="143" fill="#27ae60" font-size="10" opacity="0.8">(上次=1 → +Vref)</text>
+          <text x="370" y="132" fill="#d97706" font-size="12">0.3 - 1.0 = -0.7</text>
+          <text x="505" y="132" fill="#166534" font-size="14" font-weight="700">-0.7-0.7 = <tspan fill="#b91c1c">-1.4</tspan></text>
+          <text x="675" y="132" fill="#2563eb" font-size="13">-1.4 &lt; 0 →</text>
+          <text x="820" y="132" fill="#e74c3c" font-size="18" font-weight="700">0</text>
+
+          <!-- Row 3 -->
+          <rect x="15" y="158" width="870" height="48" rx="0" fill="#f0f9ff"/>
+          <text x="50" y="182" fill="#0369a1" font-size="14" font-weight="700">3</text>
+          <text x="145" y="182" fill="#333" font-size="14">+0.3</text>
+          <text x="255" y="182" fill="#e74c3c" font-size="14">-1.0</text>
+          <text x="370" y="182" fill="#d97706" font-size="12">0.3 - 1.0 = -0.7</text>
+          <text x="505" y="182" fill="#166534" font-size="14" font-weight="700">-0.7-1.4 = <tspan fill="#b91c1c">-2.1</tspan></text>
+          <text x="675" y="182" fill="#2563eb" font-size="13">-2.1 &lt; 0 →</text>
+          <text x="820" y="182" fill="#e74c3c" font-size="18" font-weight="700">0</text>
+
+          <!-- Row 4 -->
+          <rect x="15" y="208" width="870" height="48" rx="0" fill="#f8fafc"/>
+          <text x="50" y="232" fill="#0369a1" font-size="14" font-weight="700">4</text>
+          <text x="145" y="232" fill="#333" font-size="14">+0.3</text>
+          <text x="255" y="232" fill="#e74c3c" font-size="14">-1.0</text>
+          <text x="370" y="232" fill="#d97706" font-size="12">0.3 - 1.0 = -0.7</text>
+          <text x="505" y="232" fill="#166534" font-size="14" font-weight="700">-0.7-2.1 = <tspan fill="#b91c1c">-2.8</tspan></text>
+          <text x="675" y="232" fill="#2563eb" font-size="13">-2.8 &lt; 0 →</text>
+          <text x="820" y="232" fill="#e74c3c" font-size="18" font-weight="700">0</text>
+
+          <!-- Row 5 -->
+          <rect x="15" y="258" width="870" height="48" rx="0" fill="#f0f9ff"/>
+          <text x="50" y="282" fill="#0369a1" font-size="14" font-weight="700">5</text>
+          <text x="145" y="282" fill="#333" font-size="14">+0.3</text>
+          <text x="255" y="282" fill="#e74c3c" font-size="14">-1.0</text>
+          <text x="370" y="282" fill="#d97706" font-size="12">0.3 - 1.0 = -0.7</text>
+          <text x="505" y="282" fill="#166534" font-size="14" font-weight="700">-0.7-2.8 = <tspan fill="#b91c1c">-3.5</tspan></text>
+          <text x="675" y="282" fill="#2563eb" font-size="13">-3.5 &lt; 0 →</text>
+          <text x="820" y="282" fill="#27ae60" font-size="18" font-weight="700">1</text>
+
+          <!-- 趋势说明 -->
+          <rect x="15" y="310" width="870" height="40" rx="6" fill="#fef3c7"/>
+          <text x="450" y="328" fill="#92400e" font-size="12" font-weight="600" text-anchor="middle">
+            → 前5拍输出：0, 0, 0, 0, 1（密度 = 1/5 = 20%），逐渐逼近 Vin/Vref = 30%
+          </text>
+          <text x="450" y="343" fill="#78350f" font-size="10" text-anchor="middle">
+            负反馈迫使平均输出密度 ≡ Vin/Vref；积分器"记住"历史欠量，确保无偏追踪
+          </text>
+        </svg>
+      </div>
+
+      <div class="info-box">
+        <strong>🧠 关键理解：</strong>
+        "1-bit DAC 不追求单次精度，它只提供两个可靠电平（+Vref / -Vref）。
+        负反馈环路保证<em>长时间平均</em>输出 1 的比例等于 Vin/Vref。
+        这就是为什么 1-bit DAC 天然线性——<strong>它只切换两个电平，不存在多 bit DAC 的 INL/DNL 失配问题</strong>。"
+      </div>
+
+      <!-- 三、为什么提高 OSR 能提高精度？ -->
+      <h4 style="color:#92400e;margin-top:24px;">三、OSR —— 为精度"分摊噪声"</h4>
+      <p style="font-size:0.88rem;">
+        1-bit 量化器的总噪声能量 ≈ 固定值（由量化步长 q²/12 决定）。OSR 增大不会减少总噪声，而是把噪声<strong>稀释到更宽的频带</strong>：
+      </p>
+
+      <div class="diagram-title">图 🔬-3 | OSR 对带内噪声的影响示意</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 230" width="760" height="230" xmlns="http://www.w3.org/2000/svg">
+          <!-- OSR=4 -->
+          <rect x="20" y="10" width="350" height="210" rx="8" fill="#fffbeb" stroke="#f59e0b" stroke-width="1"/>
+          <text x="195" y="35" fill="#92400e" font-size="14" font-weight="700" text-anchor="middle">OSR = 4（典型 SAR 场景）</text>
+          <!-- 频率轴 -->
+          <line x1="50" y1="70" x2="340" y2="70" stroke="#666" stroke-width="1.5"/>
+          <polygon points="340,70 330,66 330,74" fill="#666"/>
+          <text x="340" y="62" fill="#666" font-size="10" text-anchor="end">f</text>
+          <text x="50" y="62" fill="#666" font-size="10">0</text>
+          <!-- 信号 -->
+          <line x1="50" y1="82" x2="50" y2="58" stroke="#2563eb" stroke-width="3"/>
+          <text x="50" y="55" fill="#2563eb" font-size="11" text-anchor="middle" font-weight="700">BW</text>
+          <!-- 噪声 -->
+          <rect x="50" y="70" width="290" height="70" fill="#fde8e8" opacity="0.6"/>
+          <rect x="50" y="70" width="73" height="70" fill="#e74c3c" opacity="0.4"/>
+          <text x="86" y="128" fill="#991b1b" font-size="13" font-weight="700" text-anchor="middle">带内噪声</text>
+          <text x="240" y="128" fill="#666" font-size="11" text-anchor="middle">高频噪声（被滤除）</text>
+          <text x="195" y="148" fill="#92400e" font-size="11" text-anchor="middle">fs = 4 × 2×BW</text>
+          <line x1="50" y1="70" x2="340" y2="205" stroke="#e74c3c" stroke-width="1" stroke-dasharray="4,4"/>
+          <text x="195" y="195" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">带内噪声比例 ≈ 1/4</text>
+
+          <!-- OSR=64 -->
+          <rect x="410" y="10" width="350" height="210" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+          <text x="585" y="35" fill="#166534" font-size="14" font-weight="700" text-anchor="middle">OSR = 64（典型 Σ-Δ 场景）</text>
+          <line x1="440" y1="70" x2="730" y2="70" stroke="#666" stroke-width="1.5"/>
+          <polygon points="730,70 720,66 720,74" fill="#666"/>
+          <text x="730" y="62" fill="#666" font-size="10" text-anchor="end">f</text>
+          <text x="440" y="62" fill="#666" font-size="10">0</text>
+          <line x1="440" y1="82" x2="440" y2="58" stroke="#2563eb" stroke-width="3"/>
+          <text x="440" y="55" fill="#2563eb" font-size="11" text-anchor="middle" font-weight="700">BW</text>
+          <rect x="440" y="70" width="290" height="70" fill="#fde8e8" opacity="0.6"/>
+          <rect x="440" y="70" width="4.5" height="70" fill="#16a34a" opacity="0.6"/>
+          <text x="460" y="128" fill="#166534" font-size="13" font-weight="700">带内≈0</text>
+          <text x="630" y="128" fill="#666" font-size="11" text-anchor="middle">高频噪声（被滤除）</text>
+          <text x="585" y="148" fill="#166534" font-size="11" text-anchor="middle">fs = 64 × 2×BW</text>
+          <line x1="440" y1="70" x2="730" y2="205" stroke="#16a34a" stroke-width="1" stroke-dasharray="4,4"/>
+          <text x="585" y="195" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">带内噪声比例 ≈ 1/64</text>
+        </svg>
+      </div>
+
+      <div class="formula" style="background:#fef3c7;border:1px solid #f59e0b;">
+        SNR 提升 = 10 × log<sub>10</sub>(OSR) dB<br>
+        <span style="font-size:0.82rem;">即：OSR 每翻 4 倍 → SNR +6dB → 等效多 1-bit 精度（纯过采样，无噪声整形）</span>
+      </div>
+
+      <div class="success-box">
+        <strong>📚 类比解读：</strong>书叠得越多 → 每本书分摊的测量误差越小 → 精度越高。
+        OSR 的本质就是"在同一输入下多采 N 个样点，求平均值压制随机噪声"。
+      </div>
+
+      <!-- 四、阶数 L 的作用：噪声整形 -->
+      <h4 style="color:#92400e;margin-top:24px;">四、阶数 L —— 噪声整形的"推力"</h4>
+      <p style="font-size:0.88rem;">
+        如果只靠 OSR 增加精度太慢（×4 才 +1 bit），积分器的引入带来了<strong>噪声整形</strong>。
+        每个积分器相当于给量化噪声加了一个 <strong>高通滤波器</strong>，把低频噪声"推"到高频，阶数越高推力越大。
+      </p>
+
+      <div class="diagram-title">图 🔬-4 | 噪声整形频谱 — 1/2/3 阶对比</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 280" width="760" height="280" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="glow1"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <!-- 坐标轴 -->
+          <rect x="60" y="30" width="680" height="220" rx="6" fill="#fafafa" stroke="#e5e7eb"/>
+          <!-- X轴 -->
+          <line x1="70" y1="230" x2="720" y2="230" stroke="#333" stroke-width="1.5"/>
+          <polygon points="720,230 712,226 712,234" fill="#333"/>
+          <text x="730" y="234" fill="#333" font-size="12">f</text>
+          <!-- Y轴 -->
+          <line x1="70" y1="230" x2="70" y2="40" stroke="#333" stroke-width="1.5"/>
+          <polygon points="70,40 66,48 74,48" fill="#333"/>
+          <text x="55" y="80" fill="#333" font-size="12" transform="rotate(-90,55,80)">噪声功率密度</text>
+          <!-- BW 线 -->
+          <line x1="130" y1="225" x2="130" y2="230" stroke="#2563eb" stroke-width="2.5"/>
+          <text x="130" y="222" fill="#2563eb" font-size="12" font-weight="700" text-anchor="middle">BW</text>
+          <text x="130" y="250" fill="#2563eb" font-size="10" text-anchor="middle">信号带宽</text>
+          <!-- fs 线 -->
+          <line x1="700" y1="225" x2="700" y2="230" stroke="#d97706" stroke-width="2"/>
+          <text x="700" y="222" fill="#d97706" font-size="11" font-weight="700" text-anchor="middle">fs/2</text>
+
+          <!-- 未整形噪声 -->
+          <rect x="70" y="210" width="650" height="20" fill="#ccc" opacity="0.4"/>
+          <text x="420" y="206" fill="#666" font-size="11" font-weight="700" text-anchor="middle">未整形的量化噪声（均匀分布）</text>
+
+          <!-- 1阶 -->
+          <path d="M70,210 L130,210 Q200,60 700,60" fill="none" stroke="#e74c3c" stroke-width="2.5" filter="url(#glow1)"/>
+          <text x="140" y="55" fill="#e74c3c" font-size="12" font-weight="700">1阶 L=1 (+20dB/dec)</text>
+
+          <!-- 2阶 -->
+          <path d="M70,210 L130,210 Q160,55 700,65" fill="none" stroke="#8b5cf6" stroke-width="2.5" filter="url(#glow1)"/>
+          <text x="140" y="40" fill="#8b5cf6" font-size="12" font-weight="700">2阶 L=2 (+40dB/dec)</text>
+
+          <!-- 3阶 -->
+          <path d="M70,210 L130,210 Q140,50 700,72" fill="none" stroke="#2563eb" stroke-width="2.5" filter="url(#glow1)"/>
+          <text x="140" y="25" fill="#2563eb" font-size="12" font-weight="700">3阶 L=3 (+60dB/dec)</text>
+
+          <!-- 标注区 -->
+          <rect x="72" y="44" width="56" height="165" fill="#f0f9ff" opacity="0.7" stroke="#2563eb" stroke-width="1" stroke-dasharray="4,3" rx="4"/>
+          <text x="100" y="140" fill="#2563eb" font-size="11" font-weight="700" transform="rotate(-90,100,140)" text-anchor="middle">带内噪声↓</text>
+          <!-- 箭头 -->
+          <text x="100" y="60" fill="#2563eb" font-size="16" text-anchor="middle">⬇</text>
+          <text x="100" y="200" fill="#2563eb" font-size="16" text-anchor="middle">⬆</text>
+        </svg>
+      </div>
+
+      <div class="formula" style="background:#fef3c7;border:1px solid #f59e0b;">
+        SNR<sub>total</sub> = 6.02N + 1.76 + 10 × log<sub>10</sub>[ (2L+1) × OSR<sup>(2L+1)</sup> / π<sup>2L</sup> ] dB<br>
+        <span style="font-size:0.82rem;">N = 量化器位数（通常 1~5 bit），L = 调制器阶数，OSR = 过采样率</span>
+      </div>
+
+      <div class="success-box">
+        <strong>📚 类比解读：</strong>阶数是"修正误差的智慧"——每多一个积分器，就等于在每次叠书时回顾历史误差并主动修正，让估算更准。<br>
+        <strong>直观效应：</strong>L=1时 OSR 翻2倍 → +1.5 bit；L=2时 OSR 翻2倍 → +2.5 bit；L=3时 OSR 翻2倍 → +3.5 bit。
+      </div>
+
+      <!-- 五、全链路图解 -->
+      <h4 style="color:#92400e;margin-top:24px;">五、Σ-Δ 全链路信号流程图</h4>
+
+      <div class="diagram-title">图 🔬-5 | Σ-Δ ADC 全链路信号流程</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 320" width="760" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrBlue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#1a56db"/>
+            </marker>
+            <marker id="arrRed2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#e74c3c"/>
+            </marker>
+            <marker id="arrGreen" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#16a34a"/>
+            </marker>
+          </defs>
+
+          <!-- 模拟域 -->
+          <rect x="10" y="15" width="270" height="160" rx="10" fill="#fef2f2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="145" y="35" fill="#991b1b" font-size="13" font-weight="700" text-anchor="middle">模拟域</text>
+
+          <!-- 调制器模块 -->
+          <rect x="30" y="50" width="220" height="110" rx="8" fill="#fff" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="140" y="70" fill="#e74c3c" font-size="12" font-weight="700" text-anchor="middle">Σ-Δ 调制器（1-bit）</text>
+
+          <!-- 输入 -->
+          <text x="10" y="110" fill="#333" font-size="12" font-weight="700">Vin</text>
+          <line x1="35" y1="108" x2="60" y2="108" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+
+          <!-- 加法器 -->
+          <circle cx="80" cy="108" r="12" fill="#fff" stroke="#e74c3c" stroke-width="2"/>
+          <text x="80" y="112" fill="#e74c3c" font-size="11" font-weight="700" text-anchor="middle">Σ</text>
+
+          <!-- 加法器→积分器 -->
+          <line x1="92" y1="108" x2="120" y2="108" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <text x="106" y="100" fill="#666" font-size="9" text-anchor="middle">误差 e</text>
+
+          <!-- 积分器 -->
+          <rect x="125" y="90" width="50" height="36" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="150" y="112" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">∫ 积分</text>
+
+          <!-- 积分器→比较器 -->
+          <line x1="175" y1="108" x2="200" y2="108" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+
+          <!-- 比较器 / 1-bit 量化 -->
+          <rect x="205" y="88" width="40" height="40" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="225" y="112" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">1-bit 量化</text>
+
+          <!-- 滤波器→输出 [位置调整在下面] -->
+
+          <!-- 反馈环 -->
+          <!-- 比较器→DAC -->
+          <line x1="240" y1="128" x2="240" y2="155" stroke="#e74c3c" stroke-width="2"/>
+          <line x1="240" y1="155" x2="80" y2="155" stroke="#e74c3c" stroke-width="2"/>
+          <line x1="80" y1="155" x2="80" y2="120" stroke="#e74c3c" stroke-width="2" marker-end="url(#arrRed2)"/>
+
+          <!-- DAC -->
+          <rect x="210" y="147" width="60" height="22" rx="4" fill="#fef2f2" stroke="#e74c3c" stroke-width="1"/>
+          <text x="240" y="162" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">1-bit DAC</text>
+
+          <text x="140" y="175" fill="#991b1b" font-size="10" text-anchor="middle">负反馈：DAC 输出 = 0→-Vref, 1→+Vref</text>
+
+          <!-- 中间连线 -->
+          <line x1="245" y1="108" x2="295" y2="108" stroke="#e74c3c" stroke-width="2" marker-end="url(#arrRed2)"/>
+
+          <!-- 输出标签 -->
+          <rect x="210" y="50" width="40" height="14" rx="4" fill="#fff" stroke="#e74c3c" stroke-width="1"/>
+          <text x="230" y="60" fill="#e74c3c" font-size="8" font-weight="700" text-anchor="middle">位流</text>
+          <text x="230" y="50" fill="#e74c3c" font-size="8" font-weight="700" text-anchor="middle">1-bit</text>
+
+          <!-- 数字域 -->
+          <rect x="295" y="15" width="470" height="160" rx="10" fill="#eff6ff" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="530" y="35" fill="#1e40af" font-size="13" font-weight="700" text-anchor="middle">数字域</text>
+
+          <!-- 数字LPF -->
+          <rect x="310" y="60" width="130" height="55" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="375" y="84" fill="#1e40af" font-size="12" font-weight="700" text-anchor="middle">数字 LPF</text>
+          <text x="375" y="102" fill="#2563eb" font-size="10" text-anchor="middle">(低通滤波)</text>
+
+          <!-- LPF→抽取 -->
+          <line x1="440" y1="88" x2="470" y2="88" stroke="#1a56db" stroke-width="2" marker-end="url(#arrBlue)"/>
+          <text x="455" y="80" fill="#666" font-size="9" text-anchor="middle">低速率</text>
+
+          <!-- 抽取器 -->
+          <rect x="475" y="60" width="120" height="55" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="535" y="84" fill="#1e40af" font-size="12" font-weight="700" text-anchor="middle">抽取 ↓M</text>
+          <text x="535" y="102" fill="#2563eb" font-size="10" text-anchor="middle">(降采样 OSR:1)</text>
+
+          <!-- 抽取→输出 -->
+          <line x1="595" y1="88" x2="640" y2="88" stroke="#16a34a" stroke-width="2" marker-end="url(#arrGreen)"/>
+
+          <!-- 输出 -->
+          <rect x="645" y="60" width="105" height="55" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+          <text x="697" y="84" fill="#166534" font-size="12" font-weight="700" text-anchor="middle">N-bit 输出</text>
+          <text x="697" y="102" fill="#16a34a" font-size="10" text-anchor="middle">(16~32 bit)</text>
+
+          <!-- 频谱示意 -->
+          <rect x="310" y="130" width="130" height="38" rx="6" fill="#f0f9ff" stroke="#93c5fd" stroke-width="1"/>
+          <text x="375" y="152" fill="#2563eb" font-size="10" font-weight="600" text-anchor="middle">滤除 > BW 的高频噪声</text>
+
+          <rect x="475" y="130" width="120" height="38" rx="6" fill="#f0f9ff" stroke="#93c5fd" stroke-width="1"/>
+          <text x="535" y="152" fill="#2563eb" font-size="10" font-weight="600" text-anchor="middle">速率降至 fN = 2×BW</text>
+
+          <!-- 底部总结 -->
+          <rect x="10" y="185" width="755" height="125" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+          <text x="387" y="210" fill="#1e40af" font-size="14" font-weight="700" text-anchor="middle">🔑 精度来源公式：SNR ∝ OSR(信号叠放次数) × L(误差修正层数)</text>
+
+          <!-- 精度总结表 -->
+          <rect x="50" y="225" width="160" height="35" rx="4" fill="#fffbeb" stroke="#f59e0b"/>
+          <text x="130" y="240" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">OSR 每翻 4 倍</text>
+          <text x="130" y="255" fill="#92400e" font-size="11" text-anchor="middle">→ SNR 至少 +6dB (+1bit)</text>
+
+          <rect x="225" y="225" width="160" height="35" rx="4" fill="#fef3c7" stroke="#d97706"/>
+          <text x="305" y="240" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">L=1：+20dB/dec 推力</text>
+          <text x="305" y="255" fill="#92400e" font-size="11" text-anchor="middle">OSR×2 → +1.5 bit</text>
+
+          <rect x="400" y="225" width="160" height="35" rx="4" fill="#fef3c7" stroke="#d97706"/>
+          <text x="480" y="240" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">L=2：+40dB/dec 推力</text>
+          <text x="480" y="255" fill="#92400e" font-size="11" text-anchor="middle">OSR×2 → +2.5 bit</text>
+
+          <rect x="575" y="225" width="160" height="35" rx="4" fill="#fef3c7" stroke="#d97706"/>
+          <text x="655" y="240" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">L=3：+60dB/dec 推力</text>
+          <text x="655" y="255" fill="#92400e" font-size="11" text-anchor="middle">OSR×2 → +3.5 bit</text>
+
+          <!-- 1-bit 为什么够用 -->
+          <rect x="50" y="268" width="685" height="30" rx="4" fill="#e8f5e9" stroke="#16a34a" stroke-width="1"/>
+          <text x="392" y="288" fill="#166534" font-size="13" font-weight="700" text-anchor="middle">
+            🟢 1-bit DAC 天然线性：只有两个电平（+Vref / -Vref），不存在多 bit DAC 的 INL / DNL 失配 —— 这是 Σ-Δ 能做到 20+ bit 精度的"物理根基"
+          </text>
+        </svg>
+      </div>
+
+      <!-- 六、总结 -->
+      <h4 style="color:#92400e;margin-top:24px;">六、一张脑图总结</h4>
+      <div class="compare-grid" style="margin-top:12px;">
+        <div class="compare-col" style="background:#fffbeb;border:2px solid #f59e0b;">
+          <h3 style="color:#92400e;">📚 OSR（过采样率）</h3>
+          <p><strong>物理含义：</strong>同一时间窗口内采多少个 1-bit 样点</p>
+          <p><strong>书本类比：</strong>叠书的数量</p>
+          <p><strong>噪声效果：</strong>把固定总噪声稀释到更宽频带</p>
+          <p><strong>精度增益：</strong>OSR×4 → SNR+6dB → +1bit（纯过采样）</p>
+        </div>
+        <div class="compare-col" style="background:#fef3c7;border:2px solid #d97706;">
+          <h3 style="color:#92400e;">🧠 L（调制器阶数）</h3>
+          <p><strong>物理含义：</strong>几个积分器串联</p>
+          <p><strong>书本类比：</strong>每次叠书时的误差修正智慧层数</p>
+          <p><strong>噪声效果：</strong>把低频噪声"推"到高频，每增1阶推力+20dB/dec</p>
+          <p><strong>精度增益：</strong>L+1 → SNR+约15dB @OSR=64 → +2.5bit</p>
+        </div>
+      </div>
+
+      <div class="success-box" style="margin-top:12px;">
+        <strong>💡 选型直觉：</strong>"快用 SAR，精用 Σ-Δ" 的本质 —— SAR 靠硬件二分搜索在 N 个时钟周期内给出 N-bit 结果；Σ-Δ 靠"大量低精度测量 + 数学" 在 OSR×N 个周期后给出远超 N-bit 的结果。时间是代价，精度是回报。
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 3: 电路框图 ===== -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div>
+      <div class="icon">🔲</div>
+      <h2>电路结构框图</h2>
+    </div>
+    <div class="card-body">
+
+      <!-- SAR 框图 -->
+      <div class="diagram-title">图 3-1 | SAR ADC 电路结构框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 780 240" width="760" height="240" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <!-- 背景 -->
+          <rect width="780" height="240" fill="#fafafa" rx="8"/>
+
+          <!-- 信号流箭头颜色 -->
+          <defs>
+            <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#1a56db"/>
+            </marker>
+            <marker id="arr-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#555"/>
+            </marker>
+            <marker id="arr-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#e74c3c"/>
+            </marker>
+          </defs>
+
+          <!-- VIN 输入 -->
+          <text x="14" y="110" font-size="13" fill="#333" font-weight="bold">V<tspan baseline-shift="sub" font-size="9">IN</tspan></text>
+          <line x1="50" y1="108" x2="80" y2="108" stroke="#1a56db" stroke-width="2" marker-end="url(#arr)"/>
+
+          <!-- S&H 模块 -->
+          <rect x="82" y="82" width="90" height="50" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="127" y="104" font-size="11" fill="#1e40af" text-anchor="middle" font-weight="bold">S&amp;H</text>
+          <text x="127" y="120" font-size="9" fill="#3b82f6" text-anchor="middle">采样保持</text>
+
+          <!-- S&H → 比较器 -->
+          <line x1="172" y1="108" x2="205" y2="108" stroke="#1a56db" stroke-width="2" marker-end="url(#arr)"/>
+
+          <!-- 比较器 -->
+          <polygon points="207,80 207,136 262,108" fill="#eff6ff" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="222" y="105" font-size="10" fill="#1e40af" text-anchor="middle" font-weight="bold">CMP</text>
+          <text x="222" y="120" font-size="9" fill="#3b82f6" text-anchor="middle">比较器</text>
+
+          <!-- 比较器 → SAR Logic -->
+          <line x1="263" y1="108" x2="295" y2="108" stroke="#1a56db" stroke-width="2" marker-end="url(#arr)"/>
+
+          <!-- SAR Logic -->
+          <rect x="297" y="80" width="110" height="52" rx="6" fill="#1a56db" stroke="#0e3a8e" stroke-width="1.5"/>
+          <text x="352" y="103" font-size="11" fill="white" text-anchor="middle" font-weight="bold">SAR Logic</text>
+          <text x="352" y="120" font-size="9" fill="#bfdbfe" text-anchor="middle">逐次逼近寄存器</text>
+
+          <!-- SAR → 输出 -->
+          <line x1="407" y1="108" x2="445" y2="108" stroke="#1a56db" stroke-width="2" marker-end="url(#arr)"/>
+
+          <!-- 输出寄存器 -->
+          <rect x="447" y="82" width="90" height="50" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="492" y="104" font-size="11" fill="#1e40af" text-anchor="middle" font-weight="bold">Output</text>
+          <text x="492" y="120" font-size="9" fill="#3b82f6" text-anchor="middle">数字输出码</text>
+
+          <!-- 输出箭头 -->
+          <line x1="537" y1="108" x2="575" y2="108" stroke="#1a56db" stroke-width="2" marker-end="url(#arr)"/>
+          <text x="590" y="112" font-size="12" fill="#1e40af" font-weight="bold">D[N-1:0]</text>
+
+          <!-- SAR → DAC 反馈 -->
+          <line x1="352" y1="132" x2="352" y2="175" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <line x1="352" y1="175" x2="185" y2="175" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="5,3"/>
+
+          <!-- DAC -->
+          <rect x="148" y="155" width="80" height="42" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="188" y="177" font-size="11" fill="#991b1b" text-anchor="middle" font-weight="bold">DAC</text>
+          <text x="188" y="191" font-size="9" fill="#dc2626" text-anchor="middle">N-bit DAC</text>
+
+          <!-- DAC → 比较器负端 -->
+          <line x1="148" y1="176" x2="100" y2="176" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <line x1="100" y1="176" x2="100" y2="130" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <line x1="100" y1="130" x2="207" y2="130" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-red)"/>
+
+          <!-- VREF -->
+          <text x="352" y="210" font-size="11" fill="#e74c3c" text-anchor="middle">V<tspan baseline-shift="sub" font-size="9">REF</tspan>↑</text>
+          <line x1="352" y1="205" x2="352" y2="197" stroke="#e74c3c" stroke-width="1.5" marker-end="url(#arr-red)"/>
+
+          <!-- CLK -->
+          <text x="492" y="158" font-size="10" fill="#555" text-anchor="middle">CLK ↓</text>
+          <line x1="492" y1="154" x2="492" y2="133" stroke="#555" stroke-width="1.2" marker-end="url(#arr-gray)"/>
+
+          <!-- 标注说明 -->
+          <text x="390" y="22" font-size="11" fill="#666" text-anchor="middle">N 次比较 → N-bit 结果（每次转换耗 N+2 个时钟）</text>
+          <line x1="82" y1="35" x2="537" y2="35" stroke="#ccc" stroke-width="1" stroke-dasharray="3,3"/>
+
+          <!-- 反馈标注 -->
+          <text x="180" y="225" font-size="9" fill="#e74c3c" text-anchor="middle">← DAC 反馈（二分搜索）→</text>
+        </svg>
+      </div>
+
+      <div style="margin: 8px 0 20px; font-size:0.85rem; color: var(--text-muted);">
+        <strong>说明：</strong>S&H 锁存输入 → 比较器与 DAC 输出对比 → SAR Logic 根据比较结果更新寄存器并控制 DAC → 重复 N 次，DAC 反馈回路是 SAR ADC 的核心，DAC 的线性度直接决定 INL/DNL 性能。
+      </div>
+
+      <!-- Σ-Δ 框图 -->
+      <div class="diagram-title">图 3-2 | Σ-Δ ADC 电路结构框图（一阶调制器）</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 280" width="780" height="280" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+          <rect width="820" height="280" fill="#fafafa" rx="8"/>
+
+          <defs>
+            <marker id="arr2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#e74c3c"/>
+            </marker>
+            <marker id="arr3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#27ae60"/>
+            </marker>
+            <marker id="arr4" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#333"/>
+            </marker>
+          </defs>
+
+          <!-- ===== 调制器区域 ===== -->
+          <rect x="10" y="20" width="540" height="200" rx="8" fill="none" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="6,3"/>
+          <text x="280" y="14" font-size="11" fill="#e74c3c" text-anchor="middle" font-weight="bold">Σ-Δ 调制器（高速时钟 f_s = OSR × f_N）</text>
+
+          <!-- VIN 输入 -->
+          <text x="14" y="120" font-size="13" fill="#333" font-weight="bold">V<tspan baseline-shift="sub" font-size="9">IN</tspan></text>
+          <line x1="50" y1="118" x2="82" y2="118" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr2)"/>
+
+          <!-- 求和节点 Σ -->
+          <circle cx="100" cy="118" r="18" fill="#fff" stroke="#e74c3c" stroke-width="2"/>
+          <text x="100" y="123" font-size="16" fill="#e74c3c" text-anchor="middle" font-weight="bold">Σ</text>
+
+          <!-- Σ → 积分器 -->
+          <line x1="118" y1="118" x2="150" y2="118" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr2)"/>
+
+          <!-- 积分器 -->
+          <rect x="152" y="92" width="100" height="52" rx="6" fill="#fff5f5" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="202" y="116" font-size="12" fill="#991b1b" text-anchor="middle" font-weight="bold">∫ 积分器</text>
+          <text x="202" y="131" font-size="9" fill="#dc2626" text-anchor="middle">H(z)=z⁻¹/(1-z⁻¹)</text>
+
+          <!-- 积分器 → 量化器 -->
+          <line x1="252" y1="118" x2="285" y2="118" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr2)"/>
+
+          <!-- 量化器（粗量化，通常1-bit比较器） -->
+          <polygon points="287,92 287,145 337,118" fill="#fecaca" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="305" y="113" font-size="9" fill="#991b1b" text-anchor="middle" font-weight="bold">1-bit</text>
+          <text x="305" y="127" font-size="9" fill="#991b1b" text-anchor="middle">量化器</text>
+
+          <!-- 量化器 → 数字输出（位流） -->
+          <line x1="338" y1="118" x2="370" y2="118" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr2)"/>
+
+          <!-- 位流输出节点 -->
+          <rect x="372" y="99" width="80" height="38" rx="4" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="412" y="116" font-size="10" fill="#991b1b" text-anchor="middle" font-weight="bold">1-bit</text>
+          <text x="412" y="131" font-size="9" fill="#dc2626" text-anchor="middle">位流输出</text>
+
+          <!-- 反馈 DAC -->
+          <line x1="412" y1="137" x2="412" y2="185" stroke="#555" stroke-width="1.5" stroke-dasharray="4,3"/>
+          <line x1="412" y1="185" x2="100" y2="185" stroke="#555" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+          <!-- 1-bit DAC -->
+          <rect x="215" y="165" width="90" height="38" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="260" y="183" font-size="10" fill="#92400e" text-anchor="middle" font-weight="bold">1-bit DAC</text>
+          <text x="260" y="196" font-size="9" fill="#b45309" text-anchor="middle">反馈</text>
+          <line x1="215" y1="185" x2="100" y2="185" stroke="#555" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr4)"/>
+          <line x1="100" y1="185" x2="100" y2="136" stroke="#555" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr4)"/>
+
+          <!-- 量化误差注入 -->
+          <text x="312" y="72" font-size="9" fill="#666" text-anchor="middle">e[n] 量化误差</text>
+          <line x1="312" y1="76" x2="312" y2="91" stroke="#666" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr4)"/>
+
+          <!-- OSR 时钟标注 -->
+          <text x="100" y="235" font-size="9" fill="#e74c3c" text-anchor="middle">f_s ↑ (高速时钟)</text>
+
+          <!-- ===== 数字部分 ===== -->
+          <!-- 调制器输出到数字滤波器 -->
+          <line x1="452" y1="118" x2="490" y2="118" stroke="#27ae60" stroke-width="2" marker-end="url(#arr3)"/>
+
+          <!-- 数字 LPF -->
+          <rect x="492" y="90" width="100" height="52" rx="6" fill="#dcfce7" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="542" y="112" font-size="11" fill="#166534" text-anchor="middle" font-weight="bold">数字 LPF</text>
+          <text x="542" y="126" font-size="9" fill="#16a34a" text-anchor="middle">低通抽取滤波</text>
+          <text x="542" y="137" font-size="9" fill="#16a34a" text-anchor="middle">去除高频噪声</text>
+
+          <!-- 数字 LPF → ↓OSR 抽取 -->
+          <line x1="592" y1="118" x2="624" y2="118" stroke="#27ae60" stroke-width="2" marker-end="url(#arr3)"/>
+
+          <!-- 抽取器 -->
+          <rect x="626" y="96" width="72" height="44" rx="6" fill="#bbf7d0" stroke="#27ae60" stroke-width="1.5"/>
+          <text x="662" y="114" font-size="11" fill="#166534" text-anchor="middle" font-weight="bold">↓OSR</text>
+          <text x="662" y="130" font-size="9" fill="#16a34a" text-anchor="middle">抽取器</text>
+
+          <!-- 抽取器 → 高精度输出 -->
+          <line x1="698" y1="118" x2="740" y2="118" stroke="#27ae60" stroke-width="2" marker-end="url(#arr3)"/>
+          <text x="752" y="110" font-size="11" fill="#166534" font-weight="bold">N-bit</text>
+          <text x="752" y="124" font-size="11" fill="#166534" font-weight="bold">输出</text>
+
+          <!-- 标注线 -->
+          <rect x="562" y="20" width="248" height="200" rx="8" fill="none" stroke="#27ae60" stroke-width="1.5" stroke-dasharray="6,3"/>
+          <text x="686" y="14" font-size="11" fill="#166534" text-anchor="middle" font-weight="bold">数字滤波器（低速输出 f_N）</text>
+
+          <!-- 噪声整形示意 -->
+          <text x="280" y="245" font-size="10" fill="#666" text-anchor="middle">↑ 调制器把量化噪声推向高频 → 数字滤波器截止高频 → 等效高精度</text>
+          <text x="280" y="260" font-size="9" fill="#999" text-anchor="middle">OSR 越大、调制器阶数 L 越高 → 信号带内噪声越低 → SNR 越好</text>
+        </svg>
+      </div>
+
+      <div style="margin: 8px 0 0; font-size:0.85rem; color: var(--text-muted);">
+        <strong>说明：</strong>输入信号经过求和节点（Σ，与反馈差分）→ 积分器累积误差 → 1-bit 量化器（高速比较器）→ 输出位流（Bit Stream）→ 数字低通滤波+抽取 → N-bit 高精度输出。积分器的记忆效应使量化噪声搬移到高频（噪声整形），这是 Σ-Δ 的精髓。
+      </div>
+
+      <div class="warn-box" style="margin-top:16px;">
+        <strong>⚡ 高阶 Σ-Δ 调制器：</strong>工业/音频级产品通常采用 2~5 阶调制器（多个积分器级联），每增加一阶噪声整形斜率增加 20 dB/decade，SNR 提升更显著，但需要稳定性设计（高阶调制器存在不稳定风险，需加 Zero-optimization 或 CRFF/CIFB 拓扑）。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 4: 核心差异对比 ===== -->
+<section id="sec4">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">4</div>
+      <div class="icon">⚖️</div>
+      <h2>核心特性综合对比</h2>
+    </div>
+    <div class="card-body">
+      <table>
+        <thead>
+          <tr>
+            <th>对比维度</th>
+            <th>🔵 SAR ADC</th>
+            <th>🔴 Σ-Δ ADC</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>转换原理</strong></td>
+            <td class="sar-val">二分搜索（逐次逼近）</td>
+            <td class="sd-val">过采样 + 噪声整形 + 抽取</td>
+          </tr>
+          <tr>
+            <td><strong>分辨率范围</strong></td>
+            <td>8 ~ 20-bit（典型 12~18-bit）</td>
+            <td>16 ~ 32-bit（典型 20~24-bit）</td>
+          </tr>
+          <tr>
+            <td><strong>采样速率</strong></td>
+            <td class="sar-val">高（1 kSPS ~ 10+ MSPS）</td>
+            <td>低（几 SPS ~ 数百 kSPS，音频可达 ~3 MSPS）</td>
+          </tr>
+          <tr>
+            <td><strong>延迟（Latency）</strong></td>
+            <td class="sar-val">极低（N+2 个时钟周期，μs 级）</td>
+            <td class="sd-val">高（抽取滤波器引入群延迟，ms 级）</td>
+          </tr>
+          <tr>
+            <td><strong>抗混叠要求</strong></td>
+            <td class="sd-val">严格（需外部抗混叠滤波器）</td>
+            <td class="sar-val">宽松（内部数字滤波器天然抗混叠）</td>
+          </tr>
+          <tr>
+            <td><strong>量化噪声分布</strong></td>
+            <td>白噪声，均匀分布在 0~f<sub>s</sub>/2</td>
+            <td class="sar-val">噪声整形至高频，信号带内极低</td>
+          </tr>
+          <tr>
+            <td><strong>多通道扫描</strong></td>
+            <td class="sar-val">天然支持（通道切换快，μs 级稳定）</td>
+            <td class="sd-val">困难（需等待调制器稳定，建立时间长）</td>
+          </tr>
+          <tr>
+            <td><strong>电源功耗</strong></td>
+            <td>中等，与采样率成比例</td>
+            <td>通常较高（高速调制器+数字滤波器）；低速时可极低功耗</td>
+          </tr>
+          <tr>
+            <td><strong>内部基准要求</strong></td>
+            <td class="sd-val">高（DAC 线性度直接影响精度）</td>
+            <td class="sar-val">相对宽松（DAC 仅 1-bit，非线性误差可自消）</td>
+          </tr>
+          <tr>
+            <td><strong>偏置误差/增益误差</strong></td>
+            <td>需校准（Offset、Gain 误差较明显）</td>
+            <td class="sar-val">调制器天然抑制 DC 偏置（积分器积累）</td>
+          </tr>
+          <tr>
+            <td><strong>谐波失真 THD</strong></td>
+            <td>与 DAC 线性度（INL/DNL）直接相关</td>
+            <td>与调制器非线性，反馈 DAC 一致性相关</td>
+          </tr>
+          <tr>
+            <td><strong>建立时间</strong></td>
+            <td class="sar-val">极短（几个时钟）</td>
+            <td class="sd-val">长（需充填调制器管道，通常数十到数百个输出样本）</td>
+          </tr>
+          <tr>
+            <td><strong>典型封装/接口</strong></td>
+            <td>SPI / I²C，MSOP / TSSOP</td>
+            <td>SPI，有时带 I²C；QFN / TSSOP</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 5: 核心指标 ===== -->
+<section id="sec5">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">5</div>
+      <div class="icon">📊</div>
+      <h2>核心性能指标定义</h2>
+    </div>
+    <div class="card-body">
+
+      <!-- 静态指标 -->
+      <h4 style="margin-bottom:12px; font-size:1rem; border-bottom:2px solid #e2e8f0; padding-bottom:6px;">
+        📌 5.1 静态指标（DC Performance）
+      </h4>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>偏置误差 · Offset Error</h4>
+          <span class="metric-abbr">Offset</span>
+        </div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>实际转换曲线与理想曲线在零输入时的偏差，表示 ADC 的系统零漂。</span></div>
+          <div class="metric-row"><span class="metric-label">单位</span><span>LSB 或 mV（相对 V<sub>REF</sub>）</span></div>
+          <div class="formula">Offset = V<sub>OUT,actual</sub>(code=0) − V<sub>OUT,ideal</sub>(code=0)</div>
+          <div class="metric-row"><span class="metric-label">SAR 特点</span><span>由比较器输入失调（Comparator Offset）及 DAC 零码泄漏贡献，通常为 ±几 LSB，可通过数字校准消除。</span></div>
+          <div class="metric-row"><span class="metric-label">Σ-Δ 特点</span><span>积分器天然积分可部分消除偏置，通常优于 SAR；高精度版本可达到 sub-LSB 量级。</span></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>增益误差 · Gain Error</h4>
+          <span class="metric-abbr">Gain Error</span>
+        </div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>实际满量程与理想满量程的比值偏差（满量程斜率误差）。</span></div>
+          <div class="formula">Gain Error = (FS<sub>actual</sub> − FS<sub>ideal</sub>) / FS<sub>ideal</sub> × 100% 或以 %FSR / LSB 表示</div>
+          <div class="metric-row"><span class="metric-label">来源</span><span>参考电压 V<sub>REF</sub> 误差；DAC 参考缩放误差（SAR）；调制器积分增益误差（Σ-Δ）。</span></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>微分非线性 · Differential Nonlinearity</h4>
+          <span class="metric-abbr">DNL</span>
+        </div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>相邻两个输出码字对应的模拟输入宽度与 1 LSB 的偏差，描述"步距均匀性"。</span></div>
+          <div class="formula">DNL[k] = (V<sub>transition,k+1</sub> − V<sub>transition,k</sub>) / 1LSB − 1</div>
+          <div class="metric-row"><span class="metric-label">关键判据</span><span>若 DNL ≤ −1 LSB → 出现"丢失码（Missing Code）"；若 DNL > +1 LSB → 出现"不单调（Non-monotonic）"。</span></div>
+          <div class="metric-row"><span class="metric-label">SAR 特点</span><span>直接由 DAC 电容阵列的电容匹配精度决定。工艺级 16-bit SAR DAC 单个 cap 失配 ≤ 0.1% 即可满足 ≤ ±1 LSB。</span></div>
+          <div class="metric-row"><span class="metric-label">Σ-Δ 特点</span><span>Σ-Δ 不直接定义 DNL（其量化器仅 1-bit，无步距概念），通常用噪声底和动态范围描述。</span></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>积分非线性 · Integral Nonlinearity</h4>
+          <span class="metric-abbr">INL</span>
+        </div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>实际转换曲线与理想直线（两端点连线或最佳直线拟合）的最大偏差，描述"整体线性度"。</span></div>
+          <div class="formula">INL[k] = (V<sub>actual</sub>[k] − V<sub>ideal</sub>[k]) / 1LSB</div>
+          <div class="metric-row"><span class="metric-label">与 DNL 关系</span><span class="formula-inline">INL[k] = Σ DNL[0..k]</span>（积分关系，故名）</div>
+          <div class="metric-row"><span class="metric-label">SAR 影响</span><span>DAC 二进制权电容的全局匹配误差，表现为 S 形或弓形 INL 曲线。</span></div>
+          <div class="metric-row"><span class="metric-label">Σ-Δ 影响</span><span>通过调制器非线性和反馈 DAC 线性度共同决定，高阶多 bit 量化器需关注 DAC INL。</span></div>
+        </div>
+      </div>
+
+      <!-- 动态指标 -->
+      <h4 style="margin:20px 0 12px; font-size:1rem; border-bottom:2px solid #e2e8f0; padding-bottom:6px;">
+        📌 5.2 动态指标（AC Performance）
+      </h4>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>信噪比 · Signal-to-Noise Ratio</h4>
+          <span class="metric-abbr">SNR</span>
+        </div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>输出信号基波功率与所有噪声功率（不含谐波）之比，以 dB 表示。</span></div>
+          <div class="formula">SNR = 10·log₁₀(P<sub>signal</sub> / P<sub>noise</sub>)，理论最大 = 6.02·N + 1.76 dB（满幅正弦）</div>
+          <div class="metric-row"><span class="metric-label">SAR 关联</span><span>受热噪声（kT/C，采样电容）、比较器噪声、参考噪声限制；典型 16-bit SAR 约 92~95 dB SNR。</span></div>
+          <div class="metric-row"><span class="metric-label">Σ-Δ 关联</span><span>通过 OSR 和调制器阶数 L 大幅提升；24-bit 高精度 Σ-Δ 可达 110~130 dB SNR。</span></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>总谐波失真 · Total Harmonic Distortion</h4>
+          <span class="metric-abbr">THD</span>
+        </div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>输出所有谐波分量功率之和与基波功率之比（通常取前 5 次谐波），以 dBc 表示，越负越好。</span></div>
+          <div class="formula">THD = 20·log₁₀(√(V₂²+V₃²+...+Vₙ²) / V₁) dBc</div>
+          <div class="metric-row"><span class="metric-label">SAR 来源</span><span>DAC 电容非线性（电压系数）、比较器非线性、采样电路非线性（Ron 调制）。</span></div>
+          <div class="metric-row"><span class="metric-label">Σ-Δ 来源</span><span>调制器积分器非线性、反馈 DAC 非线性（多 bit 结构），时钟 jitter 引起的调制。</span></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>信噪失真比 · Signal-to-Noise and Distortion Ratio</h4>
+          <span class="metric-abbr">SINAD / SNDR</span>
+        </div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>信号功率与所有噪声+谐波功率之比，是 SNR 和 THD 的综合指标。</span></div>
+          <div class="formula">SINAD = 10·log₁₀(P<sub>signal</sub> / (P<sub>noise</sub>+P<sub>distortion</sub>)) dB</div>
+          <div class="metric-row"><span class="metric-label">关系</span><span><span class="formula-inline">1/SINAD ≈ 1/SNR + 1/THD</span>（功率叠加）；SINAD 是决定 ENOB 的直接指标。</span></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>有效位数 · Effective Number of Bits</h4>
+          <span class="metric-abbr">ENOB</span>
+        </div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>用 SINAD 折算出的等效分辨率，综合评估真实精度（噪声+失真共同作用后的实际分辨率）。</span></div>
+          <div class="formula">ENOB = (SINAD − 1.76) / 6.02 (bit)</div>
+          <div class="metric-row"><span class="metric-label">工程意义</span><span>标称 16-bit ADC 的 ENOB 可能仅 13.5-bit（受噪声+THD 降额），ENOB 越接近名义分辨率，ADC 越"干净"。</span></div>
+          <div class="metric-row"><span class="metric-label">SAR 典型</span><span>16-bit SAR 的 ENOB 通常 13~15.5 bit；Σ-Δ 24-bit 的 ENOB 通常 18~22 bit。</span></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>无杂散动态范围 · Spurious-Free Dynamic Range</h4>
+          <span class="metric-abbr">SFDR</span>
+        </div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>基波功率与最大杂散（谐波或互调分量）功率之比，以 dBc 或 dBFS 表示，衡量频谱纯度。</span></div>
+          <div class="formula">SFDR = P<sub>signal</sub> − P<sub>max_spur</sub> (dBc)</div>
+          <div class="metric-row"><span class="metric-label">关键场景</span><span>通信 / 频谱分析应用中，SFDR 决定能否"看到"小信号旁边的杂散，直接影响动态范围需求。</span></div>
+          <div class="metric-row"><span class="metric-label">SAR 典型</span><span>100~110 dBc（中速，依赖 DAC 单调性）</span></div>
+          <div class="metric-row"><span class="metric-label">Σ-Δ 典型</span><span>100~120 dBc（低速高精度版）</span></div>
+        </div>
+      </div>
+
+      <!-- Σ-Δ 特有指标 -->
+      <h4 style="margin:20px 0 12px; font-size:1rem; border-bottom:2px solid #e2e8f0; padding-bottom:6px;">
+        📌 5.3 Σ-Δ 特有指标
+      </h4>
+
+      <div class="metric-card">
+        <div class="metric-header" style="background: linear-gradient(90deg,#991b1b,#e74c3c)">
+          <h4>过采样率 · Oversampling Ratio</h4>
+          <span class="metric-abbr">OSR</span>
+        </div>
+        <div class="metric-body">
+          <div class="formula">OSR = f<sub>s</sub> / (2 × BW<sub>signal</sub>)，其中 f<sub>s</sub> 为调制器采样频率</div>
+          <div class="metric-row"><span class="metric-label">工程意义</span><span>OSR 每翻倍，一阶调制器 SNR 提升 9 dB（1.5 bit ENOB 增益）；L 阶调制器 SNR 提升 (2L+1)×3 dB。</span></div>
+          <div class="metric-row"><span class="metric-label">典型值</span><span>音频：OSR = 64~256；工业精密测量：OSR = 512~4096</span></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header" style="background: linear-gradient(90deg,#991b1b,#e74c3c)">
+          <h4>抽取滤波器建立时间 · Settling Time / Filter Latency</h4>
+          <span class="metric-abbr">t<sub>settle</sub></span>
+        </div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>从通道切换/复位到输出数据有效所需的时间，由抽取滤波器阶数和 OSR 决定。</span></div>
+          <div class="formula">t<sub>settle</sub> ≈ (Filter_Order × OSR) / f<sub>s</sub> 个输出样本周期</div>
+          <div class="metric-row"><span class="metric-label">影响</span><span>在多通道快速扫描时，每次切换通道后必须等待 t<sub>settle</sub> 再读取有效数据，否则读出的仍是前一通道的残留。</span></div>
+        </div>
+      </div>
+
+      <!-- SAR 特有 -->
+      <h4 style="margin:20px 0 12px; font-size:1rem; border-bottom:2px solid #e2e8f0; padding-bottom:6px;">
+        📌 5.4 SAR 特有指标
+      </h4>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>转换时间 · Conversion Time</h4>
+          <span class="metric-abbr">t<sub>conv</sub></span>
+        </div>
+        <div class="metric-body">
+          <div class="formula">t<sub>conv</sub> = (N + t<sub>SH</sub> + t<sub>extra</sub>) / f<sub>CLK</sub></div>
+          <div class="metric-row"><span class="metric-label">说明</span><span>N = 分辨率位数；t<sub>SH</sub> = 采样保持时间；t<sub>extra</sub> = 读取/复位时钟。转换时间直接决定吞吐率（Throughput Rate）。</span></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>采样电容 · Sampling Capacitor</h4>
+          <span class="metric-abbr">C<sub>S</sub></span>
+        </div>
+        <div class="metric-body">
+          <div class="metric-row"><span class="metric-label">定义</span><span>用于采样保持的电容阵列（CDAC）的总值，决定热噪声底（kT/C 噪声）和驱动要求。</span></div>
+          <div class="formula">V<sub>noise,kT/C</sub> = √(kT/C<sub>S</sub>) [V<sub>rms</sub>]</div>
+          <div class="metric-row"><span class="metric-label">影响</span><span>C<sub>S</sub> 越大 → 热噪声越小 → SNR 越高，但驱动放大器需要在采样时间内充电到 0.5 LSB 精度，对驱动 amp 带宽/压摆率要求更高。</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 6: 影响因素 ===== -->
+<section id="sec6">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">6</div>
+      <div class="icon">🔗</div>
+      <h2>指标影响因素分析</h2>
+    </div>
+    <div class="card-body">
+
+      <h4 style="margin-bottom:12px;">📍 6.1 SAR ADC 指标影响因素网络</h4>
+
+      <table>
+        <thead>
+          <tr>
+            <th>关键指标</th>
+            <th>被哪些因素影响（降级）</th>
+            <th>该指标又影响哪些下游性能</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>INL / DNL</strong></td>
+            <td>
+              <span class="chip chip-red">DAC 电容失配（工艺）</span>
+              <span class="chip chip-red">参考电压纹波</span>
+              <span class="chip chip-red">电容电压系数（非线性）</span>
+              <span class="chip chip-red">温度 / 电源变化</span>
+            </td>
+            <td>
+              <span class="chip chip-blue">THD（谐波失真）</span>
+              <span class="chip chip-blue">SFDR</span>
+              <span class="chip chip-blue">线性度规格通过率（测试良率）</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>SNR / ENOB</strong></td>
+            <td>
+              <span class="chip chip-red">热噪声 kT/C（C<sub>S</sub> 越小越差）</span>
+              <span class="chip chip-red">比较器噪声</span>
+              <span class="chip chip-red">参考电压噪声（VREF 噪声）</span>
+              <span class="chip chip-red">电源耦合（AVDD/DVDD 串扰）</span>
+              <span class="chip chip-red">时钟 jitter</span>
+            </td>
+            <td>
+              <span class="chip chip-blue">ENOB（直接）</span>
+              <span class="chip chip-blue">系统动态范围</span>
+              <span class="chip chip-blue">ADC 可检测最小信号 LSB</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>采样速率 / 吞吐率</strong></td>
+            <td>
+              <span class="chip chip-red">时钟频率</span>
+              <span class="chip chip-red">比较器建立时间</span>
+              <span class="chip chip-red">DAC 开关时间</span>
+              <span class="chip chip-red">S&H 充电时间（驱动 amp 带宽）</span>
+            </td>
+            <td>
+              <span class="chip chip-blue">输入带宽（越快，带宽越高）</span>
+              <span class="chip chip-blue">多通道扫描速率</span>
+              <span class="chip chip-blue">系统实时性</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Offset / 零漂</strong></td>
+            <td>
+              <span class="chip chip-red">比较器输入失调电压</span>
+              <span class="chip chip-red">温度系数（TC）</span>
+              <span class="chip chip-red">DAC 零码泄漏</span>
+            </td>
+            <td>
+              <span class="chip chip-blue">系统测量绝对精度</span>
+              <span class="chip chip-blue">低量程信号准确度</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>SFDR</strong></td>
+            <td>
+              <span class="chip chip-red">DAC 单调性（DNL &lt; -1 LSB → 丢码 → 谐波）</span>
+              <span class="chip chip-red">时钟谐波泄漏</span>
+              <span class="chip chip-red">电源噪声调制</span>
+            </td>
+            <td>
+              <span class="chip chip-blue">频谱分析类应用性能</span>
+              <span class="chip chip-blue">通信信号质量（EVM）</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin:20px 0 12px;">📍 6.2 Σ-Δ ADC 指标影响因素网络</h4>
+
+      <table>
+        <thead>
+          <tr>
+            <th>关键指标</th>
+            <th>被哪些因素影响（降级）</th>
+            <th>该指标又影响哪些下游性能</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>SNR / ENOB</strong></td>
+            <td>
+              <span class="chip chip-red">OSR（过采样率）↓</span>
+              <span class="chip chip-red">调制器阶数 L↓</span>
+              <span class="chip chip-red">积分器热噪声（kT/C）</span>
+              <span class="chip chip-red">时钟 jitter（高 OSR 时敏感）</span>
+              <span class="chip chip-red">调制器不稳定（高阶）</span>
+            </td>
+            <td>
+              <span class="chip chip-blue">ENOB（直接）</span>
+              <span class="chip chip-blue">可检测信号下限（量程底部）</span>
+              <span class="chip chip-blue">精密测量系统精度</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>THD / SFDR</strong></td>
+            <td>
+              <span class="chip chip-red">积分器 OTA 非线性（V-I 非线性）</span>
+              <span class="chip chip-red">反馈 DAC 非线性（多 bit）</span>
+              <span class="chip chip-red">模拟输入大信号摆幅（调制器过载）</span>
+              <span class="chip chip-red">时钟 jitter 对采样非线性调制</span>
+            </td>
+            <td>
+              <span class="chip chip-blue">音频 THD+N 指标</span>
+              <span class="chip chip-blue">精密仪器非线性误差</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>建立时间（Latency）</strong></td>
+            <td>
+              <span class="chip chip-red">抽取滤波器阶数（Sinc³ 需 3×OSR 个样本）</span>
+              <span class="chip chip-red">OSR 越大，输出周期越长</span>
+              <span class="chip chip-red">程控增益（PGA）切换</span>
+            </td>
+            <td>
+              <span class="chip chip-blue">多通道扫描速度</span>
+              <span class="chip chip-blue">控制系统响应时间</span>
+              <span class="chip chip-blue">动态测量能力</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>噪声底（Noise Floor）</strong></td>
+            <td>
+              <span class="chip chip-red">OSR 和调制器阶数（决定理论下限）</span>
+              <span class="chip chip-red">积分器热噪声</span>
+              <span class="chip chip-red">1/f 噪声（斩波调制技术可消）</span>
+              <span class="chip chip-red">PCB 布线耦合（模拟地/数字地分离不足）</span>
+            </td>
+            <td>
+              <span class="chip chip-blue">微弱信号检测下限</span>
+              <span class="chip chip-blue">系统 SNR</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>调制器稳定性</strong></td>
+            <td>
+              <span class="chip chip-red">输入信号幅度超过满量程（超量程）</span>
+              <span class="chip chip-red">高阶调制器的状态机设计不当</span>
+              <span class="chip chip-red">快速大阶跃输入</span>
+            </td>
+            <td>
+              <span class="chip chip-blue">输出数据有效性</span>
+              <span class="chip chip-blue">需复位等待重新建立</span>
+              <span class="chip chip-blue">系统可靠性</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="success-box" style="margin-top:16px;">
+        <strong>✅ 关键共同影响因素（SAR & Σ-Δ 均适用）：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>参考电压（VREF）质量：</strong>噪声、纹波直接加到量化结果上，是精度天花板；VREF 温漂引起增益随温度飘移</li>
+          <li><strong>时钟质量（Jitter）：</strong>对高速 SAR 和高 OSR Σ-Δ 均影响 SNR，公式：SNR<sub>jitter</sub> = −20·log(2π·f<sub>in</sub>·σ<sub>jitter</sub>)</li>
+          <li><strong>电源去耦：</strong>AVDD/DVDD 分离、就近去耦电容；数字开关噪声通过基底耦合到模拟电路</li>
+          <li><strong>PCB 布局：</strong>模拟地/数字地分离，输入信号走线屏蔽，减少寄生电容/电阻</li>
+          <li><strong>温度：</strong>所有半导体参数随温度变化，全温度范围测试是 ATE 工程的关键</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 7: 测试方法 ===== -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div>
+      <div class="icon">🧪</div>
+      <h2>测试方法详解</h2>
+    </div>
+    <div class="card-body">
+
+      <!-- 静态测试 -->
+      <h4 style="margin-bottom:14px; font-size:1rem;">📐 7.1 静态指标测试（Offset / Gain / INL / DNL）</h4>
+
+      <div class="compare-grid">
+        <div>
+          <h4 style="color:var(--sar-color);">方法一：码密度直方图法（Histogram）</h4>
+          <p style="font-size:0.88rem;">适用于低成本批量测试，不需要高精度 DAC 激励源。</p>
+          <div class="steps" style="margin-top:10px;">
+            <div class="step">
+              <div class="step-no">1</div>
+              <div class="step-content">
+                <h5>施加线性斜坡或正弦激励</h5>
+                <p>输入覆盖整个量程，速率保证每个 code 有足够样本（每码至少 100~200 hits）。</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-no">2</div>
+              <div class="step-content">
+                <h5>统计各码出现频次</h5>
+                <p>理想 ADC 各码等概率出现（斜坡）或满足正弦分布；实际分布偏差 → 线性度误差。</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-no">3</div>
+              <div class="step-content">
+                <h5>计算 DNL / INL</h5>
+                <p>DNL[k] = (count[k] / expected_count) − 1；INL 为 DNL 的累加。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h4 style="color:var(--sd-color);">方法二：逐码测试法（Step-by-Step）</h4>
+          <p style="font-size:0.88rem;">需高精度 DAC 激励，精度高，适合实验室级验证。</p>
+          <div class="steps" style="margin-top:10px;">
+            <div class="step">
+              <div class="step-no">1</div>
+              <div class="step-content">
+                <h5>逐步扫描输入电压</h5>
+                <p>用 16-bit 以上精度的 DAC（如 Keithley 2450）扫描从 0 到 VREF，步进 &lt; 0.1 LSB。</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-no">2</div>
+              <div class="step-content">
+                <h5>记录每个码跳变点电压</h5>
+                <p>找出每个 code 从 k-1 跳到 k 的精确阈值电压 V<sub>transition,k</sub>。</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-no">3</div>
+              <div class="step-content">
+                <h5>计算 DNL / INL / Offset / Gain</h5>
+                <p>DNL[k] = (V<sub>t,k+1</sub>−V<sub>t,k</sub>) / LSB_ideal − 1；Offset = V<sub>t,0</sub>；Gain = (V<sub>t,FS</sub>−V<sub>t,0</sub>)/(FS_ideal)。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 动态测试 -->
+      <h4 style="margin:24px 0 14px; font-size:1rem;">🔊 7.2 动态指标测试（SNR / THD / SINAD / ENOB / SFDR）</h4>
+
+      <div class="info-box">
+        <strong>核心方法：FFT 频谱分析（时域采样 → 频域分析）</strong> — 所有动态指标均从一段采样数据的 FFT 频谱计算得出。
+      </div>
+
+      <div class="steps" style="margin-top:14px;">
+        <div class="step">
+          <div class="step-no">1</div>
+          <div class="step-content">
+            <h5>选择测试频率与采样点数</h5>
+            <p>相干采样条件（Coherent Sampling）：<code style="background:#e2e8f0;padding:1px 5px;border-radius:3px;">f_in/f_s = M/N</code>（M, N 互质），避免频谱泄漏（Spectral Leakage）。若无法相干采样，必须加窗函数（Hann、Blackman-Harris）。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-no">2</div>
+          <div class="step-content">
+            <h5>施加高纯度正弦激励（低失真源）</h5>
+            <p>激励源的 THD 至少比被测 ADC 好 10~20 dB；一般用 SR785 / AP SYS-2722 等高精度音频分析仪或外部 DDS + 带通滤波器（消除 DDS 谐波）。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-no">3</div>
+          <div class="step-content">
+            <h5>采集数据，执行 FFT</h5>
+            <p>采样点数 N ≥ 4096（至少 1024 以上），保证频率分辨率。对 Σ-Δ，需等待抽取滤波器建立后才开始采集有效数据。</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-no">4</div>
+          <div class="step-content">
+            <h5>频谱分析计算各指标</h5>
+            <p>
+              <strong>SNR：</strong>基波功率 / 除去谐波后的噪声功率（DC 和基波 bin 排除，不含谐波）<br>
+              <strong>THD：</strong>H2~H5（或更多次）谐波功率之和 / 基波功率<br>
+              <strong>SINAD：</strong>基波功率 / (噪声+谐波)总功率<br>
+              <strong>SFDR：</strong>基波功率 / 最大杂散 bin 功率<br>
+              <strong>ENOB：</strong>(SINAD−1.76)/6.02
+            </p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-no">5</div>
+          <div class="step-content">
+            <h5>扫描频率点，绘制性能曲线</h5>
+            <p>ENOB vs f<sub>in</sub>；SNR vs 输入幅度（-1 dBFS，-3 dBFS，-6 dBFS）；确认在整个 Nyquist 带宽内的性能。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Σ-Δ 专项测试 -->
+      <h4 style="margin:24px 0 14px; font-size:1rem;">🔴 7.3 Σ-Δ 特有测试项目</h4>
+
+      <table>
+        <thead>
+          <tr>
+            <th>测试项目</th>
+            <th>测试方法</th>
+            <th>判定标准</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>建立时间 / Latency</strong></td>
+            <td>通道切换后，施加阶跃输入，记录输出达到 ±0.5 LSB 稳定所需的输出样本数</td>
+            <td>通常 = 抽取率 × 滤波器阶数（Sinc³ = 3×OSR 个 modulator cycles）</td>
+          </tr>
+          <tr>
+            <td><strong>调制器稳定性</strong></td>
+            <td>施加满幅输入（≥ 99% FS），观察连续输出，看是否出现长串全 0 或全 1（调制器锁死）</td>
+            <td>无连续超过 4 个同极性位，输出码字无异常跳变</td>
+          </tr>
+          <tr>
+            <td><strong>噪声谱密度（NSD）</strong></td>
+            <td>输入接地（或精密 DC），采集长序列数据，FFT → 按频率计算各 bin 噪声功率/Hz</td>
+            <td>单位：nV/√Hz 或 dBFS/Hz；越平坦代表热噪声主导（好），上翘代表 1/f 噪声</td>
+          </tr>
+          <tr>
+            <td><strong>数字滤波器频响</strong></td>
+            <td>扫描输入频率，记录输出幅度变化（pass-band 平坦度、截止频率、stopband 抑制）</td>
+            <td>参考 datasheet 的 Sinc³ 频响曲线；信号带内 ±0.1 dB 平坦度</td>
+          </tr>
+          <tr>
+            <td><strong>OSR 验证</strong></td>
+            <td>通过读取内部寄存器或测量输出数据率与调制器时钟关系确认 OSR 配置</td>
+            <td>f<sub>output</sub> = f<sub>CLK</sub> / (OSR × 抽取比)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- SAR 专项 -->
+      <h4 style="margin:24px 0 14px; font-size:1rem;">🔵 7.4 SAR 特有测试项目</h4>
+
+      <table>
+        <thead>
+          <tr>
+            <th>测试项目</th>
+            <th>测试方法</th>
+            <th>判定标准</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>单调性（Monotonicity）</strong></td>
+            <td>逐码扫描，检查输出码字是否严格单调递增（无反转）</td>
+            <td>无 Missing Code；DNL > −1 LSB</td>
+          </tr>
+          <tr>
+            <td><strong>吞吐率（Throughput）</strong></td>
+            <td>在最高时钟频率下，连续触发，测量实际输出数据率</td>
+            <td>等于 f<sub>CLK</sub> / (N+2) 或 datasheet 标注值</td>
+          </tr>
+          <tr>
+            <td><strong>输入带宽（Input BW）</strong></td>
+            <td>固定采样率，扫描输入正弦频率，记录幅度下降 3 dB 的频率</td>
+            <td>满量程 −3 dB 带宽，SAR 通常远大于采样率的 1/2</td>
+          </tr>
+          <tr>
+            <td><strong>通道间串扰（Mux Crosstalk）</strong></td>
+            <td>多通道 ADC：一路输入大幅信号，相邻通道接地，测量地通道输出中的串扰分量</td>
+            <td>通常规格 ≤ −70 dBFS（依精度而定）</td>
+          </tr>
+          <tr>
+            <td><strong>温度漂移</strong></td>
+            <td>在 −40 / 25 / 85°C（或按产品规格）分别测 Offset / Gain / INL，计算 TC</td>
+            <td>Offset TC ≤ x ppm/°C 或 LSB/°C（参 datasheet）</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 8: 注意事项 ===== -->
+<section id="sec8">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">8</div>
+      <div class="icon">⚠️</div>
+      <h2>测试与使用注意事项</h2>
+    </div>
+    <div class="card-body">
+
+      <h4 style="margin-bottom:12px; font-size:0.95rem;">⚡ 通用注意事项（SAR & Σ-Δ）</h4>
+
+      <div class="caution-grid">
+        <div class="caution-item">
+          <div class="ci-title">⚡ 参考电压质量</div>
+          <p>VREF 的噪声 / 纹波直接叠加到 ADC 量化结果，必须使用低噪声 LDO 或专用基准（如 LT6657），并用 LC / RC 滤波去耦。测试时 VREF 需精确测量并输入校准程序。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🕐 时钟 Jitter</div>
+          <p>高速（SAR）或高 OSR（Σ-Δ）应用中，时钟相位噪声直接恶化 SNR：SNR<sub>jitter</sub> = −20·log(2π·f<sub>in</sub>·σ<sub>t</sub>)。使用低 jitter 晶振或专用时钟芯片（如 Si5351）；测试夹具时钟布线最短，避免容性负载。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔌 电源隔离与去耦</div>
+          <p>AVDD 与 DVDD 必须分开供电，就近放置 100 nF + 10 μF 去耦电容；数字 I/O 开关产生的高频噪声会通过衬底/电源耦合到模拟前端，需在 PCB 布局层面隔离。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">📐 PCB 布局规范</div>
+          <p>模拟地平面与数字地平面单点连接（Star Ground 或在 ADC 下方连接）；输入信号走线远离时钟线；避免跨越地分割；保护环（Guard Ring）包围敏感模拟引脚。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">📏 驱动放大器选择</div>
+          <p>SAR ADC 的 CDAC 在采样瞬间产生充电电流尖峰，驱动 amp 必须在采样时间内稳定到 0.5 LSB 精度（需要足够 GBW 和低 Zout）；建议使用专为 ADC 驱动设计的放大器（如 ADA4807、OPA189）。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🌡️ 温度测试充分性</div>
+          <p>ADC 的 Offset/Gain/INL 均有温度系数；仅室温测试不足以表征产品全温性能。ATE 测试应覆盖 −40 / 25 / 85°C 三温度点，关注温漂导致的系统精度降级。</p>
+        </div>
+      </div>
+
+      <h4 style="margin:22px 0 12px; font-size:0.95rem;">🔵 SAR ADC 专项注意事项</h4>
+
+      <div class="caution-grid">
+        <div class="caution-item">
+          <div class="ci-title">⏱ 采样时间充足</div>
+          <p>外部 RC 滤波器与 ADC 内部 CDAC 共同决定充电时间常数：t<sub>settle</sub> ≥ (N+2)·ln(2)·R·C<sub>S</sub>。采样时间不足导致 S&H 建立不充分 → DNL 恶化 → ENOB 下降。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔄 通道切换等待</div>
+          <p>多路复用（MUX）切换后，需等待输入网络重新建立稳定，否则前通道信号"记忆"仍残留，引起通道间串扰（Memory Effect）。等待时间 = 至少 10τ（τ=R<sub>source</sub>×C<sub>S</sub>）。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">📊 INL/DNL 测试样本量</div>
+          <p>直方图法中，每个码需 ≥100 hits，总样本 = 2<sup>N</sup>×100。16-bit ADC 需约 655 万次采样；测试时间需估算，选择合适斜坡频率在时间约束内完成。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🚫 输入过压保护</div>
+          <p>大多数 SAR ADC 的模拟输入不能超过 AVDD + 0.3V 或 GND − 0.3V，ESD 前仍需限流电阻（100 Ω ~ 1 kΩ）；测试夹具必须确保激励源输出不超出 ADC 输入范围。</p>
+        </div>
+      </div>
+
+      <h4 style="margin:22px 0 12px; font-size:0.95rem;">🔴 Σ-Δ ADC 专项注意事项</h4>
+
+      <div class="caution-grid">
+        <div class="caution-item">
+          <div class="ci-title">⏳ 建立时间必须等待</div>
+          <p>上电、复位、配置变更（OSR/增益/通道）后，抽取滤波器需要充填（Fill）才输出有效数据。读取前必须丢弃前 N 个输出样本（N = 滤波器阶数 × OSR）；未等待直接读取是 Σ-Δ 系统中最常见的错误！</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">📈 不可过量程</div>
+          <p>调制器输入若持续超过满量程（通常 ±V<sub>REF</sub>），积分器饱和 → 调制器进入不稳定状态 → 位流锁死 → 输出全错。需在 ADC 前端加钳位电路，或在软件中监测 SATURATION 状态位并触发复位。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔍 多通道测量串扰</div>
+          <p>Σ-Δ 不适合高速多通道扫描（每次切换需等待建立），若需多路，优选内置多路复用器并在 datasheet 规定的扫描速率下操作；注意相邻通道的低频漏电（内部积分器残留）。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔇 数字滤波器陷波</div>
+          <p>Sinc³ 抽取滤波器在 f<sub>output</sub>、2×f<sub>output</sub>... 处有陷波（零点），可用于消除工频干扰（50/60 Hz）：将输出数据率设为 50 Hz 整数分之一（如数据率 = 50 SPS → 50 Hz 抑制 ≥80 dB）。利用这一特性时需精确调整 OSR。</p>
+        </div>
+      </div>
+
+      <div class="danger-box" style="margin-top:16px;">
+        <strong>🚨 FFT 测试最常见错误：</strong>
+        <ul style="margin-top:8px;">
+          <li><strong>未做相干采样：</strong>频谱泄漏导致 SNR/SFDR 虚低；解决：用 Hann 窗，或精确设置 f<sub>in</sub>/f<sub>s</sub> = M/N（互质）</li>
+          <li><strong>激励源自身失真太大：</strong>测出的 THD 是激励源而非 ADC 的；解决：激励 THD 比被测 ADC 好 ≥15 dB，或加高品质带通滤波器</li>
+          <li><strong>Σ-Δ 未等待 Settling：</strong>包含调制器瞬态数据，SINAD/SNR 虚低</li>
+          <li><strong>FFT 点数不足：</strong>频率分辨率不足，谐波 bin 之间相互混叠；建议 ≥4096 点</li>
+          <li><strong>输入幅度设置错误：</strong>SNR 测试应在 −0.5 dBFS ~ −1 dBFS 附近，过小 → 量化噪声主导，过大 → 削波失真</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== Section 9: 选型指南 ===== -->
+<section id="sec9">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">9</div>
+      <div class="icon">🧭</div>
+      <h2>选型决策指南</h2>
+    </div>
+    <div class="card-body">
+
+      <div class="compare-grid">
+        <div class="compare-col sar">
+          <h3><span class="tag-sar">选 SAR</span> 的场景</h3>
+          <ul>
+            <li>需要<strong>高速多通道</strong>快速扫描（BMS、DAQ）</li>
+            <li>需要<strong>低延迟</strong>响应（实时控制环）</li>
+            <li>采样率 > 200 kSPS，分辨率 ≤ 18-bit</li>
+            <li>无法忍受 Σ-Δ 的长建立时间</li>
+            <li>需要精确知道<strong>每个采样时刻</strong>（同步采样）</li>
+            <li>功耗预算适中，信号带宽较宽</li>
+          </ul>
+          <div class="success-box" style="margin-top:12px;font-size:0.85rem;">
+            <strong>典型应用：</strong>BMS 电压电流采集（ADS131E04）、工业 DAQ（AD7616）、MCU 内置 ADC（STM32 12-bit SAR）
+          </div>
+        </div>
+        <div class="compare-col sd">
+          <h3><span class="tag-sd">选 Σ-Δ</span> 的场景</h3>
+          <ul>
+            <li>需要<strong>超高精度</strong>（20-bit 以上），信号变化慢</li>
+            <li>信号带宽窄（DC ~ 数 kHz），如应变计、热电偶</li>
+            <li>需要<strong>极低噪声底</strong>（精密称重、医疗 ECG）</li>
+            <li>对抗混叠要求高，不想外加大量滤波器</li>
+            <li>音频应用（Hi-Fi ADC/DAC）</li>
+            <li>电能质量、智能电表高精度电流电压测量</li>
+          </ul>
+          <div class="success-box" style="margin-top:12px;font-size:0.85rem;">
+            <strong>典型应用：</strong>高精度仪表（ADS1256 24-bit）、音频编解码（PCM4202）、智能电表（CS5460A）
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box" style="margin-top:18px;">
+        <strong>💡 工程权衡口诀：</strong>
+        "快用 SAR，精用 Σ-Δ；SAR 看 INL/ENOB，Σ-Δ 看 OSR/Settling；共同看 VREF、时钟、驱动和布局。"
+      </div>
+
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<div class="footer">
+  本文档覆盖 SAR ADC 与 Σ-Δ ADC 的原理、框图、指标定义、影响因素与测试方法，供模拟电路/ATE 工程师学习参考。<br>
+  生成时间：2026-05-28 · 文档版本 v1.0
+</div>
+
+</body>
+</html>

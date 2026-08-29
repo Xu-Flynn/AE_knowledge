@@ -1,0 +1,2358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>光模块工作原理详解 — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #1a56db; --primary-dark: #0e3a8e; --accent: #e74c3c;
+    --accent2: #27ae60; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+    --optical: #1a56db; --wireless: #e74c3c; --industrial: #27ae60;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .hero { background: linear-gradient(135deg, #0e3a8e 0%, #1a56db 50%, #0891b2 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #1a56db11, #1a56db05); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #2563eb); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #e8f0fe; }
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  .info-box { border-left: 4px solid var(--primary); background: #eff6ff; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #f0fdf4; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #1e40af, #1a56db); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #eff6ff; border: 2px solid var(--primary); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid var(--accent2); }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  @media (max-width: 700px) { .compare-grid, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>🔦 光模块工作原理详解</h1>
+  <div class="subtitle">Optical Transceiver Module — 数据中心 / 电信网络光互连核心器件</div>
+  <div class="badge-row">
+    <span class="badge">📡 NRZ / PAM4</span>
+    <span class="badge">🔌 TOSA / ROSA</span>
+    <span class="badge">🧠 oDSP</span>
+    <span class="badge">📋 CMIS / SFF MSA</span>
+    <span class="badge">⚡ 10G~800G</span>
+    <span class="badge">🔬 电口+光口测试</span>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 核心模块深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、核心对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ Section 1: 背景与定位 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">1</div><div class="icon">📖</div><h2>背景与定位</h2>
+    </div>
+    <div class="card-body">
+      <p>光模块（Optical Transceiver Module）是光通信系统中实现<strong>"光电互转"</strong>的核心可插拔器件，部署于交换机/路由器/网卡的网络端口与光纤之间。它一端通过高速电接口（铜背板/铜线缆/PCB走线）与主机 ASIC（Switch SoC / NIC / Retimer）对接，另一端通过光纤与对端光模块对接。简单来说：光模块把"电"翻译成"光"发出去，把收到的"光"翻译回"电"。</p>
+
+      <div class="diagram-title">图 1-1 | 光模块在网络链路中的位置</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 900 130" width="880" height="130" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arr1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <rect x="10" y="30" width="110" height="60" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="65" y="55" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle">Switch/NIC</text>
+          <text x="65" y="72" fill="#1e40af" font-size="9" text-anchor="middle">Host ASIC</text>
+          <line x1="120" y1="60" x2="170" y2="60" stroke="#1a56db" stroke-width="2" marker-end="url(#arr1)"/>
+          <text x="145" y="52" fill="#666" font-size="9" text-anchor="middle">高速电</text>
+          <rect x="175" y="25" width="150" height="70" rx="8" fill="#1a56db" stroke="#0e3a8e" stroke-width="2"/>
+          <text x="250" y="50" fill="white" font-size="12" font-weight="700" text-anchor="middle">光模块</text>
+          <text x="250" y="66" fill="#bfdbfe" font-size="9" text-anchor="middle">Transceiver</text>
+          <text x="250" y="80" fill="#bfdbfe" font-size="8" text-anchor="middle">TOSA+ROSA+oDSP+MCU</text>
+          <line x1="325" y1="60" x2="395" y2="60" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr1)"/>
+          <text x="360" y="52" fill="#e74c3c" font-size="9" text-anchor="middle">光纤</text>
+          <rect x="400" y="30" width="110" height="60" rx="8" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="455" y="55" fill="#991b1b" font-size="11" font-weight="700" text-anchor="middle">光纤链路</text>
+          <text x="455" y="72" fill="#991b1b" font-size="9" text-anchor="middle">SMF/MMF</text>
+          <line x1="510" y1="60" x2="580" y2="60" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr1)"/>
+          <text x="545" y="52" fill="#e74c3c" font-size="9" text-anchor="middle">光纤</text>
+          <rect x="585" y="25" width="150" height="70" rx="8" fill="#1a56db" stroke="#0e3a8e" stroke-width="2"/>
+          <text x="660" y="50" fill="white" font-size="12" font-weight="700" text-anchor="middle">对端光模块</text>
+          <text x="660" y="66" fill="#bfdbfe" font-size="9" text-anchor="middle">Transceiver</text>
+          <text x="660" y="80" fill="#bfdbfe" font-size="8" text-anchor="middle">TOSA+ROSA+oDSP+MCU</text>
+          <line x1="735" y1="60" x2="785" y2="60" stroke="#1a56db" stroke-width="2" marker-end="url(#arr1)"/>
+          <text x="760" y="52" fill="#666" font-size="9" text-anchor="middle">高速电</text>
+          <rect x="790" y="30" width="100" height="60" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="840" y="55" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle">Switch/NIC</text>
+          <text x="840" y="72" fill="#1e40af" font-size="9" text-anchor="middle">Host ASIC</text>
+        </svg>
+      </div>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col blue">
+          <h3>📌 产品定位</h3>
+          <p><strong>产业链位置：</strong>位于主机设备（交换机/路由器/网卡）与光纤链路之间</p>
+          <p><strong>核心价值：</strong>完成电→光、光→电信号互转，是"最后一公里光电桥梁"</p>
+          <p><strong>本质功能：</strong>光电转换 + 信号调理 + 通道复用 + 数字诊断</p>
+          <p><strong>可插拔：</strong>支持热插拔（Hot-pluggable），便于现场更换与升级</p>
+        </div>
+        <div class="compare-col green">
+          <h3>🎯 典型应用场景</h3>
+          <ul>
+            <li>数据中心内部互联（DCI）：SR/DR/FR 系列</li>
+            <li>数据中心园区互联：LR4/ER4 系列</li>
+            <li>5G 前传/中传/回传：25G/50G/100G 灰光/彩光</li>
+            <li>城域网/长途骨干：相干 ZR/ZR+ 系列</li>
+            <li>AI/ML 集群：800G/1.6T 高密度互联</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">光模块发展历程</h4>
+      <table>
+        <thead><tr><th>阶段</th><th>典型速率</th><th>代表封装</th><th>关键技术</th><th>时间</th></tr></thead>
+        <tbody>
+          <tr><td>1G/10G 时代</td><td>1G / 10G</td><td>GBIC / SFP / SFP+</td><td>NRZ 直接调制</td><td>2000-2010</td></tr>
+          <tr><td>40G/100G 时代</td><td>40G / 100G</td><td>QSFP+ / QSFP28 / CFP</td><td>4 通道并行 NRZ</td><td>2010-2018</td></tr>
+          <tr><td>100G/200G PAM4</td><td>100G / 200G</td><td>QSFP28 / QSFP56</td><td>PAM4 调制 + oDSP</td><td>2018-2022</td></tr>
+          <tr><td>400G 时代</td><td>400G</td><td>QSFP-DD / OSFP</td><td>8x50G PAM4 + oDSP + FEC</td><td>2020-2024</td></tr>
+          <tr><td>800G 时代</td><td>800G</td><td>QSFP-DD800 / OSFP-XD</td><td>8x100G PAM4 + 212G SerDes</td><td>2024-2026</td></tr>
+          <tr><td>1.6T 时代</td><td>1.6T</td><td>OSFP-XD / CPO</td><td>8x200G PAM4/PAM6 + 共封装光学</td><td>2026+</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">光模块分类总览</h4>
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>按封装分类</h3>
+          <ul>
+            <li><strong>SFP+/SFP28/SFP56</strong>：单通道，10G/25G/50G，LC 接口</li>
+            <li><strong>QSFP+/QSFP28/QSFP56</strong>：4 通道，40G/100G/200G</li>
+            <li><strong>QSFP-DD</strong>：8 通道双密度，400G/800G</li>
+            <li><strong>OSFP/OSFP-XD</strong>：8 通道，400G/800G/1.6T</li>
+            <li><strong>CFP/CFP2/CFP4/CFP8</strong>：电信级，100G~800G</li>
+            <li><strong>CXP</strong>：12 通道并行，120G</li>
+            <li><strong>CPO（共封装光学）</strong>：交换芯片+光引擎共封装</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>按传输距离分类</h3>
+          <table style="font-size:0.85rem;">
+            <thead><tr><th>类型</th><th>距离</th><th>光纤</th><th>典型应用</th></tr></thead>
+            <tbody>
+              <tr><td>SR/SR4/SR8</td><td>100m</td><td>OM3/OM4 MMF</td><td>机架内/列内</td></tr>
+              <tr><td>DR/DR4/DR8</td><td>500m</td><td>OS2 SMF</td><td>数据中心内</td></tr>
+              <tr><td>FR/FR4</td><td>2km</td><td>OS2 SMF</td><td>数据中心内</td></tr>
+              <tr><td>LR/LR4</td><td>10km</td><td>OS2 SMF</td><td>园区/DCI</td></tr>
+              <tr><td>ER/ER4</td><td>40km</td><td>OS2 SMF</td><td>城域</td></tr>
+              <tr><td>ZR/ZR4</td><td>80km</td><td>OS2 SMF</td><td>长途/相干</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>关键认知：</strong>光模块不是单一芯片，而是一个<strong>小型光电系统集成封装</strong>。其内部集成了光器件（TOSA/ROSA）、模拟 IC（Driver/TIA）、数字 IC（oDSP/MCU/PMIC）、无源器件（WDM filter/连接器）和固件（EEPROM/CMIS），是一个跨"光-电-数"三域的复杂模块。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 2: 工作原理 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">2</div><div class="icon">⚙️</div><h2>核心工作原理</h2>
+    </div>
+    <div class="card-body">
+      <p>光模块的核心使命是完成<strong>双向光电转换</strong>：发送方向（TX）将主机高速电信号转为光信号注入光纤；接收方向（RX）将光纤中的光信号还原为电信号送回主机。两个方向相互独立，可同时工作（全双工）。</p>
+
+      <div class="diagram-title">图 2-1 | 光模块整体信号流（TX + RX 双向）</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 900 320" width="880" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker>
+            <marker id="arr2r" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#e74c3c"/></marker>
+          </defs>
+          <!-- TX chain (top) -->
+          <text x="20" y="25" fill="#1a56db" font-size="12" font-weight="700">TX 发射链路（电→光）</text>
+          <rect x="10" y="40" width="70" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="45" y="64" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">Host</text>
+          <line x1="80" y1="60" x2="110" y2="60" stroke="#1a56db" stroke-width="2" marker-end="url(#arr2)"/>
+          <rect x="115" y="40" width="60" height="40" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="145" y="58" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">oDSP</text>
+          <text x="145" y="72" fill="#92400e" font-size="8" text-anchor="middle">FEC+预加重</text>
+          <line x1="175" y1="60" x2="205" y2="60" stroke="#1a56db" stroke-width="2" marker-end="url(#arr2)"/>
+          <rect x="210" y="40" width="60" height="40" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="240" y="58" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">Driver</text>
+          <text x="240" y="72" fill="#991b1b" font-size="8" text-anchor="middle">驱动放大</text>
+          <line x1="270" y1="60" x2="300" y2="60" stroke="#1a56db" stroke-width="2" marker-end="url(#arr2)"/>
+          <rect x="305" y="40" width="80" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="345" y="58" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">激光器</text>
+          <text x="345" y="72" fill="#166534" font-size="8" text-anchor="middle">VCSEL/DFB/EML</text>
+          <line x1="385" y1="60" x2="415" y2="60" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr2r)"/>
+          <rect x="420" y="40" width="60" height="40" rx="6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="450" y="58" fill="#4338ca" font-size="9" font-weight="700" text-anchor="middle">Mux</text>
+          <text x="450" y="72" fill="#4338ca" font-size="8" text-anchor="middle">波分复用</text>
+          <line x1="480" y1="60" x2="530" y2="60" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr2r)"/>
+          <rect x="535" y="40" width="80" height="40" rx="6" fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+          <text x="575" y="64" fill="#9d174d" font-size="10" font-weight="700" text-anchor="middle">光纤 TX</text>
+          <!-- RX chain (bottom) -->
+          <text x="20" y="155" fill="#e74c3c" font-size="12" font-weight="700">RX 接收链路（光→电）</text>
+          <rect x="535" y="170" width="80" height="40" rx="6" fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+          <text x="575" y="194" fill="#9d174d" font-size="10" font-weight="700" text-anchor="middle">光纤 RX</text>
+          <line x1="530" y1="190" x2="480" y2="190" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr2r)"/>
+          <rect x="420" y="170" width="60" height="40" rx="6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="450" y="188" fill="#4338ca" font-size="9" font-weight="700" text-anchor="middle">Demux</text>
+          <text x="450" y="202" fill="#4338ca" font-size="8" text-anchor="middle">解复用</text>
+          <line x1="415" y1="190" x2="385" y2="190" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr2r)"/>
+          <rect x="305" y="170" width="80" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="345" y="188" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">PD/APD</text>
+          <text x="345" y="202" fill="#166534" font-size="8" text-anchor="middle">光探测器</text>
+          <line x1="300" y1="190" x2="270" y2="190" stroke="#1a56db" stroke-width="2" marker-end="url(#arr2)"/>
+          <rect x="210" y="170" width="60" height="40" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="240" y="188" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">TIA</text>
+          <text x="240" y="202" fill="#991b1b" font-size="8" text-anchor="middle">跨阻放大</text>
+          <line x1="205" y1="190" x2="175" y2="190" stroke="#1a56db" stroke-width="2" marker-end="url(#arr2)"/>
+          <rect x="115" y="170" width="60" height="40" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="145" y="188" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">oDSP</text>
+          <text x="145" y="202" fill="#92400e" font-size="8" text-anchor="middle">均衡+FEC</text>
+          <line x1="110" y1="190" x2="80" y2="190" stroke="#1a56db" stroke-width="2" marker-end="url(#arr2)"/>
+          <rect x="10" y="170" width="70" height="40" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="45" y="194" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">Host</text>
+          <!-- Management -->
+          <text x="20" y="260" fill="#16a34a" font-size="12" font-weight="700">管理链路（MCU + I2C/MDIO）</text>
+          <rect x="200" y="275" width="120" height="35" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="260" y="297" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">MCU + EEPROM</text>
+          <line x1="200" y1="292" x2="160" y2="292" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr2)"/>
+          <text x="130" y="288" fill="#166534" font-size="9" text-anchor="middle">I2C</text>
+          <rect x="60" y="275" width="100" height="35" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="110" y="297" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">主机管理</text>
+          <line x1="320" y1="292" x2="360" y2="292" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr2)"/>
+          <text x="390" y="288" fill="#166534" font-size="9" text-anchor="middle">监测/控制</text>
+          <rect x="360" y="275" width="220" height="35" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="470" y="297" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">温度/光功率/偏置电流/告警</text>
+        </svg>
+      </div>
+
+      <h4>📤 TX 发射链路工作流程</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>主机发送电信号</h5><p>主机 ASIC（Switch SoC / NIC）经 SerDes 输出高速差分电信号（NRZ 或 PAM4），通过电连接器（如 QSFP-DD 的 8 通道）进入光模块</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>oDSP 处理（如配备）</h5><p>400G 及以上速率的光模块普遍内置 oDSP，对信号做 FEC 编码、预加重（Pre-emphasis）、DAC 数模转换，补偿后续链路的损耗</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>Driver 驱动放大</h5><p>Driver（调制驱动器）将电信号放大到足够幅度，驱动激光器（DML 直接调制）或外调制器（EML/SiPh MZM 外调制）</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>激光器电→光转换</h5><p>激光器（VCSEL/DFB/EML）将电信号转换为光信号，光的强度/相位随电信号变化，完成调制</p></div></div>
+        <div class="step"><div class="step-no">5</div><div class="step-content"><h5>波分复用（如多波长）</h5><p>多通道光模块（如 100G-LR4、400G-FR4）通过 WDM filter 将 4 个不同波长光信号合并到单根光纤</p></div></div>
+        <div class="step"><div class="step-no">6</div><div class="step-content"><h5>光信号注入光纤</h5><p>光信号经光连接器（LC/MPO）耦合进入光纤，向对端传输</p></div></div>
+      </div>
+
+      <h4 style="margin-top:20px;">📥 RX 接收链路工作流程</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>光信号从光纤进入</h5><p>光信号经光连接器进入光模块，若多波长则先经 Demux 解复用，分离到不同通道的光探测器</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>PD 光→电转换</h5><p>光探测器（PIN 或 APD）将光信号转换为光电流（µA 级），完成光电转换</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>TIA 跨阻放大</h5><p>TIA（Transimpedance Amplifier）将微弱光电流转换为电压信号并放大，通常还需 Post-Amp（限幅放大或线性均衡）</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>oDSP 处理（如配备）</h5><p>ADC 采样后，oDSP 做 FFE/DFE/MLSD 均衡补偿信道损伤、CDR 时钟恢复、FEC 解码纠错，恢复原始数据</p></div></div>
+        <div class="step"><div class="step-no">5</div><div class="step-content"><h5>电信号送回主机</h5><p>恢复后的高速差分电信号经电连接器送回主机 ASIC 的 SerDes 接收端</p></div></div>
+      </div>
+
+      <h4 style="margin-top:20px;">🔧 管理链路工作流程</h4>
+      <p>管理链路与数据链路物理上分离，通过 <strong>I2C</strong>（两线制，SCL+SDA）或 <strong>MDIO</strong>（MDC+MDIO）与主机通信：</p>
+      <ul>
+        <li><strong>EEPROM 读取</strong>：主机通过 I2C 读取 A0 page（模块类型、速率、波长、传输距离等基础信息）和 A2 page（DDM 数字诊断：温度、光功率、偏置电流、告警阈值）</li>
+        <li><strong>状态机控制</strong>：CMIS（Common Management Interface Specification）定义了光模块的初始化、上电、低功耗、模块就绪等状态机</li>
+        <li><strong>实时监测</strong>：MCU 周期性采样温度传感器、光功率检测器、激光器偏置电流，写入 DDM 寄存器供主机轮询</li>
+        <li><strong>告警上报</strong>：温度过高/光功率过低/偏置电流异常时，置位告警标志位，主机可触发中断或告警</li>
+        <li><strong>oDSP 寄存器访问</strong>：通过 MDIO Clause 45 访问 oDSP 内部寄存器，用于配置、调试、读取性能指标（如 FEC 误码计数）</li>
+      </ul>
+
+      <div class="success-box">
+        <strong>核心要点：</strong>光模块的"工作"实际上是三条链路并行——TX 链路把电变光、RX 链路把光变电、管理链路负责监控与配置。三者缺一不可，任何一条链路异常都会导致模块功能失效。
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ═══════════ Section 2b: 核心模块深度解析 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header">
+      <div class="icon">🔬</div><h2>核心模块深度解析</h2>
+    </div>
+    <div class="card-body">
+      <p>光模块内部由 <strong>6 大功能模块</strong>协同工作，每个模块承担特定的"光电数"转换或管理职能。下面逐一解析各模块的工作原理、涉及协议与关键指标。</p>
+
+      <div class="diagram-title">图 2b-1 | 光模块内部 6 大功能模块全景</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 900 260" width="880" height="260" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker>
+            <marker id="arr3r" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#e74c3c"/></marker>
+          </defs>
+          <!-- 链路标注 -->
+          <text x="660" y="55" fill="#1a56db" font-size="10" font-weight="700">TX 发射链路 →</text>
+          <text x="660" y="170" fill="#1a56db" font-size="10" font-weight="700">← RX 接收链路</text>
+          <text x="660" y="220" fill="#16a34a" font-size="10" font-weight="700">管理 / 供电层</text>
+          <!-- ===== TX 上路 (y=40-80) ===== -->
+          <!-- Driver -->
+          <rect x="210" y="40" width="90" height="42" rx="8" fill="#fee2e2" stroke="#e74c3c" stroke-width="2"/>
+          <text x="255" y="60" fill="#991b1b" font-size="11" font-weight="700" text-anchor="middle">②Driver</text>
+          <text x="255" y="74" fill="#991b1b" font-size="8" text-anchor="middle">TX 驱动</text>
+          <!-- TOSA -->
+          <rect x="320" y="40" width="100" height="42" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+          <text x="370" y="60" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">③TOSA</text>
+          <text x="370" y="74" fill="#166534" font-size="8" text-anchor="middle">激光器</text>
+          <line x1="300" y1="61" x2="320" y2="61" stroke="#1a56db" stroke-width="2" marker-end="url(#arr3)"/>
+          <!-- ===== 主链路 (y=92-138) ===== -->
+          <!-- 电口 -->
+          <rect x="10" y="92" width="80" height="46" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="2"/>
+          <text x="50" y="115" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle">电口</text>
+          <text x="50" y="130" fill="#1e40af" font-size="9" text-anchor="middle">SerDes 接口</text>
+          <!-- oDSP -->
+          <rect x="110" y="92" width="80" height="46" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text x="150" y="115" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">①oDSP</text>
+          <text x="150" y="130" fill="#92400e" font-size="9" text-anchor="middle">数字信号处理</text>
+          <line x1="90" y1="115" x2="110" y2="115" stroke="#1a56db" stroke-width="2" marker-end="url(#arr3)"/>
+          <!-- oDSP → Driver (上行) -->
+          <line x1="190" y1="110" x2="210" y2="61" stroke="#1a56db" stroke-width="2" marker-end="url(#arr3)"/>
+          <!-- Mux/Demux -->
+          <rect x="440" y="92" width="90" height="46" rx="8" fill="#e0e7ff" stroke="#6366f1" stroke-width="2"/>
+          <text x="485" y="115" fill="#4338ca" font-size="10" font-weight="700" text-anchor="middle">④Mux/Demux</text>
+          <text x="485" y="130" fill="#4338ca" font-size="9" text-anchor="middle">波分复用</text>
+          <!-- TOSA → Mux (下行汇入) -->
+          <line x1="420" y1="61" x2="440" y2="110" stroke="#1a56db" stroke-width="2" marker-end="url(#arr3)"/>
+          <!-- 光口 -->
+          <rect x="550" y="92" width="80" height="46" rx="8" fill="#fce7f3" stroke="#db2777" stroke-width="2"/>
+          <text x="590" y="115" fill="#9d174d" font-size="11" font-weight="700" text-anchor="middle">光口</text>
+          <text x="590" y="130" fill="#9d174d" font-size="9" text-anchor="middle">LC / MPO</text>
+          <line x1="530" y1="115" x2="550" y2="115" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr3r)"/>
+          <!-- ===== RX 下路 (y=148-190) ===== -->
+          <!-- TIA -->
+          <rect x="210" y="148" width="90" height="42" rx="8" fill="#fee2e2" stroke="#e74c3c" stroke-width="2"/>
+          <text x="255" y="168" fill="#991b1b" font-size="11" font-weight="700" text-anchor="middle">②TIA</text>
+          <text x="255" y="182" fill="#991b1b" font-size="8" text-anchor="middle">RX 放大</text>
+          <!-- ROSA -->
+          <rect x="320" y="148" width="100" height="42" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+          <text x="370" y="168" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">③ROSA</text>
+          <text x="370" y="182" fill="#166534" font-size="8" text-anchor="middle">PD 光探测</text>
+          <line x1="320" y1="169" x2="300" y2="169" stroke="#1a56db" stroke-width="2" marker-end="url(#arr3)"/>
+          <!-- Mux → ROSA (下行分出) -->
+          <line x1="440" y1="125" x2="420" y2="169" stroke="#1a56db" stroke-width="2" marker-end="url(#arr3)"/>
+          <!-- TIA → oDSP (上行汇入) -->
+          <line x1="210" y1="165" x2="190" y2="125" stroke="#1a56db" stroke-width="2" marker-end="url(#arr3)"/>
+          <!-- ===== 管理 / 供电底层 (y=208-244) ===== -->
+          <rect x="110" y="208" width="80" height="36" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+          <text x="150" y="231" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">⑤MCU</text>
+          <rect x="210" y="208" width="90" height="36" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+          <text x="255" y="231" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">⑤EEPROM</text>
+          <rect x="320" y="208" width="100" height="36" rx="8" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+          <text x="370" y="231" fill="#854d0e" font-size="10" font-weight="700" text-anchor="middle">⑥PMIC</text>
+          <!-- 管理虚线 (向上连接到各自对应模块) -->
+          <line x1="150" y1="208" x2="150" y2="138" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <line x1="255" y1="208" x2="255" y2="190" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <line x1="370" y1="208" x2="370" y2="190" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <!-- 图例 -->
+          <text x="660" y="240" fill="#666" font-size="9">━━ 数据流　- - 管理/供电</text>
+          <text x="660" y="252" fill="#666" font-size="9">红 ━ 光信号　蓝 ━ 电信号</text>
+        </svg>
+      </div>
+
+      <!-- ===== 模块 1: oDSP ===== -->
+      <h4 style="margin-top:28px;border-bottom:2px solid #f59e0b;padding-bottom:6px;">① oDSP — 光数字信号处理器</h4>
+      <p>oDSP 是 400G 及以上高速光模块的"大脑"，承担数字信号处理与纠错任务。10G/25G 模块通常无 oDSP（直驱架构），100G 部分模块可选，400G/800G 必备。</p>
+
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>TX 方向处理流程</h3>
+          <ol>
+            <li><strong>FEC 编码</strong>：对主机来的数据加 FEC 纠错码（KR4/KP4/C-FEC），引入冗余 bit</li>
+            <li><strong>符号映射</strong>：将 bit 流映射为 PAM4 符号（2 bit/symbol）或 NRZ 符号</li>
+            <li><strong>预加重（Pre-emphasis）</strong>：对后续链路损耗做预补偿，抬高低频、压制高频</li>
+            <li><strong>DAC 数模转换</strong>：数字符号 → 模拟波形，送入 Driver</li>
+          </ol>
+        </div>
+        <div class="compare-col green">
+          <h3>RX 方向处理流程</h3>
+          <ol>
+            <li><strong>ADC 采样</strong>：模拟波形 → 数字采样，采样率 ≥2 倍符号率</li>
+            <li><strong>FFE/DFE 均衡</strong>：前馈+判决反馈均衡，补偿信道损耗与码间干扰（ISI）</li>
+            <li><strong>MLSD（可选）</strong>：最大似然序列检测，进一步提升灵敏度（400ZR 用）</li>
+            <li><strong>CDR 时钟恢复</strong>：从数据中提取时钟，重定时数据</li>
+            <li><strong>FEC 解码</strong>：纠错并恢复原始数据，送回主机</li>
+          </ol>
+        </div>
+      </div>
+
+      <table style="margin-top:14px;">
+        <thead><tr><th>oDSP 子模块</th><th>功能</th><th>涉及协议/标准</th></tr></thead>
+        <tbody>
+          <tr><td>FEC 编解码器</td><td>前向纠错编解码</td><td>KR4-FEC (RS 528,514)、KP4-FEC (RS 544,514)、C-FEC、OH-FEC、Staircase FEC</td></tr>
+          <tr><td>DAC/ADC</td><td>数模/模数转换</td><td>OIF-CEI-112G/224G、IEEE 802.3ck/dj</td></tr>
+          <tr><td>FFE/DFE 均衡器</td><td>信道补偿与码间干扰消除</td><td>IEEE 802.3bs/cd/dj 信道模板</td></tr>
+          <tr><td>CDR</td><td>时钟数据恢复</td><td>IEEE 802.3bj/bm/ck JTF 规格</td></tr>
+          <tr><td>PAM4 编解码</td><td>4 电平脉冲幅度调制编解码</td><td>IEEE 802.3bs PAM4、OIF-CEI</td></tr>
+          <tr><td>寄存器接口</td><td>配置与状态读取</td><td>MDIO Clause 45 (IEEE 802.3 Clause 45)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <strong>协议关联：</strong>oDSP 是 IEEE 802.3 系列标准（bs/ck/dj）与 OIF CEI 标准的物理实现载体，FEC 类型必须与对端模块匹配（如 400G-SR8 用 KR4，400G-FR4 用 KP4），否则无法互通。
+      </div>
+
+      <!-- ===== 模块 2: Driver & TIA ===== -->
+      <h4 style="margin-top:28px;border-bottom:2px solid #e74c3c;padding-bottom:6px;">② Driver & TIA — 模拟前端放大器</h4>
+      <p>Driver 和 TIA 是光模块的<strong>模拟前端核心</strong>，分别负责 TX 方向驱动激光器和 RX 方向放大光电流。它们决定了模块的带宽、线性度和噪声性能。</p>
+
+      <div class="compare-grid">
+        <div class="compare-col red">
+          <h3>Driver（TX 驱动器）</h3>
+          <p><strong>功能：</strong>将 oDSP/CDR 输出的差分电信号放大到足够幅度（典型 0.5~2 Vpp），驱动激光器（DML）或外调制器（EML/SiPh）。</p>
+          <p><strong>关键指标：</strong></p>
+          <ul>
+            <li>带宽：≥53 GHz（106G PAM4）</li>
+            <li>输出摆幅：0.3~2.0 Vpp 可调</li>
+            <li>线性度（PAM4）：THD &lt; 3%</li>
+            <li>抖动：RJ &lt; 0.3 ps rms</li>
+            <li>预加重：2~4 tap 可编程</li>
+          </ul>
+          <p><strong>工艺：</strong>SiGe BiCMOS（高频高性能）、InP HBT（超高频）、CMOS（低成本）</p>
+        </div>
+        <div class="compare-col green">
+          <h3>TIA（RX 跨阻放大器）</h3>
+          <p><strong>功能：</strong>将 PD 输出的微弱光电流（µA 级）转换为电压信号并放大，是接收链路噪声的决定因素。</p>
+          <p><strong>关键指标：</strong></p>
+          <ul>
+            <li>跨阻增益：2~10 kΩ</li>
+            <li>带宽：≥53 GHz（106G PAM4）</li>
+            <li>输入参考噪声：&lt; 15 pA/√Hz</li>
+            <li>动态范围：&gt; 20 dB</li>
+            <li>过载功率：&gt; 3 dBm</li>
+          </ul>
+          <p><strong>工艺：</strong>SiGe BiCMOS（主流）、InP HEMT（超低噪声）、CMOS（集成度高）</p>
+        </div>
+      </div>
+
+      <table style="margin-top:14px;">
+        <thead><tr><th>Driver/TIA 子模块</th><th>功能</th><th>涉及协议/标准</th></tr></thead>
+        <tbody>
+          <tr><td>线性 Driver</td><td>PAM4 线性驱动（必须保持 4 电平比例）</td><td>IEEE 802.3bs/cd PAM4 线性度要求</td></tr>
+          <tr><td>限幅 Driver</td><td>NRZ 限幅驱动（饱和输出）</td><td>IEEE 802.3ae/bj NRZ 规格</td></tr>
+          <tr><td>线性 TIA</td><td>PAM4 线性放大（保留幅度信息）</td><td>IEEE 802.3bs 灵敏度规格</td></tr>
+          <tr><td>AGC（自动增益控制）</td><td>输入动态范围自适应</td><td>—</td></tr>
+          <tr><td>Post-Amp（限幅/线性均衡）</td><td>TIA 后级信号调理</td><td>IEEE 802.3 信道模板</td></tr>
+          <tr><td>偏置控制</td><td>APD 偏压或 PIN 偏压控制</td><td>SFF-8472 DDM 偏压监测</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ===== 链路细化：RX 接收链路逐级信号流 ===== -->
+      <h4 style="margin-top:24px;border-bottom:2px solid #991b1b;padding-bottom:6px;">🔬 RX 接收链路逐级信号流详解</h4>
+      <p>以 400G-FR4（4 波长 × 100G PAM4）为例，从光信号到数字比特的完整接收链路跨越<strong>光域 → 模拟域 → 数字域</strong>三个信号域，共 8 级处理。理解每一级的输入输出和信号性质，是搞清"TIA 与 oDSP 如何连接、ADC 在哪里"的关键。</p>
+
+      <div style="overflow-x:auto;">
+      <svg viewBox="0 0 860 280" width="860" height="280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arx1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#666"/>
+          </marker>
+        </defs>
+        <!-- 域分组背景 -->
+        <rect x="10" y="20" width="120" height="240" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="70" y="38" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">光域</text>
+        <rect x="140" y="20" width="430" height="240" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="355" y="38" fill="#991b1b" font-size="11" font-weight="700" text-anchor="middle">模拟域</text>
+        <rect x="580" y="20" width="270" height="240" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="715" y="38" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle">数字域</text>
+
+        <!-- 级1: 光纤 -->
+        <rect x="30" y="60" width="80" height="50" rx="4" fill="#fbbf24" stroke="#92400e" stroke-width="1.5"/>
+        <text x="70" y="82" fill="#451a03" font-size="10" font-weight="700" text-anchor="middle">① 光纤</text>
+        <text x="70" y="97" fill="#451a03" font-size="8" text-anchor="middle">4λ 合波</text>
+        <!-- 级2: Demux -->
+        <rect x="30" y="130" width="80" height="50" rx="4" fill="#fbbf24" stroke="#92400e" stroke-width="1.5"/>
+        <text x="70" y="152" fill="#451a03" font-size="10" font-weight="700" text-anchor="middle">② Demux</text>
+        <text x="70" y="167" fill="#451a03" font-size="8" text-anchor="middle">AWG/TFF</text>
+        <!-- 级3: PD -->
+        <rect x="160" y="60" width="90" height="50" rx="4" fill="#fca5a5" stroke="#991b1b" stroke-width="1.5"/>
+        <text x="205" y="80" fill="#7f1d1d" font-size="10" font-weight="700" text-anchor="middle">③ PD</text>
+        <text x="205" y="95" fill="#7f1d1d" font-size="8" text-anchor="middle">PIN/APD</text>
+        <!-- 级4: TIA -->
+        <rect x="160" y="130" width="90" height="50" rx="4" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+        <text x="205" y="150" fill="#fff" font-size="10" font-weight="700" text-anchor="middle">④ TIA</text>
+        <text x="205" y="165" fill="#fee2e2" font-size="8" text-anchor="middle">纯模拟 I→V</text>
+        <!-- 级5: PCB走线 -->
+        <rect x="290" y="130" width="100" height="50" rx="4" fill="#fca5a5" stroke="#991b1b" stroke-width="1.5"/>
+        <text x="340" y="150" fill="#7f1d1d" font-size="10" font-weight="700" text-anchor="middle">⑤ PCB 差分线</text>
+        <text x="340" y="165" fill="#7f1d1d" font-size="8" text-anchor="middle">100Ω CML P/N</text>
+        <!-- 级6: ADC -->
+        <rect x="420" y="130" width="100" height="50" rx="4" fill="#3b82f6" stroke="#1e40af" stroke-width="2"/>
+        <text x="470" y="150" fill="#fff" font-size="10" font-weight="700" text-anchor="middle">⑥ ADC</text>
+        <text x="470" y="165" fill="#dbeafe" font-size="8" text-anchor="middle">在 oDSP 内</text>
+        <!-- 级7: DSP核心 -->
+        <rect x="600" y="60" width="110" height="50" rx="4" fill="#60a5fa" stroke="#1e40af" stroke-width="1.5"/>
+        <text x="655" y="80" fill="#1e3a8a" font-size="10" font-weight="700" text-anchor="middle">⑦ DSP 核心</text>
+        <text x="655" y="95" fill="#1e3a8a" font-size="8" text-anchor="middle">FFE/DFE/CDR</text>
+        <!-- 级8: HOST侧 -->
+        <rect x="720" y="60" width="110" height="50" rx="4" fill="#60a5fa" stroke="#1e40af" stroke-width="1.5"/>
+        <text x="775" y="80" fill="#1e3a8a" font-size="10" font-weight="700" text-anchor="middle">⑧ HOST SerDes</text>
+        <text x="775" y="95" fill="#1e3a8a" font-size="8" text-anchor="middle">→ 电口</text>
+
+        <!-- 连线 -->
+        <line x1="70" y1="110" x2="70" y2="130" stroke="#666" stroke-width="1.5" marker-end="url(#arx1)"/>
+        <line x1="110" y1="155" x2="160" y2="85" stroke="#666" stroke-width="1.5" marker-end="url(#arx1)"/>
+        <line x1="205" y1="110" x2="205" y2="130" stroke="#666" stroke-width="1.5" marker-end="url(#arx1)"/>
+        <line x1="250" y1="155" x2="290" y2="155" stroke="#666" stroke-width="1.5" marker-end="url(#arx1)"/>
+        <line x1="390" y1="155" x2="420" y2="155" stroke="#666" stroke-width="1.5" marker-end="url(#arx1)"/>
+        <line x1="520" y1="150" x2="600" y2="85" stroke="#666" stroke-width="1.5" marker-end="url(#arx1)"/>
+        <line x1="710" y1="85" x2="720" y2="85" stroke="#666" stroke-width="1.5" marker-end="url(#arx1)"/>
+
+        <!-- 信号性质标注 -->
+        <text x="205" y="200" fill="#991b1b" font-size="9" text-anchor="middle">µA 级电流</text>
+        <text x="340" y="200" fill="#991b1b" font-size="9" text-anchor="middle">mV~V 级电压</text>
+        <text x="470" y="200" fill="#1e40af" font-size="9" text-anchor="middle">6~8bit 采样</text>
+
+        <!-- 域转换标注 -->
+        <text x="135" y="245" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">光→电</text>
+        <line x1="120" y1="235" x2="150" y2="235" stroke="#92400e" stroke-width="1.5"/>
+        <text x="560" y="245" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">模→数</text>
+        <line x1="540" y1="235" x2="580" y2="235" stroke="#1e40af" stroke-width="1.5"/>
+      </svg>
+      </div>
+
+      <table style="margin-top:14px;">
+        <thead><tr><th>级</th><th>器件</th><th>信号域</th><th>输入 → 输出</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>光纤</td><td>光域</td><td>4λ 合波光信号</td><td>4 个波长（LAN-WDM）合在一根光纤</td></tr>
+          <tr><td>2</td><td>Demux（AWG/TFF）</td><td>光域</td><td>合波光 → 4 路单波长光</td><td>解复用成 4 路独立光信号</td></tr>
+          <tr><td>3</td><td>PD（PIN/APD）</td><td>光→模拟</td><td>光功率 → 光电流（µA 级）</td><td>光电二极管，<strong>电流源输出</strong></td></tr>
+          <tr><td><strong>4</strong></td><td><strong>TIA</strong></td><td><strong>模拟</strong></td><td>光电流 → 模拟电压（mV~V）</td><td><strong>纯模拟器件，无 ADC</strong></td></tr>
+          <tr><td>5</td><td>PCB 差分走线</td><td>模拟</td><td>模拟差分电压 P/N</td><td>100Ω 差分线，CML 电平，无有源器件</td></tr>
+          <tr><td><strong>6</strong></td><td><strong>oDSP LINE 侧 ADC</strong></td><td><strong>模拟→数字</strong></td><td>模拟电压 → 数字采样</td><td><strong>ADC 在 oDSP 芯片内</strong></td></tr>
+          <tr><td>7</td><td>oDSP DSP 核心</td><td>数字</td><td>数字采样 → 比特流</td><td>FFE/DFE/MLSD + CDR + FEC</td></tr>
+          <tr><td>8</td><td>oDSP HOST 侧 SerDes</td><td>数字</td><td>比特流 → 高速串行</td><td>PMA/PCS，输出到电口</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <strong>核心结论：</strong>TIA 是<strong>纯模拟跨阻放大器</strong>（I-V 转换 + 滤波 + AGC + Post-Amp），输出模拟差分电压；通过 PCB 差分走线直连 oDSP LINE 侧；<strong>ADC 集成在 oDSP 芯片内部</strong>，TIA 与 oDSP 之间<strong>没有独立 ADC 芯片</strong>。这是现代 100G/400G/800G 光模块的主流集成架构。
+      </div>
+
+      <!-- ===== TIA 内部电路详解 ===== -->
+      <h4 style="margin-top:20px;">TIA 内部电路详解</h4>
+      <p>TIA（Transimpedance Amplifier）虽不含 ADC，但内部由多级模拟电路组成，每一级都对接收灵敏度有决定性影响。下图展示 TIA 单通道的内部信号流。</p>
+
+      <div style="overflow-x:auto;">
+      <svg viewBox="0 0 860 250" width="860" height="250" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="atia1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#666"/>
+          </marker>
+        </defs>
+        <!-- 输入: PD光电流 -->
+        <rect x="10" y="100" width="80" height="50" rx="4" fill="#fbbf24" stroke="#92400e" stroke-width="1.5"/>
+        <text x="50" y="122" fill="#451a03" font-size="10" font-weight="700" text-anchor="middle">PD</text>
+        <text x="50" y="137" fill="#451a03" font-size="8" text-anchor="middle">I_ph (µA)</text>
+
+        <!-- 级1: 跨阻放大级 -->
+        <rect x="120" y="100" width="110" height="50" rx="4" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+        <text x="175" y="118" fill="#fff" font-size="10" font-weight="700" text-anchor="middle">① 跨阻放大级</text>
+        <text x="175" y="133" fill="#fee2e2" font-size="8" text-anchor="middle">I→V, 2~10 kΩ</text>
+
+        <!-- 级2: 带通滤波 -->
+        <rect x="260" y="100" width="100" height="50" rx="4" fill="#fca5a5" stroke="#991b1b" stroke-width="1.5"/>
+        <text x="310" y="118" fill="#7f1d1d" font-size="10" font-weight="700" text-anchor="middle">② 带通滤波</text>
+        <text x="310" y="133" fill="#7f1d1d" font-size="8" text-anchor="middle">抑制带外噪声</text>
+
+        <!-- 级3: AGC -->
+        <rect x="390" y="100" width="100" height="50" rx="4" fill="#fca5a5" stroke="#991b1b" stroke-width="1.5"/>
+        <text x="440" y="118" fill="#7f1d1d" font-size="10" font-weight="700" text-anchor="middle">③ AGC</text>
+        <text x="440" y="133" fill="#7f1d1d" font-size="8" text-anchor="middle">自动增益控制</text>
+
+        <!-- 级4: Post-Amp -->
+        <rect x="520" y="100" width="110" height="50" rx="4" fill="#fca5a5" stroke="#991b1b" stroke-width="1.5"/>
+        <text x="575" y="118" fill="#7f1d1d" font-size="10" font-weight="700" text-anchor="middle">④ Post-Amp</text>
+        <text x="575" y="133" fill="#7f1d1d" font-size="8" text-anchor="middle">限幅(NRZ)/线性(PAM4)</text>
+
+        <!-- 级5: 差分输出 -->
+        <rect x="660" y="100" width="100" height="50" rx="4" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+        <text x="710" y="118" fill="#fff" font-size="10" font-weight="700" text-anchor="middle">⑤ 差分输出</text>
+        <text x="710" y="133" fill="#fee2e2" font-size="8" text-anchor="middle">CML P/N</text>
+
+        <!-- 连线 -->
+        <line x1="90" y1="125" x2="120" y2="125" stroke="#666" stroke-width="1.5" marker-end="url(#atia1)"/>
+        <line x1="230" y1="125" x2="260" y2="125" stroke="#666" stroke-width="1.5" marker-end="url(#atia1)"/>
+        <line x1="360" y1="125" x2="390" y2="125" stroke="#666" stroke-width="1.5" marker-end="url(#atia1)"/>
+        <line x1="490" y1="125" x2="520" y2="125" stroke="#666" stroke-width="1.5" marker-end="url(#atia1)"/>
+        <line x1="630" y1="125" x2="660" y2="125" stroke="#666" stroke-width="1.5" marker-end="url(#atia1)"/>
+
+        <!-- 输出标注 -->
+        <text x="780" y="128" fill="#991b1b" font-size="9" font-weight="700">→ oDSP ADC</text>
+
+        <!-- 各级说明 -->
+        <text x="175" y="180" fill="#7f1d1d" font-size="8" text-anchor="middle">决定噪声底线</text>
+        <text x="175" y="192" fill="#7f1d1d" font-size="8" text-anchor="middle">核心：Rf 反馈电阻</text>
+        <text x="310" y="180" fill="#7f1d1d" font-size="8" text-anchor="middle">低通+高通</text>
+        <text x="310" y="192" fill="#7f1d1d" font-size="8" text-anchor="middle">切除 DC 和高频噪</text>
+        <text x="440" y="180" fill="#7f1d1d" font-size="8" text-anchor="middle">适应输入功率</text>
+        <text x="440" y="192" fill="#7f1d1d" font-size="8" text-anchor="middle">动态范围 >20dB</text>
+        <text x="575" y="180" fill="#7f1d1d" font-size="8" text-anchor="middle">NRZ: 饱和限幅</text>
+        <text x="575" y="192" fill="#7f1d1d" font-size="8" text-anchor="middle">PAM4: 线性保持</text>
+        <text x="710" y="180" fill="#7f1d1d" font-size="8" text-anchor="middle">300~800 mVpp</text>
+        <text x="710" y="192" fill="#7f1d1d" font-size="8" text-anchor="middle">100Ω 差分</text>
+
+        <!-- 反馈环路标注 -->
+        <path d="M 440 100 Q 440 75 310 75 Q 175 75 175 100" stroke="#dc2626" stroke-width="1" fill="none" stroke-dasharray="3,2" marker-end="url(#atia1)"/>
+        <text x="310" y="68" fill="#dc2626" font-size="8" font-style="italic" text-anchor="middle">AGC 反馈控制前级增益</text>
+
+        <!-- 标题 -->
+        <text x="430" y="30" fill="#7f1d1d" font-size="13" font-weight="700" text-anchor="middle">TIA 单通道内部电路（纯模拟，无 ADC）</text>
+        <text x="430" y="48" fill="#991b1b" font-size="9" text-anchor="middle">信号始终在模拟域：电流 → 电压 → 滤波 → 增益调节 → 放大 → 差分输出</text>
+      </svg>
+      </div>
+
+      <table style="margin-top:12px;">
+        <thead><tr><th>级</th><th>子电路</th><th>功能</th><th>关键参数</th></tr></thead>
+        <tbody>
+          <tr><td>①</td><td>跨阻放大级（Core TIA）</td><td>光电流 I→电压 V 转换，核心是反馈电阻 Rf</td><td>跨阻增益 2~10 kΩ；输入参考噪声 &lt;15 pA/√Hz</td></tr>
+          <tr><td>②</td><td>带通滤波（BPF）</td><td>低通滤除高频噪声 + 高通去除 DC 分量</td><td>带宽 53~80 GHz；截止频率可调</td></tr>
+          <tr><td>③</td><td>AGC（自动增益控制）</td><td>根据输入光功率自动调节增益，保持输出幅度稳定</td><td>动态范围 &gt;20 dB；响应时间 ~µs</td></tr>
+          <tr><td>④</td><td>Post-Amp（后级放大）</td><td>NRZ 用限幅放大（饱和输出）；PAM4 用线性放大（保留 4 电平）</td><td>输出摆幅 300~800 mVpp；线性度 THD&lt;3%</td></tr>
+          <tr><td>⑤</td><td>差分输出驱动（CML）</td><td>转差分信号，CML 电平，驱动 PCB 差分线</td><td>100Ω 差分阻抗；交流耦合</td></tr>
+        </tbody>
+      </table>
+
+      <div class="warn-box">
+        <strong>NRZ vs PAM4 的 TIA 差异：</strong>NRZ 模块的 TIA Post-Amp 通常采用<strong>限幅放大器</strong>（Limiting Amp），输出饱和的方波，恢复数字电平；PAM4 模块的 TIA 必须采用<strong>线性放大器</strong>（Linear Amp），严格保留 4 个电平的幅度比例，不能饱和。这就是 PAM4 TIA 设计难度更高的根本原因——任何非线性都会导致 4 电平压缩、眼图闭合。
+      </div>
+
+      <!-- ===== Driver 内部电路详解 ===== -->
+      <h4 style="margin-top:20px;">Driver 内部电路详解</h4>
+      <p>Driver 是 TIA 的镜像（TX 方向），同样是纯模拟器件，将 oDSP DAC 输出的模拟差分电压放大到足够幅度驱动激光器。下图展示 Driver 单通道的内部信号流。</p>
+
+      <div style="overflow-x:auto;">
+      <svg viewBox="0 0 860 250" width="860" height="250" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="adrv1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#666"/>
+          </marker>
+        </defs>
+        <!-- 输入: oDSP DAC -->
+        <rect x="10" y="100" width="90" height="50" rx="4" fill="#3b82f6" stroke="#1e40af" stroke-width="1.5"/>
+        <text x="55" y="122" fill="#fff" font-size="10" font-weight="700" text-anchor="middle">oDSP DAC</text>
+        <text x="55" y="137" fill="#dbeafe" font-size="8" text-anchor="middle">模拟差分 V</text>
+
+        <!-- 级1: 输入缓冲 -->
+        <rect x="130" y="100" width="100" height="50" rx="4" fill="#fca5a5" stroke="#991b1b" stroke-width="1.5"/>
+        <text x="180" y="118" fill="#7f1d1d" font-size="10" font-weight="700" text-anchor="middle">① 输入缓冲</text>
+        <text x="180" y="133" fill="#7f1d1d" font-size="8" text-anchor="middle">阻抗匹配</text>
+
+        <!-- 级2: 预加重 -->
+        <rect x="260" y="100" width="100" height="50" rx="4" fill="#fca5a5" stroke="#991b1b" stroke-width="1.5"/>
+        <text x="310" y="118" fill="#7f1d1d" font-size="10" font-weight="700" text-anchor="middle">② 预加重</text>
+        <text x="310" y="133" fill="#7f1d1d" font-size="8" text-anchor="middle">2~4 tap</text>
+
+        <!-- 级3: 可变增益 -->
+        <rect x="390" y="100" width="100" height="50" rx="4" fill="#fca5a5" stroke="#991b1b" stroke-width="1.5"/>
+        <text x="440" y="118" fill="#7f1d1d" font-size="10" font-weight="700" text-anchor="middle">③ VGA</text>
+        <text x="440" y="133" fill="#7f1d1d" font-size="8" text-anchor="middle">可变增益放大</text>
+
+        <!-- 级4: 输出驱动 -->
+        <rect x="520" y="100" width="110" height="50" rx="4" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+        <text x="575" y="118" fill="#fff" font-size="10" font-weight="700" text-anchor="middle">④ 输出驱动</text>
+        <text x="575" y="133" fill="#fee2e2" font-size="8" text-anchor="middle">功率放大</text>
+
+        <!-- 级5: 激光器 -->
+        <rect x="660" y="100" width="100" height="50" rx="4" fill="#fbbf24" stroke="#92400e" stroke-width="1.5"/>
+        <text x="710" y="118" fill="#451a03" font-size="10" font-weight="700" text-anchor="middle">⑤ 激光器</text>
+        <text x="710" y="133" fill="#451a03" font-size="8" text-anchor="middle">DML/EML</text>
+
+        <!-- 连线 -->
+        <line x1="100" y1="125" x2="130" y2="125" stroke="#666" stroke-width="1.5" marker-end="url(#adrv1)"/>
+        <line x1="230" y1="125" x2="260" y2="125" stroke="#666" stroke-width="1.5" marker-end="url(#adrv1)"/>
+        <line x1="360" y1="125" x2="390" y2="125" stroke="#666" stroke-width="1.5" marker-end="url(#adrv1)"/>
+        <line x1="490" y1="125" x2="520" y2="125" stroke="#666" stroke-width="1.5" marker-end="url(#adrv1)"/>
+        <line x1="630" y1="125" x2="660" y2="125" stroke="#666" stroke-width="1.5" marker-end="url(#adrv1)"/>
+
+        <!-- 输入标注 -->
+        <text x="55" y="170" fill="#1e40af" font-size="8" text-anchor="middle">DAC 在 oDSP 内</text>
+
+        <!-- 各级说明 -->
+        <text x="180" y="180" fill="#7f1d1d" font-size="8" text-anchor="middle">100Ω 差分输入</text>
+        <text x="180" y="192" fill="#7f1d1d" font-size="8" text-anchor="middle">CML 电平</text>
+        <text x="310" y="180" fill="#7f1d1d" font-size="8" text-anchor="middle">预补偿信道损耗</text>
+        <text x="310" y="192" fill="#7f1d1d" font-size="8" text-anchor="middle">高频分量提升</text>
+        <text x="440" y="180" fill="#7f1d1d" font-size="8" text-anchor="middle">调节输出摆幅</text>
+        <text x="440" y="192" fill="#7f1d1d" font-size="8" text-anchor="middle">0.3~2.0 Vpp</text>
+        <text x="575" y="180" fill="#7f1d1d" font-size="8" text-anchor="middle">NRZ: 限幅驱动</text>
+        <text x="575" y="192" fill="#7f1d1d" font-size="8" text-anchor="middle">PAM4: 线性驱动</text>
+        <text x="710" y="180" fill="#92400e" font-size="8" text-anchor="middle">DML: 直接调制</text>
+        <text x="710" y="192" fill="#92400e" font-size="8" text-anchor="middle">EML: 外调制</text>
+
+        <!-- 标题 -->
+        <text x="430" y="30" fill="#7f1d1d" font-size="13" font-weight="700" text-anchor="middle">Driver 单通道内部电路（纯模拟，无 DAC）</text>
+        <text x="430" y="48" fill="#991b1b" font-size="9" text-anchor="middle">信号始终在模拟域：差分电压 → 缓冲 → 预加重 → 增益调节 → 功率放大 → 驱动激光器</text>
+      </svg>
+      </div>
+
+      <table style="margin-top:12px;">
+        <thead><tr><th>级</th><th>子电路</th><th>功能</th><th>关键参数</th></tr></thead>
+        <tbody>
+          <tr><td>①</td><td>输入缓冲（Input Buffer）</td><td>接收 oDSP DAC 输出的模拟差分信号，阻抗匹配</td><td>100Ω 差分输入；CML 电平</td></tr>
+          <tr><td>②</td><td>预加重（Pre-emphasis）</td><td>提升高频分量，预补偿激光器和信道的高频损耗</td><td>2~4 tap 可编程；FFE 结构</td></tr>
+          <tr><td>③</td><td>VGA（可变增益放大）</td><td>调节输出摆幅，适应不同激光器偏置需求</td><td>输出 0.3~2.0 Vpp 可调</td></tr>
+          <tr><td>④</td><td>输出驱动（Output Driver）</td><td>NRZ 限幅驱动（饱和）；PAM4 线性驱动（保留 4 电平）</td><td>带宽 ≥53 GHz；THD&lt;3%（PAM4）</td></tr>
+          <tr><td>⑤</td><td>激光器（DML/EML）</td><td>电→光转换；DML 直接调制注入电流，EML 驱动外调制器</td><td>调制电流 20~80 mA</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ===== 架构对比 ===== -->
+      <h4 style="margin-top:20px;">集成架构 vs 分立架构对比</h4>
+      <table>
+        <thead><tr><th>维度</th><th>集成架构（主流）</th><th>分立架构（早期/特殊）</th></tr></thead>
+        <tbody>
+          <tr><td><strong>ADC/DAC 位置</strong></td><td>集成在 oDSP 芯片内</td><td>TIA/Driver 与 oDSP 之间有独立 ADC/DAC 芯片</td></tr>
+          <tr><td><strong>TIA 输出</strong></td><td>模拟差分 → oDSP ADC</td><td>模拟差分 → 独立 ADC → 数字 → oDSP</td></tr>
+          <tr><td><strong>Driver 输入</strong></td><td>oDSP DAC → 模拟差分 → Driver</td><td>oDSP → 独立 DAC → 模拟差分 → Driver</td></tr>
+          <tr><td><strong>芯片数量</strong></td><td>少（TIA + Driver + oDSP）</td><td>多（TIA + ADC + DAC + Driver + oDSP）</td></tr>
+          <tr><td><strong>应用</strong></td><td>100G/400G/800G 现代模块</td><td>早期 10G/40G、某些相干模块</td></tr>
+          <tr><td><strong>优势</strong></td><td>低功耗、低噪声、小面积、短模拟走线</td><td>ADC/DAC 可选高性能独立器件</td></tr>
+          <tr><td><strong>劣势</strong></td><td>ADC/DAC 性能受 oDSP CMOS 工艺限制</td><td>走线长、噪声大、成本高、面积大</td></tr>
+        </tbody>
+      </table>
+
+      <div class="success-box">
+        <strong>现代模块的主流选择：</strong>400G/800G 模块几乎都采用集成架构——TIA 和 Driver 是纯模拟器件，ADC/DAC 集成在 oDSP 内。oDSP 是一颗 CMOS SoC，内部集成了 4~8 路 DAC（TX）、4~8 路 ADC（RX）、DSP 核心、HOST 侧 SerDes 和管理接口。这样设计可缩短模拟走线（降噪）、降低功耗、减小 PCB 面积。
+      </div>
+
+      <!-- ===== ADC/DAC 架构与校准详解 ===== -->
+      <h4 style="margin-top:24px;border-bottom:2px solid #16a34a;padding-bottom:6px;">🔬 oDSP 内部 ADC/DAC 架构与校准</h4>
+      <p>现代光模块 oDSP 内部的 ADC/DAC 是整个信号链的"模数/数模转换门户"，其架构选型和校准机制直接决定模块的 SNR、BER 和长期稳定性。这一小节深入解析 ADC/DAC 的架构选择、失配机理和校准方法。</p>
+
+      <!-- ===== 一、ADC 架构选型 ===== -->
+      <h5 style="margin-top:18px;color:#1e40af;">一、ADC 架构选型：为什么是 TI-SAR</h5>
+      <p>光模块（100G/400G/800G）内部 oDSP 的 ADC 几乎清一色采用 <strong>TI-SAR（Time-Interleaved SAR，时间交织 SAR）</strong>架构——多个低速 SAR 子通道按相位错开采样，等效出高速采样率。核心思路是：单通道 SAR 在先进 CMOS 工艺（16nm/7nm）下能跑到 ~14~28 GS/s，把 4~8 个这样的子通道按 0°/45°/90°/.../315° 相位错开采样，等效采样率 = M × 单通道速率，轻松做到 56~112 GS/s，而每个子通道仍工作在舒适区。</p>
+
+      <div style="overflow-x:auto;">
+      <svg viewBox="0 0 860 420" width="860" height="420" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="aad1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#1e40af"/>
+          </marker>
+        </defs>
+        <rect x="0" y="0" width="860" height="420" fill="#fafafa" rx="8"/>
+        <text x="430" y="28" fill="#1e40af" font-size="14" font-weight="700" text-anchor="middle">四种 ADC 架构对比与 TI-SAR 工作原理</text>
+
+        <rect x="30" y="55" width="190" height="110" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+        <text x="125" y="78" fill="#991b1b" font-size="12" font-weight="700" text-anchor="middle">Flash ADC</text>
+        <text x="125" y="98" fill="#7f1d1d" font-size="10" text-anchor="middle">并行比较</text>
+        <text x="125" y="115" fill="#7f1d1d" font-size="10" text-anchor="middle">2^N-1 个比较器</text>
+        <text x="125" y="132" fill="#7f1d1d" font-size="10" text-anchor="middle">6bit = 63 个</text>
+        <text x="125" y="152" fill="#dc2626" font-size="10" font-weight="700" text-anchor="middle">✗ 功耗爆炸</text>
+
+        <rect x="240" y="55" width="190" height="110" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+        <text x="335" y="78" fill="#854d0e" font-size="12" font-weight="700" text-anchor="middle">SAR ADC</text>
+        <text x="335" y="98" fill="#713f12" font-size="10" text-anchor="middle">逐次逼近</text>
+        <text x="335" y="115" fill="#713f12" font-size="10" text-anchor="middle">N 个时钟周期</text>
+        <text x="335" y="132" fill="#713f12" font-size="10" text-anchor="middle">精度高但慢</text>
+        <text x="335" y="152" fill="#d97706" font-size="10" font-weight="700" text-anchor="middle">✗ 速率不够</text>
+
+        <rect x="450" y="55" width="190" height="110" rx="6" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
+        <text x="545" y="78" fill="#7c2d12" font-size="12" font-weight="700" text-anchor="middle">Pipeline ADC</text>
+        <text x="545" y="98" fill="#9a3412" font-size="10" text-anchor="middle">流水线分级</text>
+        <text x="545" y="115" fill="#9a3412" font-size="10" text-anchor="middle">每级 2-3 bit</text>
+        <text x="545" y="132" fill="#9a3412" font-size="10" text-anchor="middle">延迟大</text>
+        <text x="545" y="152" fill="#ea580c" font-size="10" font-weight="700" text-anchor="middle">△ 功耗偏高</text>
+
+        <rect x="660" y="55" width="190" height="110" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+        <text x="755" y="76" fill="#166534" font-size="12" font-weight="700" text-anchor="middle">TI-SAR（主流）</text>
+        <text x="755" y="94" fill="#166534" font-size="10" text-anchor="middle">时间交织 SAR</text>
+        <text x="755" y="111" fill="#166534" font-size="10" text-anchor="middle">多通道并行</text>
+        <text x="755" y="128" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">100G/400G/800G</text>
+        <text x="755" y="148" fill="#16a34a" font-size="10" font-weight="700" text-anchor="middle">✓ 首选方案</text>
+
+        <line x1="755" y1="168" x2="755" y2="195" stroke="#16a34a" stroke-width="1.5" marker-end="url(#aad1)"/>
+
+        <rect x="30" y="200" width="820" height="160" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+        <text x="430" y="222" fill="#166534" font-size="13" font-weight="700" text-anchor="middle">TI-ADC 工作原理：M 个 SAR 子通道按相位错开采样</text>
+
+        <rect x="50" y="240" width="170" height="60" rx="5" fill="#bbf7d0" stroke="#16a34a" stroke-width="1"/>
+        <text x="135" y="262" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">SAR 子通道 0</text>
+        <text x="135" y="280" fill="#15803d" font-size="10" text-anchor="middle">相位 0°</text>
+        <text x="135" y="294" fill="#15803d" font-size="9" text-anchor="middle">14 GS/s</text>
+
+        <rect x="240" y="240" width="170" height="60" rx="5" fill="#bbf7d0" stroke="#16a34a" stroke-width="1"/>
+        <text x="325" y="262" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">SAR 子通道 1</text>
+        <text x="325" y="280" fill="#15803d" font-size="10" text-anchor="middle">相位 90°</text>
+        <text x="325" y="294" fill="#15803d" font-size="9" text-anchor="middle">14 GS/s</text>
+
+        <rect x="430" y="240" width="170" height="60" rx="5" fill="#bbf7d0" stroke="#16a34a" stroke-width="1"/>
+        <text x="515" y="262" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">SAR 子通道 2</text>
+        <text x="515" y="280" fill="#15803d" font-size="10" text-anchor="middle">相位 180°</text>
+        <text x="515" y="294" fill="#15803d" font-size="9" text-anchor="middle">14 GS/s</text>
+
+        <rect x="620" y="240" width="170" height="60" rx="5" fill="#bbf7d0" stroke="#16a34a" stroke-width="1"/>
+        <text x="705" y="262" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">SAR 子通道 3</text>
+        <text x="705" y="280" fill="#15803d" font-size="10" text-anchor="middle">相位 270°</text>
+        <text x="705" y="294" fill="#15803d" font-size="9" text-anchor="middle">14 GS/s</text>
+
+        <line x1="135" y1="300" x2="135" y2="325" stroke="#16a34a" stroke-width="1.2"/>
+        <line x1="325" y1="300" x2="325" y2="325" stroke="#16a34a" stroke-width="1.2"/>
+        <line x1="515" y1="300" x2="515" y2="325" stroke="#16a34a" stroke-width="1.2"/>
+        <line x1="705" y1="300" x2="705" y2="325" stroke="#16a34a" stroke-width="1.2"/>
+        <line x1="135" y1="325" x2="705" y2="325" stroke="#16a34a" stroke-width="1.5"/>
+
+        <rect x="280" y="325" width="280" height="28" rx="4" fill="#16a34a" stroke="none"/>
+        <text x="420" y="344" fill="#fff" font-size="11" font-weight="700" text-anchor="middle">Mux 合并 → 等效 56 GS/s 输出</text>
+
+        <text x="430" y="378" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">4 通道交织：等效采样率 = 4 × 14 = 56 GS/s</text>
+        <text x="430" y="396" fill="#15803d" font-size="10" text-anchor="middle">每个子通道仍工作在 14 GS/s 舒适区，兼顾速率/精度/功耗</text>
+      </svg>
+      </div>
+
+      <table>
+        <thead><tr><th>架构</th><th>原理</th><th>速率</th><th>分辨率</th><th>功耗</th><th>光模块适用性</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Flash</strong></td><td>2^N-1 个比较器并行</td><td>极快</td><td>低（≤6bit）</td><td>极高</td><td>✗ 6bit=63 个比较器，112GS/s 下功耗爆炸，输入电容累积导致带宽坍塌</td></tr>
+          <tr><td><strong>SAR</strong></td><td>逐次逼近，N 个周期</td><td>慢</td><td>中高</td><td>低</td><td>✗ 单通道速率上限 ~1GS/s，远不够</td></tr>
+          <tr><td><strong>Pipeline</strong></td><td>分级流水线，每级 2-3bit</td><td>快</td><td>中高</td><td>中</td><td>△ 延迟大（数个时钟），功耗偏高，早期 40G/100G 用过</td></tr>
+          <tr><td><strong>TI-SAR</strong></td><td>M 个 SAR 通道时间交织</td><td>快</td><td>中</td><td>低</td><td><strong>✓ 主流</strong>，兼顾速率/精度/功耗</td></tr>
+        </tbody>
+      </table>
+
+      <p style="margin-top:12px;"><strong>典型指标</strong>（400G PAM4 模块 oDSP 内 ADC）：</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:8px 0 16px 0;">
+        <div style="background:#eff6ff;padding:10px 14px;border-radius:6px;border-left:3px solid #1e40af;"><strong>分辨率</strong><br>6~8 bit（ENOB 5.5~7）</div>
+        <div style="background:#eff6ff;padding:10px 14px;border-radius:6px;border-left:3px solid #1e40af;"><strong>采样率</strong><br>56~112 GSa/s</div>
+        <div style="background:#eff6ff;padding:10px 14px;border-radius:6px;border-left:3px solid #1e40af;"><strong>模拟带宽</strong><br>20~40 GHz</div>
+        <div style="background:#eff6ff;padding:10px 14px;border-radius:6px;border-left:3px solid #1e40af;"><strong>SNDR</strong><br>28~32 dB</div>
+        <div style="background:#eff6ff;padding:10px 14px;border-radius:6px;border-left:3px solid #1e40af;"><strong>功耗</strong><br>200~400 mW/通道</div>
+        <div style="background:#eff6ff;padding:10px 14px;border-radius:6px;border-left:3px solid #1e40af;"><strong>交织通道数</strong><br>4~8（工艺越先进越少）</div>
+      </div>
+
+      <div class="warn-box">
+        <strong>为什么不用 Flash？</strong>6bit Flash 需要 63 个比较器，8bit 需要 255 个。在 112 GS/s 速率下，每个比较器都要消耗数十 mW，总功耗超过 5W；更致命的是 255 个比较器的输入电容并联（每个 ~5fF），总输入电容超过 1pF，在 40 GHz 带宽下阻抗极低，前级驱动器无法驱动。Flash 只适用于 6bit 以下、6 GS/s 以下的低速场景。
+      </div>
+
+      <!-- ===== 二、TI-ADC 失配误差 ===== -->
+      <h5 style="margin-top:20px;color:#1e40af;">二、TI-ADC 四种失配误差：为什么必须校准</h5>
+      <p>TI-ADC 的"阿喀琉斯之踵"在于：M 个子通道在物理上不可能完全一致，任何微小差异都会在频谱上产生<strong>交织杂散（interleaving spurs）</strong>，出现在 fs/M 及其谐波处，直接抬高本底噪声、压低 SNDR/SFDR。</p>
+
+      <div class="danger-box">
+        <strong>关键数字：</strong>在 112 GS/s、4 通道交织下，时序失配只要 <strong>100 fs（1e-13 秒）</strong>，就会产生 -40 dBc 的杂散，足以让 SNDR 从 32 dB 恶化到 24 dB。而 CMOS 工艺的时钟分配路径失配通常在 <strong>ps 级</strong>——<strong>不校准根本无法工作</strong>。
+      </div>
+
+      <div style="overflow-x:auto;">
+      <svg viewBox="0 0 860 340" width="860" height="340" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="860" height="340" fill="#fafafa" rx="8"/>
+        <text x="430" y="28" fill="#1e40af" font-size="14" font-weight="700" text-anchor="middle">TI-ADC 四种失配误差</text>
+
+        <rect x="30" y="55" width="390" height="120" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+        <text x="45" y="78" fill="#991b1b" font-size="12" font-weight="700">① 增益失配 Gain Mismatch</text>
+        <text x="45" y="98" fill="#7f1d1d" font-size="10">各子通道增益系数 G_k 略有不同</text>
+        <text x="45" y="116" fill="#7f1d1d" font-size="10">→ 产生 fs/M 杂散（M=通道数）</text>
+        <text x="45" y="134" fill="#7f1d1d" font-size="10">频谱：固定频率尖峰</text>
+        <text x="45" y="156" fill="#991b1b" font-size="10" font-weight="700">校准：估计 G_k → 归一化 G_k/G_ref</text>
+
+        <rect x="440" y="55" width="390" height="120" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1"/>
+        <text x="455" y="78" fill="#6b21a8" font-size="12" font-weight="700">② 偏置失配 Offset Mismatch</text>
+        <text x="455" y="98" fill="#581c87" font-size="10">各子通道直流偏置 O_k 不同</text>
+        <text x="455" y="116" fill="#581c87" font-size="10">→ 产生 fs/M 频率尖峰</text>
+        <text x="455" y="134" fill="#581c87" font-size="10">最易发现，影响 SNR</text>
+        <text x="455" y="156" fill="#6b21a8" font-size="10" font-weight="700">校准：减去 O_k（每通道求均值）</text>
+
+        <rect x="30" y="190" width="390" height="120" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+        <text x="45" y="213" fill="#854d0e" font-size="12" font-weight="700">③ 时序失配 Timing Skew</text>
+        <text x="45" y="233" fill="#713f12" font-size="10">采样时钟相位非理想等分</text>
+        <text x="45" y="251" fill="#713f12" font-size="10">Δt_k 偏差（fs 级）→ 信号依赖杂散</text>
+        <text x="45" y="269" fill="#713f12" font-size="10">高频信号下恶化严重</text>
+        <text x="45" y="291" fill="#854d0e" font-size="10" font-weight="700">校准：估计 Δt_k → 分数延迟滤波器补偿</text>
+
+        <rect x="440" y="190" width="390" height="120" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1"/>
+        <text x="455" y="213" fill="#1e40af" font-size="12" font-weight="700">④ 带宽失配 Bandwidth Mismatch</text>
+        <text x="455" y="233" fill="#1e3a8a" font-size="10">各子通道前端带宽/群延迟不同</text>
+        <text x="455" y="251" fill="#1e3a8a" font-size="10">→ 频率相关相位/幅度误差</text>
+        <text x="455" y="269" fill="#1e3a8a" font-size="10">最难校准，需自适应滤波</text>
+        <text x="455" y="291" fill="#1e40af" font-size="10" font-weight="700">校准：自适应 LMS 滤波器对齐</text>
+      </svg>
+      </div>
+
+      <table>
+        <thead><tr><th>失配类型</th><th>机理</th><th>影响</th><th>校准方法</th><th>难度</th></tr></thead>
+        <tbody>
+          <tr><td><strong>① 增益失配</strong></td><td>各子通道 G_k 略不同</td><td>fs/M 处杂散</td><td>估计 G_k，归一化 G_k/G_ref</td><td>★★</td></tr>
+          <tr><td><strong>② 偏置失配</strong></td><td>各子通道直流偏置 O_k 不同</td><td>fs/M 处尖峰</td><td>减去 O_k（每通道求均值，最简单）</td><td>★</td></tr>
+          <tr><td><strong>③ 时序失配</strong></td><td>采样时钟相位非理想等分</td><td>信号依赖杂散，高频恶化</td><td>估计 Δt_k，分数延迟滤波器补偿</td><td>★★★</td></tr>
+          <tr><td><strong>④ 带宽失配</strong></td><td>前端带宽/群延迟不同</td><td>频率相关相位/幅度误差</td><td>自适应 LMS 滤波器对齐</td><td>★★★★</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ===== 三、校准机制 ===== -->
+      <h5 style="margin-top:20px;color:#1e40af;">三、校准机制：前台 + 后台双重</h5>
+      <p>校准采用<strong>前台校准（Factory）+ 后台校准（Background）</strong>双重机制：前台消除初始大误差，后台追踪温度/老化漂移，保证全温区、全寿命周期性能稳定。</p>
+
+      <div style="overflow-x:auto;">
+      <svg viewBox="0 0 860 280" width="860" height="280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="aad2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#1e40af"/>
+          </marker>
+        </defs>
+        <rect x="0" y="0" width="860" height="280" fill="#fafafa" rx="8"/>
+        <text x="430" y="28" fill="#1e40af" font-size="14" font-weight="700" text-anchor="middle">前台校准（出厂）+ 后台校准（运行时）双重机制</text>
+
+        <rect x="30" y="55" width="390" height="200" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="225" y="78" fill="#1e40af" font-size="12" font-weight="700" text-anchor="middle">前台校准 Factory Calibration</text>
+        <text x="50" y="102" fill="#1e3a8a" font-size="10">1. 输入已知测试信号（DC/正弦/多频）</text>
+        <text x="50" y="122" fill="#1e3a8a" font-size="10">2. 扫描测 G_k / O_k / Δt_k / 带宽响应</text>
+        <text x="50" y="142" fill="#1e3a8a" font-size="10">3. 系数写入片上 OTP/eFuse（掉电不丢）</text>
+        <text x="50" y="162" fill="#1e3a8a" font-size="10">4. 每次上电加载，初始化校准引擎</text>
+        <text x="50" y="190" fill="#16a34a" font-size="10" font-weight="700">→ 消除"初始大误差"（工艺偏差）</text>
+        <text x="50" y="212" fill="#64748b" font-size="9">产线上一次性完成，耗时 ~100ms~1s</text>
+        <text x="50" y="230" fill="#64748b" font-size="9">校准系数固化在芯片内，用户不可见</text>
+
+        <rect x="440" y="55" width="390" height="200" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+        <text x="635" y="78" fill="#166534" font-size="12" font-weight="700" text-anchor="middle">后台校准 Background Calibration</text>
+        <text x="460" y="102" fill="#15803d" font-size="10">1. 运行中持续监测输出信号统计特性</text>
+        <text x="460" y="122" fill="#15803d" font-size="10">2. LMS/RLS 自适应算法更新校准系数</text>
+        <text x="460" y="142" fill="#15803d" font-size="10">3. 追踪温度（-40~+85℃）/老化引起的漂移</text>
+        <text x="460" y="162" fill="#15803d" font-size="10">4. 全程无需中断业务（零业务影响）</text>
+        <text x="460" y="190" fill="#16a34a" font-size="10" font-weight="700">→ 消除"动态漂移"（温度/老化）</text>
+        <text x="460" y="212" fill="#64748b" font-size="9">oDSP 内部 DSP 核心持续运行</text>
+        <text x="460" y="230" fill="#64748b" font-size="9">校准引擎对前向数据通路透明</text>
+
+        <line x1="425" y1="155" x2="438" y2="155" stroke="#1e40af" stroke-width="1.5" marker-end="url(#aad2)"/>
+        <text x="432" y="148" fill="#1e40af" font-size="8" text-anchor="middle">衔接</text>
+      </svg>
+      </div>
+
+      <p><strong>校准在 oDSP 内部的实现位置</strong>（RX 数据路径）：</p>
+      <div style="background:#1e293b;color:#e2e8f0;padding:14px 18px;border-radius:6px;font-family:'Courier New',monospace;font-size:11px;line-height:1.7;overflow-x:auto;margin:8px 0;">
+ADC 输出 → [偏置校准] → [增益校准] → [时序校准] → [带宽校准] → FFE/DFE → CDR → FEC<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;减 O_k&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;乘 1/G_k&nbsp;&nbsp;&nbsp;&nbsp;分数延迟滤波&nbsp;&nbsp;&nbsp;LMS 自适应<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(后台)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(后台)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(后台)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(后台)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+前台系数&nbsp;&nbsp;&nbsp;+前台系数&nbsp;&nbsp;&nbsp;+前台系数&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+前台系数
+      </div>
+
+      <!-- ===== 四、DAC 架构与校准 ===== -->
+      <h5 style="margin-top:20px;color:#1e40af;">四、DAC 架构与校准：TX 方向的对称问题</h5>
+      <p>TX 方向的 <strong>DAC 同样是 TI 架构（TI-DAC）</strong>，与 ADC 镜像对称。DAC 把 oDSP 数字预处理后的采样值转换为模拟差分信号，送给 Driver 放大后驱动激光器。DAC 与 ADC 面临完全相同的四种失配问题，校准机制也对称。</p>
+
+      <table>
+        <thead><tr><th>维度</th><th>ADC（RX 方向）</th><th>DAC（TX 方向）</th></tr></thead>
+        <tbody>
+          <tr><td><strong>位置</strong></td><td>oDSP LINE 侧 RX，接 TIA 输出</td><td>oDSP LINE 侧 TX，接 Driver 输入</td></tr>
+          <tr><td><strong>功能</strong></td><td>模拟电压 → 数字采样</td><td>数字采样 → 模拟电压</td></tr>
+          <tr><td><strong>主流架构</strong></td><td>TI-SAR（时间交织 SAR）</td><td>TI-DAC（时间交织 Current-Steering）</td></tr>
+          <tr><td><strong>子通道数</strong></td><td>4~8 个 SAR 通道</td><td>4~8 个 DAC 通道</td></tr>
+          <tr><td><strong>分辨率</strong></td><td>6~8 bit（ENOB 5.5~7）</td><td>6~8 bit（ENOB 5.5~7）</td></tr>
+          <tr><td><strong>采样率</strong></td><td>56~112 GSa/s</td><td>56~112 GSa/s</td></tr>
+          <tr><td><strong>四种失配</strong></td><td>增益/偏置/时序/带宽</td><td>增益/偏置/时序/带宽（完全对称）</td></tr>
+          <tr><td><strong>前台校准</strong></td><td>已知信号源测系数 → OTP</td><td>片上回环（loopback）测系数 → OTP</td></tr>
+          <tr><td><strong>后台校准</strong></td><td>LMS 盲估计，追踪温漂</td><td>LMS 盲估计，追踪温漂</td></tr>
+          <tr><td><strong>校准难度</strong></td><td>★★★（时序/带宽难）</td><td>★★★（与 ADC 对称）</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <strong>DAC 校准的反馈机制——片上回环（Loopback）：</strong>DAC 校准面临一个难题：怎么知道 DAC 输出对不对？答案是 oDSP 内部有<strong>片上回环路径</strong>——把 DAC 输出通过片上耦合电容/电阻网络回送到 ADC 输入，ADC 采样后送给校准引擎分析。这样 oDSP 可以"自检自校准" DAC，无需外部仪器。回环路径通常在模块上电初始化时启用，正常运行时也可周期性触发。
+      </div>
+
+      <p><strong>DAC 校准在 oDSP 内部的实现位置</strong>（TX 数据路径，与 RX 对称）：</p>
+      <div style="background:#1e293b;color:#e2e8f0;padding:14px 18px;border-radius:6px;font-family:'Courier New',monospace;font-size:11px;line-height:1.7;overflow-x:auto;margin:8px 0;">
+TX 数据 → [预加重 DSP] → [带宽校准] → [时序校准] → [增益校准] → [偏置校准] → DAC 输出 → Driver<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LMS 自适应&nbsp;&nbsp;&nbsp;分数延迟&nbsp;&nbsp;&nbsp;乘 G_k&nbsp;&nbsp;&nbsp;加 O_k<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(后台)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(后台)&nbsp;&nbsp;&nbsp;&nbsp;(后台)&nbsp;&nbsp;(后台)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↑ 反馈来自片上回环 ADC 采样
+      </div>
+
+      <div class="warn-box">
+        <strong>DAC 电流舵（Current-Steering）架构说明：</strong>高速 DAC 普遍采用<strong>电流舵架构</strong>——用 2^N 个电流源单元阵列，按数字码开关组合输出电流。相比电阻分压/电容电荷分配，电流舵架构速度快、带宽大，适合 112 GS/s 场景。但电流源单元之间的失配（W/L 偏差、阈值电压偏差）会直接导致 INL/DNL 误差，这也是 DAC 需要校准的根本原因。电流舵 DAC 的交织杂散机理与 SAR ADC 完全对称。
+      </div>
+
+      <!-- ===== 五、校准效果验证 ===== -->
+      <h5 style="margin-top:20px;color:#1e40af;">五、校准效果验证方法</h5>
+      <table>
+        <thead><tr><th>验证方法</th><th>操作</th><th>期望结果（校准合格）</th></tr></thead>
+        <tbody>
+          <tr><td><strong>频谱杂散</strong></td><td>输入单频正弦，FFT 看输出频谱</td><td>fs/M 杂散 &lt; -60 dBc</td></tr>
+          <tr><td><strong>SNDR 测试</strong></td><td>输入满量程正弦，算信噪失真比</td><td>≥ 30 dB（6bit 等效）</td></tr>
+          <tr><td><strong>ENOB</strong></td><td>ENOB = (SNDR-1.76)/6.02</td><td>≥ 5.5 bit</td></tr>
+          <tr><td><strong>眼图对比</strong></td><td>校准前后对比 PAM4 三眼图</td><td>中间眼高度提升明显，三眼趋于对称</td></tr>
+          <tr><td><strong>温度扫描</strong></td><td>-40~+85℃ 全温区测 SNDR</td><td>变化 &lt; 2 dB（后台校准生效）</td></tr>
+          <tr><td><strong>老化测试</strong></td><td>高温老化 168h 后复测 SNDR</td><td>下降 &lt; 1 dB（后台追踪有效）</td></tr>
+        </tbody>
+      </table>
+
+      <div class="success-box">
+        <strong>总结：</strong>① ADC/DAC 架构 = TI-SAR / TI-DAC（时间交织）；② 必须校准（增益/偏置/时序/带宽四种失配）；③ 校准 = 前台（OTP 固化初始系数）+ 后台（LMS 自适应追踪漂移）；④ DAC 靠片上回环自检自校准；⑤ 验证看 fs/M 杂散 &lt; -60 dBc、SNDR ≥ 30 dB。
+      </div>
+
+      <!-- ===== TX 发射链路逐级信号流 ===== -->
+      <h4 style="margin-top:24px;border-bottom:2px solid #16a34a;padding-bottom:6px;">🔬 TX 发射链路逐级信号流详解</h4>
+      <p>TX 链路与 RX 链路完全对称，信号流方向相反：从主机电信号到光信号，跨越<strong>数字域 → 模拟域 → 光域</strong>。DAC 集成在 oDSP 内，Driver 是纯模拟器件。</p>
+
+      <div style="overflow-x:auto;">
+      <svg viewBox="0 0 860 280" width="860" height="280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="atx1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#666"/>
+          </marker>
+        </defs>
+        <!-- 域分组背景 -->
+        <rect x="10" y="20" width="270" height="240" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="145" y="38" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle">数字域</text>
+        <rect x="300" y="20" width="430" height="240" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="515" y="38" fill="#991b1b" font-size="11" font-weight="700" text-anchor="middle">模拟域</text>
+        <rect x="750" y="20" width="100" height="240" rx="6" fill="#fef3c7" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="800" y="38" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">光域</text>
+
+        <!-- 级1: HOST侧 SerDes -->
+        <rect x="30" y="60" width="110" height="50" rx="4" fill="#60a5fa" stroke="#1e40af" stroke-width="1.5"/>
+        <text x="85" y="80" fill="#1e3a8a" font-size="10" font-weight="700" text-anchor="middle">① HOST SerDes</text>
+        <text x="85" y="95" fill="#1e3a8a" font-size="8" text-anchor="middle">电口输入</text>
+        <!-- 级2: DSP核心 -->
+        <rect x="160" y="60" width="110" height="50" rx="4" fill="#60a5fa" stroke="#1e40af" stroke-width="1.5"/>
+        <text x="215" y="80" fill="#1e3a8a" font-size="10" font-weight="700" text-anchor="middle">② DSP 核心</text>
+        <text x="215" y="95" fill="#1e3a8a" font-size="8" text-anchor="middle">预加重+FEC</text>
+        <!-- 级3: DAC -->
+        <rect x="320" y="60" width="100" height="50" rx="4" fill="#3b82f6" stroke="#1e40af" stroke-width="2"/>
+        <text x="370" y="80" fill="#fff" font-size="10" font-weight="700" text-anchor="middle">③ DAC</text>
+        <text x="370" y="95" fill="#dbeafe" font-size="8" text-anchor="middle">在 oDSP 内</text>
+        <!-- 级4: PCB走线 -->
+        <rect x="320" y="130" width="100" height="50" rx="4" fill="#fca5a5" stroke="#991b1b" stroke-width="1.5"/>
+        <text x="370" y="150" fill="#7f1d1d" font-size="10" font-weight="700" text-anchor="middle">④ PCB 差分线</text>
+        <text x="370" y="165" fill="#7f1d1d" font-size="8" text-anchor="middle">100Ω CML P/N</text>
+        <!-- 级5: Driver -->
+        <rect x="450" y="130" width="90" height="50" rx="4" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+        <text x="495" y="150" fill="#fff" font-size="10" font-weight="700" text-anchor="middle">⑤ Driver</text>
+        <text x="495" y="165" fill="#fee2e2" font-size="8" text-anchor="middle">纯模拟放大</text>
+        <!-- 级6: TOSA -->
+        <rect x="580" y="130" width="90" height="50" rx="4" fill="#fca5a5" stroke="#991b1b" stroke-width="1.5"/>
+        <text x="625" y="150" fill="#7f1d1d" font-size="10" font-weight="700" text-anchor="middle">⑥ TOSA</text>
+        <text x="625" y="165" fill="#7f1d1d" font-size="8" text-anchor="middle">DML/EML</text>
+        <!-- 级7: Mux -->
+        <rect x="770" y="60" width="70" height="50" rx="4" fill="#fbbf24" stroke="#92400e" stroke-width="1.5"/>
+        <text x="805" y="80" fill="#451a03" font-size="10" font-weight="700" text-anchor="middle">⑦ Mux</text>
+        <text x="805" y="95" fill="#451a03" font-size="8" text-anchor="middle">合波</text>
+        <!-- 级8: 光纤 -->
+        <rect x="770" y="130" width="70" height="50" rx="4" fill="#fbbf24" stroke="#92400e" stroke-width="1.5"/>
+        <text x="805" y="152" fill="#451a03" font-size="10" font-weight="700" text-anchor="middle">⑧ 光纤</text>
+        <text x="805" y="167" fill="#451a03" font-size="8" text-anchor="middle">4λ 输出</text>
+
+        <!-- 连线 -->
+        <line x1="140" y1="85" x2="160" y2="85" stroke="#666" stroke-width="1.5" marker-end="url(#atx1)"/>
+        <line x1="270" y1="85" x2="320" y2="85" stroke="#666" stroke-width="1.5" marker-end="url(#atx1)"/>
+        <line x1="370" y1="110" x2="370" y2="130" stroke="#666" stroke-width="1.5" marker-end="url(#atx1)"/>
+        <line x1="420" y1="155" x2="450" y2="155" stroke="#666" stroke-width="1.5" marker-end="url(#atx1)"/>
+        <line x1="540" y1="155" x2="580" y2="155" stroke="#666" stroke-width="1.5" marker-end="url(#atx1)"/>
+        <line x1="670" y1="150" x2="770" y2="85" stroke="#666" stroke-width="1.5" marker-end="url(#atx1)"/>
+        <line x1="805" y1="110" x2="805" y2="130" stroke="#666" stroke-width="1.5" marker-end="url(#atx1)"/>
+
+        <!-- 信号性质标注 -->
+        <text x="370" y="200" fill="#1e40af" font-size="9" text-anchor="middle">6~8bit 采样</text>
+        <text x="495" y="200" fill="#991b1b" font-size="9" text-anchor="middle">0.5~2 Vpp</text>
+        <text x="625" y="200" fill="#991b1b" font-size="9" text-anchor="middle">调制电流</text>
+
+        <!-- 域转换标注 -->
+        <text x="305" y="245" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">数→模</text>
+        <line x1="290" y1="235" x2="320" y2="235" stroke="#1e40af" stroke-width="1.5"/>
+        <text x="745" y="245" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">电→光</text>
+        <line x1="725" y1="235" x2="760" y2="235" stroke="#92400e" stroke-width="1.5"/>
+      </svg>
+      </div>
+
+      <table style="margin-top:14px;">
+        <thead><tr><th>级</th><th>器件</th><th>信号域</th><th>输入 → 输出</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>oDSP HOST 侧 SerDes</td><td>数字</td><td>主机串行数据 → 比特流</td><td>从电口接收 PMA/PCS 数据</td></tr>
+          <tr><td>2</td><td>oDSP DSP 核心</td><td>数字</td><td>比特流 → 数字采样</td><td>FEC 编码 + 预加重（TX EQ）</td></tr>
+          <tr><td><strong>3</strong></td><td><strong>oDSP LINE 侧 DAC</strong></td><td><strong>数字→模拟</strong></td><td>数字采样 → 模拟电压</td><td><strong>DAC 在 oDSP 芯片内</strong></td></tr>
+          <tr><td>4</td><td>PCB 差分走线</td><td>模拟</td><td>模拟差分电压 P/N</td><td>100Ω 差分线，CML 电平</td></tr>
+          <tr><td><strong>5</strong></td><td><strong>Driver</strong></td><td><strong>模拟</strong></td><td>模拟电压 → 放大电压</td><td><strong>纯模拟器件，无 DAC</strong></td></tr>
+          <tr><td>6</td><td>TOSA（DML/EML）</td><td>模拟→光</td><td>调制电流 → 光功率</td><td>电→光转换</td></tr>
+          <tr><td>7</td><td>Mux（AWG/TFF）</td><td>光域</td><td>4 路单波长 → 合波</td><td>波分复用</td></tr>
+          <tr><td>8</td><td>光纤</td><td>光域</td><td>4λ 合波光信号</td><td>传输到对端</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <strong>oDSP 的"两侧"：</strong>oDSP 有两个高速接口侧——<strong>HOST 侧</strong>（连主机/交换机，走高速串行 PAM4/NRZ，内部是 SerDes）和 <strong>LINE 侧</strong>（连 Driver/TIA，走模拟基带差分，内部是 DAC/ADC）。"oDSP LINE 侧 4 路差分"指的就是 LINE 侧的 4 路 DAC 输出（TX）或 4 路 ADC 输入（RX），直接接 Driver 输入或 TIA 输出。
+      </div>
+
+      <!-- ===== 模块 3: TOSA & ROSA ===== -->
+      <h4 style="margin-top:28px;border-bottom:2px solid #16a34a;padding-bottom:6px;">③ TOSA & ROSA — 光发射/接收次模块</h4>
+      <p>TOSA（Transmitter Optical Sub-Assembly）和 ROSA（Receiver Optical Sub-Assembly）合称 OSA，是光模块的<strong>光电/电光转换核心</strong>，封装了激光器/光探测器及光学对准元件。</p>
+
+      <h4 style="margin-top:14px;">TOSA — 激光器类型对比</h4>
+      <table>
+        <thead><tr><th>激光器类型</th><th>调制方式</th><th>典型波长</th><th>速率上限</th><th>应用场景</th><th>涉及标准</th></tr></thead>
+        <tbody>
+          <tr><td><strong>VCSEL</strong></td><td>直接调制 DML</td><td>850 nm</td><td>50G PAM4</td><td>SR/SR4/SR8 多模短距</td><td>IEEE 802.3bm SR4 / 802.3cd SR</td></tr>
+          <tr><td><strong>DFB</strong></td><td>直接调制 DML</td><td>1310 / 1550 nm</td><td>50G PAM4 / 25G NRZ</td><td>DR/FR/LR 单模中距</td><td>IEEE 802.3bm LR4 / 802.3cd DR/FR</td></tr>
+          <tr><td><strong>EML（EML/DFB+EA）</strong></td><td>外调制（电吸收调制器）</td><td>1310 / 1550 nm</td><td>100G PAM4 / 400G</td><td>LR4/ER4 高速单模</td><td>IEEE 802.3ba/bm LR4 / 802.3cn ER</td></tr>
+          <tr><td><strong>SiPh MZM</strong></td><td>外调制（马赫-曾德尔）</td><td>1310 / 1550 nm</td><td>400G+ 相干/DCO</td><td>400G-ZR / 800G 相干</td><td>OIF-400ZR / IEEE 802.3cy</td></tr>
+          <tr><td><strong>Coherent Modulator</strong></td><td>相干 QPSK/16QAM</td><td>1550 nm C-band</td><td>800G+ 相干</td><td>长距城域/骨干</td><td>ITU-T G.698.2 / OIF-400ZR</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <strong>直接调制 vs 外调制：</strong>直接调制（DML）通过改变激光器注入电流实现光强调制，简单低成本但啁啾（chirp）大、带宽受限；外调制（EML/SiPh）激光器持续发光，用外接调制器改变光强度，啁啾小、带宽高但成本高。100G 以下多用 DML，100G 以上长距多用 EML/SiPh。
+      </div>
+
+      <h4 style="margin-top:14px;">ROSA — 光探测器类型对比</h4>
+      <table>
+        <thead><tr><th>探测器类型</th><th>增益</th><th>灵敏度</th><th>带宽</th><th>应用场景</th><th>涉及标准</th></tr></thead>
+        <tbody>
+          <tr><td><strong>PIN</strong></td><td>1（无增益）</td><td>较差（-7~-10 dBm）</td><td>≥80 GHz</td><td>短距/高速 SR/DR</td><td>IEEE 802.3bm SR4 / 802.3bs SR8</td></tr>
+          <tr><td><strong>APD（雪崩二极管）</strong></td><td>10~20（雪崩倍增）</td><td>优（-15~-25 dBm）</td><td>≥53 GHz</td><td>中长距 LR/ER/ZR</td><td>IEEE 802.3bm LR4 / 802.3cn ER</td></tr>
+          <tr><td><strong>Coherent PD（相干平衡检测）</strong></td><td>1（双 PIN 平衡）</td><td>依赖 DSP（-30 dBm+）</td><td>≥80 GHz</td><td>相干长距 ZR/ZR+</td><td>OIF-400ZR / ITU-T G.698.2</td></tr>
+        </tbody>
+      </table>
+
+      <table style="margin-top:14px;">
+        <thead><tr><th>TOSA/ROSA 子模块</th><th>功能</th><th>涉及协议/标准</th></tr></thead>
+        <tbody>
+          <tr><td>激光器（VCSEL/DFB/EML/SiPh）</td><td>电→光转换</td><td>IEEE 802.3 波长与功率规格</td></tr>
+          <tr><td>TEC（半导体热电制冷器）</td><td>激光器波长稳定</td><td>SFF-8472 温度监测、CMIS TEC 控制</td></tr>
+          <tr><td>光探测器（PIN/APD）</td><td>光→电转换</td><td>IEEE 802.3 接收灵敏度规格</td></tr>
+          <tr><td>APD 偏压控制</td><td>调节雪崩增益</td><td>SFF-8472 DDM 偏压监测</td></tr>
+          <tr><td>光隔离器（长距用）</td><td>抑制背反射</td><td>IEEE 802.3 回损要求</td></tr>
+          <tr><td>透镜/对准元件</td><td>光耦合到光纤</td><td>Telcordia GR-1221/468 可靠性</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ===== 模块 4: Mux/Demux ===== -->
+      <h4 style="margin-top:28px;border-bottom:2px solid #6366f1;padding-bottom:6px;">④ Mux/Demux — 波分复用器</h4>
+      <p>多波长光模块（如 100G-LR4、400G-FR4）通过 Mux/Demux 将多个波长合并到单根光纤，避免多根光纤的复杂布线。这是<strong>降低光纤成本</strong>的关键技术。</p>
+
+      <table>
+        <thead><tr><th>复用技术</th><th>波长间隔</th><th>典型波长</th><th>通道数</th><th>应用</th><th>涉及标准</th></tr></thead>
+        <tbody>
+          <tr><td><strong>CWDM</strong></td><td>20 nm</td><td>1270~1610 nm</td><td>4~18</td><td>100G-CWDM4、5G 前传</td><td>ITU-T G.694.2、IEEE 802.3bm CWDM4</td></tr>
+          <tr><td><strong>LAN-WDM</strong></td><td>4.5 nm</td><td>1295/1300/1304/1309 nm</td><td>4</td><td>100G-LR4、400G-FR4/LR4</td><td>IEEE 802.3ba/bm LR4、802.3bs FR4</td></tr>
+          <tr><td><strong>DWDM</strong></td><td>0.4 / 0.8 / 1.6 nm</td><td>1528~1563 nm（C波段）</td><td>40~96</td><td>相干长距、城域 DWDM</td><td>ITU-T G.694.1、OIF-400ZR</td></tr>
+          <tr><td><strong>SWDM</strong></td><td>30 nm</td><td>850/880/910/940 nm</td><td>4</td><td>多模短距 WDM</td><td>TIA SWDM MSA</td></tr>
+        </tbody>
+      </table>
+
+      <div class="warn-box">
+        <strong>关键点：</strong>Mux/Demux 的实现方式有 <strong>TFF（薄膜滤波片）</strong>和 <strong>AWG（阵列波导光栅）</strong>两种。TFF 工艺成熟、插损低，适合 4 通道；AWG 集成度高、适合 8+ 通道，但温度敏感，需配合 TEC 温控。
+      </div>
+
+      <!-- ===== Mux/Demux 内部电路详解 ===== -->
+      <h4 style="margin-top:20px;border-bottom:2px solid #6366f1;padding-bottom:6px;">🔬 Mux/Demux 内部结构详解</h4>
+      <p>Mux（复用器）和 Demux（解复用器）是光域的无源器件，不涉及电信号。它们利用<strong>波长选择性</strong>将多个波长合并（Mux）或分离（Demux）。两种主流实现方式：TFF（薄膜滤波片）和 AWG（阵列波导光栅）。</p>
+
+      <h4 style="margin-top:14px;">TFF（薄膜滤波片）结构 — 4 通道 Demux</h4>
+      <p>TFF 利用多层介质薄膜的干涉效应，只透射特定波长、反射其他波长。4 通道 Demux 由 3 个 TFF 滤波片 + 4 个准直透镜级联组成，每个 TFF 透出一个波长、反射其余 3 个波长。</p>
+
+      <div style="overflow-x:auto;">
+      <svg viewBox="0 0 860 320" width="860" height="320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="atff1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#666"/>
+          </marker>
+        </defs>
+        <text x="430" y="22" fill="#4338ca" font-size="13" font-weight="700" text-anchor="middle">TFF 解复用器（4 通道）内部结构</text>
+
+        <!-- 输入光纤 -->
+        <rect x="20" y="145" width="60" height="30" rx="3" fill="#fbbf24" stroke="#92400e" stroke-width="1.5"/>
+        <text x="50" y="164" fill="#451a03" font-size="9" font-weight="700" text-anchor="middle">输入光纤</text>
+        <text x="50" y="190" fill="#92400e" font-size="8" text-anchor="middle">4λ 合波</text>
+
+        <!-- 准直透镜1 -->
+        <ellipse cx="110" cy="160" rx="8" ry="20" fill="#bfdbfe" stroke="#1e40af" stroke-width="1.5"/>
+        <text x="110" y="200" fill="#1e40af" font-size="8" text-anchor="middle">透镜1</text>
+
+        <!-- TFF1 (透λ1, 反λ2λ3λ4) -->
+        <line x1="170" y1="130" x2="170" y2="190" stroke="#4338ca" stroke-width="4"/>
+        <text x="170" y="120" fill="#4338ca" font-size="9" font-weight="700" text-anchor="middle">TFF1</text>
+        <text x="170" y="208" fill="#4338ca" font-size="7" text-anchor="middle">透 λ1</text>
+        <!-- λ1 输出 -->
+        <rect x="155" y="40" width="30" height="80" rx="2" fill="#fbbf24" stroke="#92400e" stroke-width="1"/>
+        <line x1="170" y1="130" x2="170" y2="120" stroke="#92400e" stroke-width="1.5" marker-end="url(#atff1)"/>
+        <text x="170" y="32" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">λ1 → PD1</text>
+
+        <!-- 准直透镜2 -->
+        <ellipse cx="260" cy="160" rx="8" ry="20" fill="#bfdbfe" stroke="#1e40af" stroke-width="1.5"/>
+        <text x="260" y="200" fill="#1e40af" font-size="8" text-anchor="middle">透镜2</text>
+
+        <!-- TFF2 (透λ2, 反λ3λ4) -->
+        <line x1="320" y1="130" x2="320" y2="190" stroke="#4338ca" stroke-width="4"/>
+        <text x="320" y="120" fill="#4338ca" font-size="9" font-weight="700" text-anchor="middle">TFF2</text>
+        <text x="320" y="208" fill="#4338ca" font-size="7" text-anchor="middle">透 λ2</text>
+        <!-- λ2 输出 -->
+        <rect x="305" y="40" width="30" height="80" rx="2" fill="#fbbf24" stroke="#92400e" stroke-width="1"/>
+        <line x1="320" y1="130" x2="320" y2="120" stroke="#92400e" stroke-width="1.5" marker-end="url(#atff1)"/>
+        <text x="320" y="32" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">λ2 → PD2</text>
+
+        <!-- 准直透镜3 -->
+        <ellipse cx="410" cy="160" rx="8" ry="20" fill="#bfdbfe" stroke="#1e40af" stroke-width="1.5"/>
+        <text x="410" y="200" fill="#1e40af" font-size="8" text-anchor="middle">透镜3</text>
+
+        <!-- TFF3 (透λ3, 反λ4) -->
+        <line x1="470" y1="130" x2="470" y2="190" stroke="#4338ca" stroke-width="4"/>
+        <text x="470" y="120" fill="#4338ca" font-size="9" font-weight="700" text-anchor="middle">TFF3</text>
+        <text x="470" y="208" fill="#4338ca" font-size="7" text-anchor="middle">透 λ3</text>
+        <!-- λ3 输出 -->
+        <rect x="455" y="40" width="30" height="80" rx="2" fill="#fbbf24" stroke="#92400e" stroke-width="1"/>
+        <line x1="470" y1="130" x2="470" y2="120" stroke="#92400e" stroke-width="1.5" marker-end="url(#atff1)"/>
+        <text x="470" y="32" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">λ3 → PD3</text>
+
+        <!-- λ4 直通 -->
+        <line x1="490" y1="160" x2="570" y2="160" stroke="#92400e" stroke-width="1.5" marker-end="url(#atff1)"/>
+        <rect x="575" y="145" width="60" height="30" rx="3" fill="#fbbf24" stroke="#92400e" stroke-width="1.5"/>
+        <text x="605" y="164" fill="#451a03" font-size="9" font-weight="700" text-anchor="middle">λ4 → PD4</text>
+
+        <!-- 主光路连线 -->
+        <line x1="80" y1="160" x2="102" y2="160" stroke="#92400e" stroke-width="1.5" marker-end="url(#atff1)"/>
+        <line x1="118" y1="160" x2="170" y2="160" stroke="#92400e" stroke-width="1.5"/>
+        <line x1="170" y1="160" x2="252" y2="160" stroke="#92400e" stroke-width="1.5" marker-end="url(#atff1)"/>
+        <line x1="268" y1="160" x2="320" y2="160" stroke="#92400e" stroke-width="1.5"/>
+        <line x1="320" y1="160" x2="402" y2="160" stroke="#92400e" stroke-width="1.5" marker-end="url(#atff1)"/>
+        <line x1="418" y1="160" x2="470" y2="160" stroke="#92400e" stroke-width="1.5"/>
+
+        <!-- TFF 结构剖面 -->
+        <rect x="670" y="80" width="170" height="220" rx="4" fill="#eef2ff" stroke="#4338ca" stroke-width="1"/>
+        <text x="755" y="100" fill="#4338ca" font-size="10" font-weight="700" text-anchor="middle">TFF 滤波片剖面</text>
+        <rect x="690" y="115" width="130" height="15" fill="#c7d2fe" stroke="#4338ca"/>
+        <text x="755" y="126" fill="#3730a3" font-size="7" text-anchor="middle">基板（玻璃）</text>
+        <rect x="690" y="135" width="130" height="8" fill="#a5b4fc" stroke="#4338ca"/>
+        <text x="830" y="142" fill="#3730a3" font-size="6">TiO2 高折射率层</text>
+        <rect x="690" y="143" width="130" height="8" fill="#ddd6fe" stroke="#4338ca"/>
+        <text x="830" y="150" fill="#3730a3" font-size="6">SiO2 低折射率层</text>
+        <rect x="690" y="151" width="130" height="8" fill="#a5b4fc" stroke="#4338ca"/>
+        <rect x="690" y="159" width="130" height="8" fill="#ddd6fe" stroke="#4338ca"/>
+        <text x="755" y="178" fill="#3730a3" font-size="7" text-anchor="middle">多层介质膜（~100 层）</text>
+        <text x="755" y="190" fill="#3730a3" font-size="7" text-anchor="middle">光学厚度 = λ/4</text>
+        <rect x="690" y="200" width="130" height="15" fill="#c7d2fe" stroke="#4338ca"/>
+        <text x="755" y="211" fill="#3730a3" font-size="7" text-anchor="middle">基板</text>
+        <text x="755" y="235" fill="#4338ca" font-size="8" text-anchor="middle">特定波长: 干涉相长透射</text>
+        <text x="755" y="247" fill="#4338ca" font-size="8" text-anchor="middle">其他波长: 干涉相消反射</text>
+        <text x="755" y="275" fill="#4338ca" font-size="8" font-weight="700" text-anchor="middle">带宽: ~2 nm</text>
+        <text x="755" y="287" fill="#4338ca" font-size="8" font-weight="700" text-anchor="middle">隔离度: >30 dB</text>
+      </svg>
+      </div>
+
+      <h4 style="margin-top:18px;">AWG（阵列波导光栅）结构 — 8 通道 Demux</h4>
+      <p>AWG 利用平面光波导的<strong>相位干涉</strong>实现波长分离：输入光经第一级星形耦合器分到多个不等长波导，不同波长的光在输出端干涉聚焦到不同输出端口。AWG 是 PLC（平面光路）集成器件，适合 8+ 通道高密度复用。</p>
+
+      <div style="overflow-x:auto;">
+      <svg viewBox="0 0 860 330" width="860" height="330" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="aawg1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#666"/>
+          </marker>
+        </defs>
+        <text x="430" y="22" fill="#4338ca" font-size="13" font-weight="700" text-anchor="middle">AWG 解复用器（8 通道）内部结构</text>
+
+        <!-- 输入波导 -->
+        <rect x="20" y="155" width="50" height="20" rx="2" fill="#fbbf24" stroke="#92400e" stroke-width="1.5"/>
+        <text x="45" y="168" fill="#451a03" font-size="8" font-weight="700" text-anchor="middle">输入</text>
+        <text x="45" y="190" fill="#92400e" font-size="8" text-anchor="middle">8λ 合波</text>
+        <line x1="70" y1="165" x2="140" y2="165" stroke="#92400e" stroke-width="1.5" marker-end="url(#aawg1)"/>
+
+        <!-- 第一级星形耦合器 (Free Propagation Region 1) -->
+        <path d="M 140 130 L 230 100 L 230 230 L 140 200 Z" fill="#e0e7ff" stroke="#4338ca" stroke-width="1.5"/>
+        <text x="185" y="165" fill="#4338ca" font-size="9" font-weight="700" text-anchor="middle">FPR 1</text>
+        <text x="185" y="250" fill="#4338ca" font-size="8" text-anchor="middle">第一级星形耦合器</text>
+        <text x="185" y="262" fill="#4338ca" font-size="8" text-anchor="middle">(自由传播区)</text>
+
+        <!-- 阵列波导 (不等长) -->
+        <g stroke="#4338ca" stroke-width="1.2" fill="none">
+          <path d="M 230 110 Q 320 95 410 110"/>
+          <path d="M 230 122 Q 320 110 410 122"/>
+          <path d="M 230 134 Q 320 125 410 134"/>
+          <path d="M 230 146 Q 320 140 410 146"/>
+          <path d="M 230 158 Q 320 155 410 158"/>
+          <path d="M 230 170 Q 320 170 410 170"/>
+          <path d="M 230 182 Q 320 185 410 182"/>
+          <path d="M 230 194 Q 320 200 410 194"/>
+          <path d="M 230 206 Q 320 215 410 206"/>
+          <path d="M 230 218 Q 320 230 410 218"/>
+        </g>
+        <text x="320" y="85" fill="#4338ca" font-size="9" font-weight="700" text-anchor="middle">阵列波导（N 条）</text>
+        <text x="320" y="278" fill="#4338ca" font-size="8" text-anchor="middle">相邻波导长度差 ΔL = 常数</text>
+        <text x="320" y="290" fill="#4338ca" font-size="8" text-anchor="middle">产生波长相关相位差</text>
+
+        <!-- 第二级星形耦合器 (FPR 2) -->
+        <path d="M 410 130 L 500 100 L 500 230 L 410 200 Z" fill="#e0e7ff" stroke="#4338ca" stroke-width="1.5"/>
+        <text x="455" y="165" fill="#4338ca" font-size="9" font-weight="700" text-anchor="middle">FPR 2</text>
+        <text x="455" y="250" fill="#4338ca" font-size="8" text-anchor="middle">第二级星形耦合器</text>
+
+        <!-- 8个输出波导 -->
+        <g stroke="#92400e" stroke-width="1.2" fill="none">
+          <line x1="500" y1="105" x2="620" y2="70"/>
+          <line x1="500" y1="115" x2="620" y2="90"/>
+          <line x1="500" y1="125" x2="620" y2="110"/>
+          <line x1="500" y1="140" x2="620" y2="130"/>
+          <line x1="500" y1="160" x2="620" y2="150"/>
+          <line x1="500" y1="175" x2="620" y2="170"/>
+          <line x1="500" y1="190" x2="620" y2="190"/>
+          <line x1="500" y1="205" x2="620" y2="210"/>
+          <line x1="500" y1="215" x2="620" y2="230"/>
+          <line x1="500" y1="225" x2="620" y2="250"/>
+        </g>
+
+        <!-- 输出端口 -->
+        <g>
+          <rect x="625" y="62" width="40" height="16" rx="2" fill="#fbbf24" stroke="#92400e"/>
+          <text x="645" y="73" fill="#451a03" font-size="7" text-anchor="middle">λ1</text>
+          <rect x="625" y="82" width="40" height="16" rx="2" fill="#fbbf24" stroke="#92400e"/>
+          <text x="645" y="93" fill="#451a03" font-size="7" text-anchor="middle">λ2</text>
+          <rect x="625" y="102" width="40" height="16" rx="2" fill="#fbbf24" stroke="#92400e"/>
+          <text x="645" y="113" fill="#451a03" font-size="7" text-anchor="middle">λ3</text>
+          <rect x="625" y="122" width="40" height="16" rx="2" fill="#fbbf24" stroke="#92400e"/>
+          <text x="645" y="133" fill="#451a03" font-size="7" text-anchor="middle">λ4</text>
+          <rect x="625" y="142" width="40" height="16" rx="2" fill="#fbbf24" stroke="#92400e"/>
+          <text x="645" y="153" fill="#451a03" font-size="7" text-anchor="middle">λ5</text>
+          <rect x="625" y="162" width="40" height="16" rx="2" fill="#fbbf24" stroke="#92400e"/>
+          <text x="645" y="173" fill="#451a03" font-size="7" text-anchor="middle">λ6</text>
+          <rect x="625" y="182" width="40" height="16" rx="2" fill="#fbbf24" stroke="#92400e"/>
+          <text x="645" y="193" fill="#451a03" font-size="7" text-anchor="middle">λ7</text>
+          <rect x="625" y="202" width="40" height="16" rx="2" fill="#fbbf24" stroke="#92400e"/>
+          <text x="645" y="213" fill="#451a03" font-size="7" text-anchor="middle">λ8</text>
+        </g>
+
+        <text x="690" y="135" fill="#92400e" font-size="9" font-weight="700">→ 各 PD</text>
+
+        <!-- 原理说明 -->
+        <rect x="700" y="260" width="150" height="60" rx="4" fill="#eef2ff" stroke="#4338ca" stroke-width="1"/>
+        <text x="775" y="278" fill="#4338ca" font-size="8" font-weight="700" text-anchor="middle">AWG 工作原理</text>
+        <text x="775" y="292" fill="#3730a3" font-size="7" text-anchor="middle">ΔL 产生相位差 →</text>
+        <text x="775" y="302" fill="#3730a3" font-size="7" text-anchor="middle">不同波长在输出端</text>
+        <text x="775" y="312" fill="#3730a3" font-size="7" text-anchor="middle">聚焦到不同端口</text>
+      </svg>
+      </div>
+
+      <table style="margin-top:14px;">
+        <thead><tr><th>对比项</th><th>TFF（薄膜滤波片）</th><th>AWG（阵列波导光栅）</th></tr></thead>
+        <tbody>
+          <tr><td><strong>工作原理</strong></td><td>多层介质膜干涉（透射特定波长，反射其余）</td><td>阵列波导相位干涉（不同波长聚焦到不同端口）</td></tr>
+          <tr><td><strong>通道数</strong></td><td>通常 4 通道（级联 3 个 TFF）</td><td>8~96 通道（高密度集成）</td></tr>
+          <tr><td><strong>工艺</strong></td><td>分立元件组装（透镜+TFF+光纤对准）</td><td>PLC 平面光路集成（SiO2/Si 波导）</td></tr>
+          <tr><td><strong>插入损耗</strong></td><td>1.0~1.5 dB（低）</td><td>2.5~4.0 dB（较高）</td></tr>
+          <tr><td><strong>温度敏感度</strong></td><td>低（~0.01 nm/°C）</td><td>高（~0.012 nm/°C），需 TEC 温控</td></tr>
+          <tr><td><strong>通道隔离度</strong></td><td>&gt;30 dB</td><td>&gt;25 dB</td></tr>
+          <tr><td><strong>成本</strong></td><td>中（4 通道经济）</td><td>高（8+ 通道经济）</td></tr>
+          <tr><td><strong>典型应用</strong></td><td>100G-LR4、400G-FR4（4λ）</td><td>800G-2xFR4、DWDM 96λ、相干模块</td></tr>
+          <tr><td><strong>体积</strong></td><td>较大（分立元件）</td><td>小（集成 PLC）</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <strong>Mux 与 Demux 的对称性：</strong>Mux（复用）是 Demux（解复用）的逆过程——同样用 TFF 或 AWG，但光路方向相反。TFF Mux 中，4 路不同波长光从各自输入端口注入，经 TFF 逐级合并到一根光纤输出；AWG Mux 则是 8 路光从输出端反向输入，在输入端合波。实际器件中，<strong>Mux 和 Demux 常封装在同一 OSA 内</strong>（如 400G-FR4 的 Mux+Demux 共封装），共用光学对准结构。
+      </div>
+
+      <div class="warn-box">
+        <strong>光模块中的 Mux/Demux 与数字 Mux/Demux 完全不同：</strong>光模块里的 Mux/Demux 工作在<strong>光域</strong>，是无源光学器件（TFF/AWG），处理的是不同波长的光信号合并/分离；而数字电路中的 Mux/Demux 是<strong>电子逻辑器件</strong>（多路选择器），处理的是数字比特流的选择。两者同名但原理、域、实现完全不同。
+      </div>
+
+      <!-- ===== 模块 5: MCU & EEPROM ===== -->
+      <h4 style="margin-top:28px;border-bottom:2px solid #16a34a;padding-bottom:6px;">⑤ MCU + EEPROM — 控制与管理模块</h4>
+      <p>MCU + EEPROM 是光模块的<strong>"管家"</strong>，负责模块初始化、状态机管理、数字诊断监测（DDM）、告警上报，以及与主机的管理通信。</p>
+
+      <h4 style="margin-top:14px;">EEPROM 内存映射（I2C 地址）</h4>
+      <table>
+        <thead><tr><th>Page</th><th>I2C 地址</th><th>内容</th><th>涉及规范</th></tr></thead>
+        <tbody>
+          <tr><td><strong>A0 (Lower)</strong></td><td>0x50 (1010000)</td><td>模块标识、速率、连接器类型、波长、传输距离、厂商信息、CRC</td><td>SFF-8472、SFF-8636、CMIS 5.0</td></tr>
+          <tr><td><strong>A0 (Upper)</strong></td><td>0x50 (页切换)</td><td>CMIS 状态机、模块控制、告警标志、传感器读数</td><td>CMIS 5.0</td></tr>
+          <tr><td><strong>A2</strong></td><td>0x51 (1010001)</td><td>DDM：温度、VCC、偏置电流、TX 光功率、RX 光功率、告警阈值</td><td>SFF-8472、SFF-8636</td></tr>
+          <tr><td><strong>A2h Page (CMIS)</strong></td><td>0x50 (页切换)</td><td>oDSP 配置、Lane 监测、FEC 误码计数、PRBS 测试</td><td>CMIS 5.0</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:14px;">MCU 核心功能</h4>
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>状态机管理（CMIS）</h3>
+          <ul>
+            <li><strong>Init</strong> → <strong>ModuleReady</strong>：上电初始化</li>
+            <li><strong>ModuleLowPwr</strong>：低功耗模式</li>
+            <li><strong>ModuleReady</strong> → <strong>ModuleEnabled</strong>：模块使能</li>
+            <li><strong>TxReady</strong>：发送链路就绪</li>
+            <li><strong>ModuleFault</strong>：故障状态</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>DDM 数字诊断监测</h3>
+          <ul>
+            <li>温度（-40~+95°C，精度 ±3°C）</li>
+            <li>VCC 电压（3.3V，精度 ±0.1V）</li>
+            <li>激光器偏置电流（0~100 mA，精度 ±10%）</li>
+            <li>TX 光功率（-10~+10 dBm，精度 ±3 dB）</li>
+            <li>RX 光功率（-30~+5 dBm，精度 ±3 dB）</li>
+          </ul>
+        </div>
+      </div>
+
+      <table style="margin-top:14px;">
+        <thead><tr><th>MCU/EEPROM 子模块</th><th>功能</th><th>涉及协议/标准</th></tr></thead>
+        <tbody>
+          <tr><td>MCU 主控</td><td>状态机、轮询、告警逻辑</td><td>CMIS 5.0、SFF-8636</td></tr>
+          <tr><td>EEPROM</td><td>存储模块信息与 DDM 数据</td><td>SFF-8472、SFF-8024（Identifier 编码）</td></tr>
+          <tr><td>I2C 从机接口</td><td>与主机管理通信</td><td>I2C（NXP UM10204）、CMIS 5.0</td></tr>
+          <tr><td>温度传感器</td><td>监测模块内部温度</td><td>SFF-8472 DDM 温度字段</td></tr>
+          <tr><td>光功率监测（RSSI）</td><td>通过 PD 背面电流监测 TX/RX 光功率</td><td>SFF-8472 DDM 光功率字段</td></tr>
+          <tr><td>偏置电流监测</td><td>通过采样电阻监测激光器电流</td><td>SFF-8472 DDM 偏置字段</td></tr>
+          <tr><td>MDIO 透传（部分模块）</td><td>主机经 I2C 间接访问 oDSP MDIO 寄存器</td><td>CMIS MDIO passthrough、IEEE 802.3 Clause 45</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ===== 模块 6: PMIC ===== -->
+      <h4 style="margin-top:28px;border-bottom:2px solid #ca8a04;padding-bottom:6px;">⑥ PMIC — 电源管理芯片</h4>
+      <p>PMIC 负责将主机 3.3V 供电转换为各芯片所需的多路电源（如 oDSP 的 0.8V/1.2V/1.8V、Driver/TIA 的 3.3V/5V、TEC 的 5V/12V），并管理上电时序。</p>
+
+      <table>
+        <thead><tr><th>电源轨</th><th>典型电压</th><th>供电对象</th><th>涉及规范</th></tr></thead>
+        <tbody>
+          <tr><td>VDD_CORE</td><td>0.8V</td><td>oDSP 数字核</td><td>CMIS 上电时序</td></tr>
+          <tr><td>VDD_IO</td><td>1.2V / 1.8V</td><td>oDSP I/O、DDR</td><td>CMIS 上电时序</td></tr>
+          <tr><td>VDD_TX/RX</td><td>3.3V</td><td>Driver / TIA 模拟供电</td><td>SFF-8636 / CMIS</td></tr>
+          <tr><td>VCC_APD</td><td>20~80V（可调）</td><td>APD 雪崩偏压</td><td>SFF-8472 DDM 偏压</td></tr>
+          <tr><td>VCC_TEC</td><td>5V / 12V</td><td>TEC 热电制冷器</td><td>CMIS TEC 控制</td></tr>
+          <tr><td>VCC_HOST</td><td>3.3V</td><td>模块主供电（来自主机）</td><td>SFF-8636 / CMIS 引脚定义</td></tr>
+        </tbody>
+      </table>
+
+      <div class="warn-box">
+        <strong>上电时序要求：</strong>CMIS 规范定义了严格的上电时序——主机 3.3V 上电 → PMIC 输出各电源轨 → MCU 初始化 → 模块进入 ModuleReady 状态 → 主机通过 I2C 写控制寄存器使能 TX/RX。时序错误可能导致激光器误点亮或 oDSP 配置丢失。
+      </div>
+
+      <div class="info-box" style="margin-top:20px;">
+        <strong>6 大模块协作总结：</strong>主机电信号 → ①oDSP 处理 → ②Driver 放大 → ③TOSA 激光器发光 → ④Mux 复用 → 光纤传输 → ④Demux 解复用 → ③ROSA PD 探测 → ②TIA 放大 → ①oDSP 恢复 → 主机。⑤MCU/EEPROM 全程监控，⑥PMIC 全程供电。
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ═══════════ Section 3: 电路框图 ═══════════ -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">3</div><div class="icon">🔲</div><h2>电路框图与硬件连接</h2>
+    </div>
+    <div class="card-body">
+      <p>下面以典型 400G-QSFP-DD FR4 光模块为例，展示完整的硬件连接框图。该模块集成了 oDSP、8 通道 Driver/TIA、4 通道 EML TOSA + PIN ROSA、LAN-WDM Mux/Demux、MCU+EEPROM、PMIC。</p>
+
+      <div class="diagram-title">图 3-1 | 400G-QSFP-DD FR4 光模块完整硬件框图</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 900 420" width="880" height="420" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr4" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker>
+            <marker id="arr4r" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#e74c3c"/></marker>
+          </defs>
+          <!-- 主机电口 -->
+          <rect x="10" y="160" width="90" height="100" rx="8" fill="#dbeafe" stroke="#1a56db" stroke-width="2"/>
+          <text x="55" y="185" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle">Host ASIC</text>
+          <text x="55" y="202" fill="#1e40af" font-size="9" text-anchor="middle">8x53G PAM4</text>
+          <text x="55" y="217" fill="#1e40af" font-size="9" text-anchor="middle">100Ω差分</text>
+          <text x="55" y="232" fill="#1e40af" font-size="9" text-anchor="middle">800GAUI-8</text>
+          <text x="55" y="248" fill="#1e40af" font-size="9" text-anchor="middle">3.3V + I2C</text>
+          <!-- 电口连接器 -->
+          <rect x="120" y="170" width="50" height="80" rx="4" fill="#f1f5f9" stroke="#475569" stroke-width="1.5"/>
+          <text x="145" y="215" fill="#475569" font-size="9" text-anchor="middle" transform="rotate(-90 145 215)">QSFP-DD</text>
+          <!-- oDSP -->
+          <rect x="190" y="150" width="100" height="120" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text x="240" y="175" fill="#92400e" font-size="12" font-weight="700" text-anchor="middle">oDSP</text>
+          <text x="240" y="192" fill="#92400e" font-size="9" text-anchor="middle">FEC+EQ+CDR</text>
+          <text x="240" y="207" fill="#92400e" font-size="9" text-anchor="middle">KP4-FEC</text>
+          <text x="240" y="222" fill="#92400e" font-size="9" text-anchor="middle">8x106G</text>
+          <text x="240" y="237" fill="#92400e" font-size="9" text-anchor="middle">PAM4</text>
+          <text x="240" y="252" fill="#92400e" font-size="9" text-anchor="middle">7nm CMOS</text>
+          <!-- TX 链路 -->
+          <line x1="290" y1="175" x2="320" y2="175" stroke="#1a56db" stroke-width="2" marker-end="url(#arr4)"/>
+          <rect x="325" y="155" width="80" height="40" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="365" y="172" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">Driver x8</text>
+          <text x="365" y="185" fill="#991b1b" font-size="8" text-anchor="middle">SiGe</text>
+          <line x1="405" y1="175" x2="435" y2="175" stroke="#1a56db" stroke-width="2" marker-end="url(#arr4)"/>
+          <rect x="440" y="155" width="80" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="480" y="172" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">EML x4</text>
+          <text x="480" y="185" fill="#166534" font-size="8" text-anchor="middle">1310nm</text>
+          <!-- Mux -->
+          <line x1="520" y1="175" x2="555" y2="175" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr4r)"/>
+          <rect x="560" y="150" width="70" height="50" rx="6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="595" y="172" fill="#4338ca" font-size="9" font-weight="700" text-anchor="middle">LAN-WDM</text>
+          <text x="595" y="186" fill="#4338ca" font-size="8" text-anchor="middle">Mux</text>
+          <text x="595" y="198" fill="#4338ca" font-size="7" text-anchor="middle">4λ→1</text>
+          <!-- 光口 TX -->
+          <line x1="630" y1="175" x2="660" y2="175" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr4r)"/>
+          <rect x="665" y="155" width="70" height="40" rx="6" fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+          <text x="700" y="172" fill="#9d174d" font-size="9" font-weight="700" text-anchor="middle">LC 接口</text>
+          <text x="700" y="185" fill="#9d174d" font-size="8" text-anchor="middle">TX 光口</text>
+          <!-- RX 链路 -->
+          <rect x="665" y="260" width="70" height="40" rx="6" fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+          <text x="700" y="277" fill="#9d174d" font-size="9" font-weight="700" text-anchor="middle">LC 接口</text>
+          <text x="700" y="290" fill="#9d174d" font-size="8" text-anchor="middle">RX 光口</text>
+          <line x1="665" y1="280" x2="630" y2="280" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr4r)"/>
+          <rect x="560" y="260" width="70" height="50" rx="6" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="595" y="282" fill="#4338ca" font-size="9" font-weight="700" text-anchor="middle">LAN-WDM</text>
+          <text x="595" y="296" fill="#4338ca" font-size="8" text-anchor="middle">Demux</text>
+          <text x="595" y="308" fill="#4338ca" font-size="7" text-anchor="middle">1→4λ</text>
+          <line x1="555" y1="280" x2="520" y2="280" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr4r)"/>
+          <rect x="440" y="260" width="80" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="480" y="277" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">PIN x4</text>
+          <text x="480" y="290" fill="#166534" font-size="8" text-anchor="middle">1310nm</text>
+          <line x1="435" y1="280" x2="405" y2="280" stroke="#1a56db" stroke-width="2" marker-end="url(#arr4)"/>
+          <rect x="325" y="260" width="80" height="40" rx="6" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="365" y="277" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">TIA x8</text>
+          <text x="365" y="290" fill="#991b1b" font-size="8" text-anchor="middle">SiGe</text>
+          <line x1="320" y1="280" x2="290" y2="280" stroke="#1a56db" stroke-width="2" marker-end="url(#arr4)"/>
+          <!-- 管理链路 -->
+          <rect x="190" y="330" width="100" height="35" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="240" y="352" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">MCU+EEPROM</text>
+          <line x1="240" y1="330" x2="240" y2="270" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <line x1="145" y1="250" x2="145" y2="347" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <line x1="145" y1="347" x2="190" y2="347" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr4)"/>
+          <text x="165" y="345" fill="#166534" font-size="8">I2C/MDIO</text>
+          <!-- PMIC -->
+          <rect x="325" y="330" width="100" height="35" rx="6" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+          <text x="375" y="352" fill="#854d0e" font-size="10" font-weight="700" text-anchor="middle">PMIC</text>
+          <line x1="375" y1="330" x2="375" y2="300" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <line x1="375" y1="365" x2="375" y2="385" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <text x="395" y="378" fill="#854d0e" font-size="8">多路电源</text>
+          <line x1="120" y1="250" x2="120" y2="385" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <line x1="120" y1="385" x2="325" y2="385" stroke="#ca8a04" stroke-width="1.5"/>
+          <text x="200" y="380" fill="#854d0e" font-size="8">3.3V</text>
+          <!-- 图例 -->
+          <text x="10" y="20" fill="#1a56db" font-size="11" font-weight="700">TX: Host→oDSP→Driver→EML→Mux→光纤</text>
+          <text x="10" y="36" fill="#e74c3c" font-size="11" font-weight="700">RX: 光纤→Demux→PIN→TIA→oDSP→Host</text>
+          <text x="10" y="52" fill="#16a34a" font-size="11" font-weight="700">管理: Host I2C/MDIO→MCU→各芯片</text>
+          <text x="10" y="68" fill="#ca8a04" font-size="11" font-weight="700">供电: 3.3V→PMIC→多路电源</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:20px;">电口硬件连接</h4>
+      <table>
+        <thead><tr><th>引脚组</th><th>数量</th><th>功能</th><th>电平/标准</th></tr></thead>
+        <tbody>
+          <tr><td>TX 通道</td><td>8 对差分</td><td>主机 → 模块发送</td><td>100Ω CML，PAM4，53G/106G</td></tr>
+          <tr><td>RX 通道</td><td>8 对差分</td><td>模块 → 主机接收</td><td>100Ω CML，PAM4，53G/106G</td></tr>
+          <tr><td>I2C</td><td>SCL + SDA</td><td>管理通信</td><td>100/400 kHz，Open-Drain</td></tr>
+          <tr><td>ResetL</td><td>1</td><td>模块硬复位</td><td>LVCMOS，低有效</td></tr>
+          <tr><td>ModSelL</td><td>1</td><td>模块选择（多模块共总线时）</td><td>LVCMOS，低有效</td></tr>
+          <tr><td>LPMode</td><td>1</td><td>低功耗模式控制</td><td>LVCMOS</td></tr>
+          <tr><td>ModPrsL</td><td>1</td><td>模块在位检测</td><td>LVCMOS，低有效</td></tr>
+          <tr><td>IntL</td><td>1</td><td>中断上报</td><td>LVCMOS，低有效</td></tr>
+          <tr><td>VCC</td><td>多引脚</td><td>主供电</td><td>3.3V，&lt; 20W（QSFP-DD）</td></tr>
+          <tr><td>GND</td><td>多引脚</td><td>地</td><td>—</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">光口硬件连接</h4>
+      <table>
+        <thead><tr><th>连接器类型</th><th>通道数</th><th>光纤类型</th><th>典型应用</th></tr></thead>
+        <tbody>
+          <tr><td><strong>LC Duplex</strong></td><td>1 TX + 1 RX</td><td>SMF（单模）</td><td>LR4/FR4/ER4/CWDM4 单波长复用</td></tr>
+          <tr><td><strong>LC Duplex</strong></td><td>1 TX + 1 RX</td><td>MMF（多模）</td><td>SR/SR BiDi 多模</td></tr>
+          <tr><td><strong>MPO-12</strong></td><td>12 芯（4/8 TX + 4/8 RX）</td><td>MMF / SMF</td><td>SR4/SR8 并行</td></tr>
+          <tr><td><strong>MPO-16</strong></td><td>16 芯</td><td>SMF</td><td>400G-DR8 / 800G-DR8 并行</td></tr>
+          <tr><td><strong>CS</strong></td><td>2 芯（1 TX + 1 RX）</td><td>SMF</td><td>400G-DR4/2xFR4 高密度</td></tr>
+          <tr><td><strong>SN</strong></td><td>2 芯</td><td>SMF</td><td>800G 高密度</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 4: 核心对比 ═══════════ -->
+<section id="sec4">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">4</div><div class="icon">⚖️</div><h2>核心对比</h2>
+    </div>
+    <div class="card-body">
+      <h4>4.1 不同封装对比</h4>
+      <table>
+        <thead><tr><th>封装</th><th>通道数</th><th>单通道速率</th><th>总速率</th><th>功耗</th><th>管理协议</th><th>典型应用</th></tr></thead>
+        <tbody>
+          <tr><td>SFP+</td><td>1</td><td>10G NRZ</td><td>10G</td><td>1W</td><td>SFF-8472</td><td>10G 以太网</td></tr>
+          <tr><td>SFP28</td><td>1</td><td>25G NRZ</td><td>25G</td><td>1.5W</td><td>SFF-8472</td><td>25G 以太网/5G 前传</td></tr>
+          <tr><td>SFP56</td><td>1</td><td>50G PAM4</td><td>50G</td><td>2.5W</td><td>SFF-8472</td><td>50G 以太网</td></tr>
+          <tr><td>QSFP28</td><td>4</td><td>25G NRZ</td><td>100G</td><td>4W</td><td>SFF-8636</td><td>100G 数据中心</td></tr>
+          <tr><td>QSFP56</td><td>4</td><td>50G PAM4</td><td>200G</td><td>6W</td><td>SFF-8636</td><td>200G 数据中心</td></tr>
+          <tr><td>QSFP-DD</td><td>8</td><td>50G/100G PAM4</td><td>400G/800G</td><td>10~20W</td><td>CMIS 5.0</td><td>400G/800G 数据中心</td></tr>
+          <tr><td>OSFP</td><td>8</td><td>50G/100G PAM4</td><td>400G/800G</td><td>12~22W</td><td>CMIS 5.0</td><td>400G/800G AI 集群</td></tr>
+          <tr><td>OSFP-XD</td><td>8</td><td>200G PAM4</td><td>1.6T</td><td>25~40W</td><td>CMIS 5.x</td><td>1.6T 下一代</td></tr>
+          <tr><td>CFP4</td><td>4</td><td>25G NRZ</td><td>100G</td><td>5W</td><td>SFF-8436</td><td>电信 100G</td></tr>
+          <tr><td>CFP8</td><td>8</td><td>50G PAM4</td><td>400G</td><td>20W</td><td>SFF-8436 扩展</td><td>电信 400G ZR</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">4.2 不同传输距离规格对比（以 400G 为例）</h4>
+      <table>
+        <thead><tr><th>规格</th><th>距离</th><th>光纤</th><th>通道</th><th>波长</th><th>连接器</th><th>IEEE 标准</th></tr></thead>
+        <tbody>
+          <tr><td>400G-SR8</td><td>100m</td><td>OM3/OM4 MMF</td><td>8 通道并行</td><td>850nm</td><td>MPO-16</td><td>802.3bs</td></tr>
+          <tr><td>400G-DR4</td><td>500m</td><td>OS2 SMF</td><td>4 通道并行</td><td>1310nm</td><td>MPO-12</td><td>802.3bs</td></tr>
+          <tr><td>400G-DR8</td><td>500m</td><td>OS2 SMF</td><td>8 通道并行</td><td>1310nm</td><td>MPO-16</td><td>802.3bs</td></tr>
+          <tr><td>400G-FR4</td><td>2km</td><td>OS2 SMF</td><td>4λ WDM</td><td>LAN-WDM</td><td>LC Duplex</td><td>802.3bs</td></tr>
+          <tr><td>400G-LR4</td><td>10km</td><td>OS2 SMF</td><td>4λ WDM</td><td>LAN-WDM</td><td>LC Duplex</td><td>802.3bs</td></tr>
+          <tr><td>400G-ER8</td><td>40km</td><td>OS2 SMF</td><td>8λ WDM</td><td>CWDM</td><td>LC Duplex</td><td>802.3cn</td></tr>
+          <tr><td>400G-ZR</td><td>80~120km</td><td>OS2 SMF</td><td>相干单波</td><td>C-band DWDM</td><td>LC Duplex</td><td>OIF-400ZR</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">4.3 NRZ vs PAM4 调制对比</h4>
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>NRZ (OOK)</h3>
+          <p><strong>2 电平</strong>（0 和 1），1 bit/symbol</p>
+          <ul>
+            <li>带宽利用率：1 bit/Baud</li>
+            <li>抗噪声强（眼图张开大）</li>
+            <li>对线性度无要求（限幅驱动）</li>
+            <li>典型速率：10G/25G</li>
+            <li>典型标准：IEEE 802.3ae/bj/by</li>
+          </ul>
+        </div>
+        <div class="compare-col red">
+          <h3>PAM4</h3>
+          <p><strong>4 电平</strong>（00/01/10/11），2 bit/symbol</p>
+          <ul>
+            <li>带宽利用率：2 bit/Baud（翻倍）</li>
+            <li>抗噪声弱（眼图张开小 1/3）</li>
+            <li>要求高线性度（线性 Driver/TIA）</li>
+            <li>典型速率：50G/100G/200G/400G/800G</li>
+            <li>典型标准：IEEE 802.3bs/ck/dj</li>
+          </ul>
+        </div>
+      </div>
+      <div class="formula" style="margin-top:12px;">
+        相同波特率下：PAM4 速率 = 2 × NRZ 速率 &nbsp;|&nbsp; PAM4 SNR 代价 ≈ 9.5 dB（理论） / 6 dB（实际带 FEC）
+      </div>
+
+      <h4 style="margin-top:20px;">4.4 直接调制 vs 外调制对比</h4>
+      <table>
+        <thead><tr><th>维度</th><th>直接调制 DML</th><th>外调制 EML/SiPh</th></tr></thead>
+        <tbody>
+          <tr><td>调制方式</td><td>改变激光器注入电流</td><td>激光器持续发光，外接调制器改变光强</td></tr>
+          <tr><td>啁啾（Chirp）</td><td>大（频率随电流变化）</td><td>小（调制器独立）</td></tr>
+          <tr><td>带宽</td><td>受限于激光器弛豫振荡（~25G）</td><td>可达 100G+（调制器带宽高）</td></tr>
+          <tr><td>色散代价</td><td>高（chirp 与色散相互作用）</td><td>低（chirp 小，色散受限距离长）</td></tr>
+          <tr><td>成本</td><td>低（单芯片）</td><td>高（激光器+调制器集成）</td></tr>
+          <tr><td>典型应用</td><td>SR/DR 短距、25G/50G</td><td>LR/ER/ZR 长距、100G+</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">4.5 PIN vs APD vs Coherent RX 接收对比</h4>
+      <table>
+        <thead><tr><th>维度</th><th>PIN</th><td>APD</th><td>Coherent RX</th></tr></thead>
+        <tbody>
+          <tr><td>增益</td><td>1（无增益）</td><td>10~20（雪崩倍增）</td><td>1（双 PIN 平衡）</td></tr>
+          <tr><td>灵敏度</td><td>-7~-10 dBm</td><td>-15~-25 dBm</td><td>-30 dBm+（依赖 DSP）</td></tr>
+          <tr><td>带宽</td><td>≥80 GHz</td><td>≥53 GHz</td><td>≥80 GHz</td></tr>
+          <tr><td>偏压</td><td>3~5V</td><td>20~80V（高压）</td><td>3~5V</td></tr>
+          <tr><td>噪声</td><td>低（受限于 TIA）</td><td>中（雪崩噪声附加）</td><td>低（相干增益）</td></tr>
+          <tr><td>成本</td><td>低</td><td>中</td><td>高（需本振激光器+DSP）</td></tr>
+          <tr><td>典型应用</td><td>SR/DR 短距</td><td>LR/ER 中长距</td><td>ZR/ZR+ 相干长距</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">4.6 涉及的协议族全景</h4>
+      <table>
+        <thead><tr><th>协议类别</th><th>具体协议</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="5"><strong>IEEE 802.3 以太网物理层</strong></td><td>802.3ae (10G)</td><td>10GBASE-SR/LR/ER</td></tr>
+          <tr><td>802.3ba/bj/bm (40G/100G)</td><td>40GBASE-SR4/LR4、100GBASE-SR4/LR4</td></tr>
+          <tr><td>802.3bs (200G/400G)</td><td>200GBASE/400GBASE-SR8/DR4/FR4/LR4</td></tr>
+          <tr><td>802.3ck (电接口)</td><td>100GAUI/200GAUI/400GAUI-8</td></tr>
+          <tr><td>802.3dj (800G/1.6T)</td><td>800GAUI-8、1.6TAUI</td></tr>
+          <tr><td rowspan="4"><strong>MSA 封装与管理</strong></td><td>SFF-8472</td><td>SFP/SFP+ DDM 数字诊断</td></tr>
+          <tr><td>SFF-8636</td><td>QSFP+/QSFP28 管理接口</td></tr>
+          <tr><td>SFF-8024</td><td>Identifier 编码标准</td></tr>
+          <tr><td>CMIS 5.0</td><td>QSFP-DD/OSFP 通用管理接口</td></tr>
+          <tr><td rowspan="3"><strong>调制与 FEC</strong></td><td>NRZ / PAM4</td><td>信号调制方式</td></tr>
+          <tr><td>KR4-FEC / KP4-FEC</td><td>RS (528,514) / RS (544,514) 纠错码</td></tr>
+          <tr><td>C-FEC / OH-FEC / Staircase</td><td>级联 FEC、开放式 FEC、阶梯 FEC</td></tr>
+          <tr><td rowspan="3"><strong>管理总线</strong></td><td>I2C (NXP UM10204)</td><td>EEPROM/CMIS 读写</td></tr>
+          <tr><td>MDIO (IEEE 802.3 Clause 22/45)</td><td>oDSP 寄存器访问</td></tr>
+          <tr><td>OIF-CEI-112G/224G</td><td>公共电气接口规范</td></tr>
+          <tr><td rowspan="3"><strong>波分复用与光纤</strong></td><td>ITU-T G.694.1/2</td><td>DWDM/CWDM 频率栅格</td></tr>
+          <tr><td>ITU-T G.652 (OS2) / G.651 (OM3/4)</td><td>单模/多模光纤标准</td></tr>
+          <tr><td>OIF-400ZR</td><td>400G 相干互操作规范</td></tr>
+          <tr><td rowspan="2"><strong>可靠性</strong></td><td>Telcordia GR-1221</td><td>光器件可靠性通用要求</td></tr>
+          <tr><td>Telcordia GR-468</td><td>光电器件可靠性保证</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<!-- ═══════════ Section 5: 核心指标 ═══════════ -->
+<section id="sec5">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">5</div><div class="icon">📊</div><h2>核心指标</h2>
+    </div>
+    <div class="card-body">
+      <p>光模块指标分为<strong>电口指标</strong>（与主机 SerDes 对接）和<strong>光口指标</strong>（与光纤链路对接）两大类。两类指标共同决定了模块能否与主机和对端模块互通，以及传输距离和信号质量。</p>
+
+      <div class="diagram-title">图 5-1 | 电口与光口指标分界</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 900 110" width="880" height="110" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arr5" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <rect x="10" y="35" width="100" height="45" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="2"/>
+          <text x="60" y="62" fill="#1e40af" font-size="11" font-weight="700" text-anchor="middle">Host ASIC</text>
+          <line x1="110" y1="57" x2="160" y2="57" stroke="#1a56db" stroke-width="3" marker-end="url(#arr5)"/>
+          <text x="135" y="48" fill="#1a56db" font-size="9" font-weight="700" text-anchor="middle">电口指标</text>
+          <rect x="165" y="25" width="180" height="65" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text x="255" y="50" fill="#92400e" font-size="12" font-weight="700" text-anchor="middle">光模块</text>
+          <text x="255" y="68" fill="#92400e" font-size="9" text-anchor="middle">oDSP+Driver+TOSA+ROSA</text>
+          <text x="255" y="82" fill="#92400e" font-size="8" text-anchor="middle">电↔光 转换</text>
+          <line x1="345" y1="57" x2="395" y2="57" stroke="#e74c3c" stroke-width="3" marker-end="url(#arr5)"/>
+          <text x="370" y="48" fill="#e74c3c" font-size="9" font-weight="700" text-anchor="middle">光口指标</text>
+          <rect x="400" y="35" width="120" height="45" rx="6" fill="#fce7f3" stroke="#db2777" stroke-width="2"/>
+          <text x="460" y="55" fill="#9d174d" font-size="10" font-weight="700" text-anchor="middle">光纤链路</text>
+          <text x="460" y="70" fill="#9d174d" font-size="8" text-anchor="middle">SMF/MMF</text>
+          <line x1="520" y1="57" x2="570" y2="57" stroke="#e74c3c" stroke-width="3" marker-end="url(#arr5)"/>
+          <text x="545" y="48" fill="#e74c3c" font-size="9" font-weight="700" text-anchor="middle">光口指标</text>
+          <rect x="575" y="25" width="180" height="65" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text x="665" y="50" fill="#92400e" font-size="12" font-weight="700" text-anchor="middle">对端光模块</text>
+          <text x="665" y="68" fill="#92400e" font-size="9" text-anchor="middle">ROSA+TIA+oDSP</text>
+          <line x1="755" y1="57" x2="805" y2="57" stroke="#1a56db" stroke-width="3" marker-end="url(#arr5)"/>
+          <text x="780" y="48" fill="#1a56db" font-size="9" font-weight="700" text-anchor="middle">电口指标</text>
+          <rect x="810" y="35" width="80" height="45" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="2"/>
+          <text x="850" y="62" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">Host</text>
+        </svg>
+      </div>
+
+      <h3 style="margin-top:24px;color:var(--primary-dark);border-bottom:2px solid var(--primary);padding-bottom:8px;">📡 一、电口指标</h3>
+      <p>电口指标定义在 IEEE 802.3 系列标准（bj/bm/bs/ck/dj）和 OIF-CEI-112G/224G 规范中，描述模块与主机 SerDes 之间的电气接口特性。</p>
+
+      <!-- 电口指标卡 1: 速率与协议 -->
+      <div class="metric-card">
+        <div class="metric-header"><h4>5.1 单通道速率与协议</h4><span class="metric-abbr">SerDes Rate</span></div>
+        <div class="metric-body">
+          <table>
+            <thead><tr><th>速率</th><th>调制</th><th>波特率</th><th>1 UI</th><th>典型协议</th><th>电接口标准</th></tr></thead>
+            <tbody>
+              <tr><td>10G</td><td>NRZ</td><td>10.3125 GBaud</td><td>97 ps</td><td>10GBASE-R</td><td>SFI (802.3ae)</td></tr>
+              <tr><td>25G</td><td>NRZ</td><td>25.78125 GBaud</td><td>38.8 ps</td><td>25GBASE-CR/KR/SR/LR</td><td>SFI28 (802.3by)</td></tr>
+              <tr><td>50G</td><td>PAM4</td><td>26.5625 GBaud</td><td>37.6 ps</td><td>50GBASE-CR/KR/SR/LR</td><td>50GAUI (802.3cd)</td></tr>
+              <tr><td>53G</td><td>PAM4</td><td>26.5625 GBaud</td><td>37.6 ps</td><td>100GBASE（每通道 53G）</td><td>CAUI-4 (802.3bm)</td></tr>
+              <tr><td>100G</td><td>PAM4</td><td>53.125 GBaud</td><td>18.8 ps</td><td>100GBASE/200GBASE</td><td>100GAUI-2 (802.3ck)</td></tr>
+              <tr><td>106G</td><td>PAM4</td><td>53.125 GBaud</td><td>18.8 ps</td><td>400GBASE（每通道 106G）</td><td>400GAUI-8 (802.3bs/ck)</td></tr>
+              <tr><td>212G</td><td>PAM4</td><td>106.25 GBaud</td><td>9.4 ps</td><td>800GBASE</td><td>800GAUI-8 (802.3dj)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 电口指标卡 2: 眼图模板 -->
+      <div class="metric-card">
+        <div class="metric-header"><h4>5.2 电口眼图模板（Eye Mask）</h4><span class="metric-abbr">TX Eye</span></div>
+        <div class="metric-body">
+          <table>
+            <thead><tr><th>速率</th><th>眼图模板参数（典型）</th><th>测试条件</th><th>标准</th></tr></thead>
+            <tbody>
+              <tr><td>10G NRZ</td><td>眼高 ≥ 300 mV，眼宽 ≥ 0.6 UI</td><td>PRBS31，1m 背板</td><td>IEEE 802.3ae</td></tr>
+              <tr><td>25G NRZ</td><td>眼高 ≥ 360 mV，眼宽 ≥ 0.7 UI</td><td>PRBS31，CEI-25G</td><td>OIF-CEI-25G/IEEE 802.3by</td></tr>
+              <tr><td>53G PAM4</td><td>3 眼模板，每眼高 ≥ 95 mV</td><td>PRBS13Q，3-tap 均衡</td><td>IEEE 802.3cd</td></tr>
+              <tr><td>106G PAM4</td><td>3 眼模板，每眼高 ≥ 60 mV</td><td>PRBS13Q，5-tap 均衡</td><td>IEEE 802.3ck/OIF-CEI-112G</td></tr>
+              <tr><td>212G PAM4</td><td>3 眼模板，每眼高 ≥ 40 mV</td><td>PRBS13Q，6+ tap 均衡</td><td>IEEE 802.3dj/OIF-CEI-224G</td></tr>
+            </tbody>
+          </table>
+          <div class="warn-box" style="margin-top:10px;">
+            <strong>PAM4 注意：</strong>PAM4 有 3 个眼图，眼图张开仅 NRZ 的 1/3，对噪声和线性度极敏感。测试必须使用<strong>参考接收机（Reference Receiver）</strong>，并按标准规定的均衡设置（如 5-tap FFE）解码。
+          </div>
+        </div>
+      </div>
+
+      <!-- 电口指标卡 3: 抖动 -->
+      <div class="metric-card">
+        <div class="metric-header"><h4>5.3 抖动指标（Jitter）</h4><span class="metric-abbr">RJ/DJ/TJ</span></div>
+        <div class="metric-body">
+          <table>
+            <thead><tr><th>抖动类型</th><th>定义</th><th>典型规格（106G PAM4）</th><th>测试方法</th></tr></thead>
+            <tbody>
+              <tr><td><strong>TJ (Total Jitter)</strong></td><td>总抖动</td><td>≤ 0.7 UI (13.2 ps)</td><td>统计分析（ bathtub 曲线）</td></tr>
+              <tr><td><strong>RJ (Random Jitter)</strong></td><td>随机抖动（高斯分布）</td><td>≤ 0.3 ps rms</td><td>BER vs 采样点拟合</td></tr>
+              <tr><td><strong>DJ (Deterministic Jitter)</strong></td><td>确定性抖动</td><td>≤ 8 ps p-p</td><td>抖动分离算法</td></tr>
+              <tr><td><strong>DDJ (Data Dependent Jitter)</strong></td><td>数据相关抖动（ISI 引起）</td><td>≤ 6 ps p-p</td><td>PRBS 模式分析</td></tr>
+              <tr><td><strong>PJ (Periodic Jitter)</strong></td><td>周期性抖动（电源/EMI）</td><td>≤ 2 ps p-p</td><td>频谱分析</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 电口指标卡 4: 阻抗与回损 -->
+      <div class="metric-card">
+        <div class="metric-header"><h4>5.4 阻抗与回波损耗</h4><span class="metric-abbr">RL/Impedance</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><div class="metric-label">差分阻抗</div><div>100 Ω ±10%（QSFP-DD/OSFP）</div></div>
+          <div class="metric-row"><div class="metric-label">回波损耗 (RL)</div><div>≥ 10 dB（DC 到 Nyquist 频率）</div></div>
+          <div class="metric-row"><div class="metric-label">共模阻抗</div><div>~50 Ω（不平衡时）</div></div>
+          <div class="metric-row"><div class="metric-label">串扰 (NEXT)</div><div>≥ 35 dB（相邻通道）</div></div>
+          <div class="metric-row"><div class="metric-label">PCB 走线</div><div>100Ω 差分对，等长（±5 mil），参考层完整</div></div>
+          <div class="warn-box" style="margin-top:8px;">
+            <strong>阻抗失配后果：</strong>回波损耗不达标会导致信号反射，引起眼图畸变、码间干扰（ISI）增加，严重时触发 FEC 误码甚至链路中断。高速模块（106G+）对 PCB 阻抗控制要求 ±5%。
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:30px;color:var(--accent);border-bottom:2px solid var(--accent);padding-bottom:8px;">💡 二、光口指标</h3>
+      <p>光口指标定义在 IEEE 802.3 系列标准、OIF-400ZR、ITU-T G.698.2 等规范中，描述模块与光纤链路之间的光接口特性，直接决定传输距离与信号质量。</p>
+
+      <!-- 光口指标卡 1: 发射光功率 -->
+      <div class="metric-card">
+        <div class="metric-header" style="background:linear-gradient(90deg,#991b1b,#e74c3c);"><h4>5.5 发射光功率（Tx Power）</h4><span class="metric-abbr">Pavg / OMA</span></div>
+        <div class="metric-body">
+          <table>
+            <thead><tr><th>指标</th><th>定义</th><th>典型值（400G-FR4）</th><th>典型值（400G-LR4）</th><th>标准</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Pavg</strong></td><td>平均发射光功率（dBm）</td><td>-3.5 ~ +2.9 dBm</td><td>-1.5 ~ +3.3 dBm</td><td>IEEE 802.3bs</td></tr>
+              <tr><td><strong>OMA</strong></td><td>光调制幅度（dBm），P1-P0</td><td>≥ -2.6 dBm</td><td>≥ -0.6 dBm</td><td>IEEE 802.3bs</td></tr>
+              <tr><td><strong>OMAouter</strong></td><td>外调制 OMA（含 FEC）</td><td>≥ -2.2 dBm</td><td>≥ -0.2 dBm</td><td>IEEE 802.3bs</td></tr>
+              <tr><td><strong>Pmax</strong></td><td>最大发射功率（过载保护）</td><td>+3.3 dBm</td><td>+5.0 dBm</td><td>—</td></tr>
+            </tbody>
+          </table>
+          <div class="formula" style="margin-top:8px;">
+            OMA (dBm) = Pavg (dBm) + 10·log10[(10^(ER/10)-1)/(10^(ER/10)+1)]
+          </div>
+        </div>
+      </div>
+
+      <!-- 光口指标卡 2: 消光比 -->
+      <div class="metric-card">
+        <div class="metric-header" style="background:linear-gradient(90deg,#991b1b,#e74c3c);"><h4>5.6 消光比（Extinction Ratio, ER）</h4><span class="metric-abbr">ER</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><div class="metric-label">定义</div><div>激光器"1"光功率与"0"光功率之比：ER = P1/P0</div></div>
+          <div class="metric-row"><div class="metric-label">典型规格</div><div>3.5 ~ 6.0 dB（NRZ）；2.0 ~ 4.5 dB（PAM4）</div></div>
+          <div class="metric-row"><div class="metric-label">最小值</div><td>≥ 3.0 dB（IEEE 802.3bs 400G-FR4）</div></div>
+          <div class="metric-row"><div class="metric-label">最大值</div><div>≤ 6.0 dB（防止激光器过驱动产生非线性）</div></div>
+          <div class="metric-row"><div class="metric-label">影响</div><div>ER 过低→眼图张开小、灵敏度差；ER 过高→功耗大、啁啾大、色散代价增加</div></div>
+          <div class="warn-box" style="margin-top:8px;">
+            <strong>PAM4 的特殊要求：</strong>PAM4 有 3 个眼图，ER 定义为顶部电平（P3）与底部电平（P0）之比。各电平间隔需均匀（Rlm ≥ 0.92，线性度系数），否则影响判决。
+          </div>
+        </div>
+      </div>
+
+      <!-- 光口指标卡 3: 中心波长与光谱 -->
+      <div class="metric-card">
+        <div class="metric-header" style="background:linear-gradient(90deg,#991b1b,#e74c3c);"><h4>5.7 中心波长与光谱特性</h4><span class="metric-abbr">λ / SMSR</span></div>
+        <div class="metric-body">
+          <table>
+            <thead><tr><th>指标</th><th>定义</th><th>典型值（400G-FR4 LAN-WDM）</th><th>测试方法</th></tr></thead>
+            <tbody>
+              <tr><td><strong>中心波长 λc</strong></td><td>激光器中心工作波长</td><td>1295.56 / 1300.05 / 1304.58 / 1309.14 nm</td><td>OSA 光谱仪</td></tr>
+              <tr><td><strong>波长偏差 Δλ</strong></td><td>实际波长与标称值之差</td><td>±0.1 nm（TEC 温控）</td><td>OSA</td></tr>
+              <tr><td><strong>光谱宽度（-20dB）</strong></td><td>光谱 -20dB 带宽</td><td>≤ 1.0 nm</td><td>OSA</td></tr>
+              <tr><td><strong>SMSR</strong></td><td>边模抑制比（主模与边模功率比）</td><td>≥ 40 dB（DFB/EML）</td><td>OSA</td></tr>
+              <tr><td><strong>RIN</strong></td><td>相对强度噪声</td><td>≤ -130 dB/Hz（DFB）</td><td>RIN 测试仪</td></tr>
+              <tr><td><strong>啁啾（Chirp）</strong></td><td>调制引起的频率偏移</td><td>≤ 0.3 nm（EML），DML 较大</td><td>频率分辨 OSA</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 光口指标卡 4: 接收灵敏度 -->
+      <div class="metric-card">
+        <div class="metric-header" style="background:linear-gradient(90deg,#991b1b,#e74c3c);"><h4>5.8 接收灵敏度（Receiver Sensitivity）</h4><span class="metric-abbr">Sensitivity</span></div>
+        <div class="metric-body">
+          <table>
+            <thead><tr><th>规格</th><th>距离</th><th>BER 门槛</th><th>PIN 灵敏度</th><th>APD 灵敏度</th><th>标准</th></tr></thead>
+            <tbody>
+              <tr><td>400G-SR8</td><td>100m</td><td>1E-5（FEC 前）</td><td>-7.0 dBm</td><td>—</td><td>802.3bs</td></tr>
+              <tr><td>400G-DR4</td><td>500m</td><td>1E-5</td><td>-4.9 dBm</td><td>—</td><td>802.3bs</td></tr>
+              <tr><td>400G-FR4</td><td>2km</td><td>1E-5</td><td>—</td><td>-9.9 dBm</td><td>802.3bs</td></tr>
+              <tr><td>400G-LR4</td><td>10km</td><td>1E-5</td><td>—</td><td>-9.9 dBm</td><td>802.3bs</td></tr>
+              <tr><td>400G-ER8</td><td>40km</td><td>1E-5</td><td>—</td><td>-15.0 dBm</td><td>802.3cn</td></tr>
+              <tr><td>400G-ZR</td><td>80km+</td><td>1E-15（FEC 后）</td><td colspan="2">-22 dBm（相干）</td><td>OIF-400ZR</td></tr>
+            </tbody>
+          </table>
+          <div class="warn-box" style="margin-top:10px;">
+            <strong>BER 门槛差异：</strong>NRZ 模块通常要求 BER ≤ 1E-12（无 FEC）或 1E-15（带 FEC 后）；PAM4 模块 FEC 前通常 1E-4 ~ 1E-5，FEC 后 1E-15。测试时必须明确是 FEC 前 BER 还是 FEC 后 BER。
+          </div>
+        </div>
+      </div>
+
+      <!-- 光口指标卡 5: 其他光学指标 -->
+      <div class="metric-card">
+        <div class="metric-header" style="background:linear-gradient(90deg,#991b1b,#e74c3c);"><h4>5.9 其他关键光口指标</h4><span class="metric-abbr">TDP / CD / PMD</span></div>
+        <div class="metric-body">
+          <table>
+            <thead><tr><th>指标</th><th>定义</th><th>典型规格</th><th>测试方法</th></tr></thead>
+            <tbody>
+              <tr><td><strong>TDP</strong></td><td>发射色散代价（Transmitter Dispersion Penalty）</td><td>≤ 2.0 dB（400G-FR4）</td><td>参考光纤+BERT</td></tr>
+              <tr><td><strong>STDC</strong></td><td>发射与色散眼图闭合代价</td><td>≤ 1.8 dB（106G）</td><td>眼图测试+参考链路</td></tr>
+              <tr><td><strong>入纤功率</strong></td><td>进入光纤的最大光功率（防止非线性）</td><td>+8 dBm（DWDM 长距）</td><td>光功率计</td></tr>
+              <tr><td><strong>ROSNR</strong></td><td>所需光信噪比（相干）</td><td>≤ 18 dB（400G-ZR）</td><td>噪声加载测试</td></tr>
+              <tr><td><strong>CD 容限</strong></td><td>色度色散容限</td><td>±1600 ps/nm（FR4）；60000+ ps/nm（相干）</td><td>色散补偿光纤测试</td></tr>
+              <tr><td><strong>PMD 容限</strong></td><td>偏振模色散容限</td><td>≤ 30 ps（LR4）；相干可达 100+ ps</td><td>PMD 仿真器</td></tr>
+              <tr><td><strong>回损（ORL）</strong></td><td>光回波损耗</td><td>≥ 27 dB（模块端面 APC）</td><td>光回损仪</td></tr>
+              <tr><td><strong>过载功率</strong></td><td>RX 最大可承受光功率</td><td>+2 ~ +5 dBm</td><td>可调光衰+BER</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3 style="margin-top:30px;color:var(--accent2);border-bottom:2px solid var(--accent2);padding-bottom:8px;">📋 三、管理接口指标</h3>
+      <div class="metric-card">
+        <div class="metric-header" style="background:linear-gradient(90deg,#166534,#16a34a);"><h4>5.10 I2C/MDIO 管理接口指标</h4><span class="metric-abbr">DDM/CMIS</span></div>
+        <div class="metric-body">
+          <table>
+            <thead><tr><th>指标</th><th>规格</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>I2C 速率</td><td>100 kHz（标准）/ 400 kHz（快速）/ 1 MHz（快速+）</td><td>CMIS 5.0 推荐 400 kHz</td></tr>
+              <tr><td>I2C 地址</td><td>0x50（A0 page）、0x51（A2 page）</td><td>7-bit 地址</td></tr>
+              <tr><td>MDIO 速率</td><td>2.5 MHz（标准）</td><td>IEEE 802.3 Clause 45</td></tr>
+              <tr><td>DDM 温度精度</td><td>±3°C</td><td>-40~+95°C 量程</td></tr>
+              <tr><td>DDM 光功率精度</td><td>±3 dB（TX）、±2 dB（RX）</td><td>校准后</td></tr>
+              <tr><td>DDM 偏置电流精度</td><td>±10%</td><td>0~100 mA 量程</td></tr>
+              <tr><td>告警响应时间</td><td>≤ 100 ms</td><td>温度/光功率越限</td></tr>
+              <tr><td>CMIS 状态机</td><td>Init→Ready→Enabled</td><td>CMIS 5.0 定义</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 6: 影响因素 ═══════════ -->
+<section id="sec6">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">6</div><div class="icon">🔗</div><h2>影响因素</h2>
+    </div>
+    <div class="card-body">
+      <p>光模块性能受<strong>温度、老化、光纤特性、连接器、串扰、电源噪声</strong>等多重因素影响，实际部署时需综合考虑。</p>
+
+      <div class="caution-grid">
+        <div class="caution-item">
+          <div class="ci-title">🌡️ 1. 温度</div>
+          <p><strong>影响：</strong>激光器波长随温度漂移（~0.1 nm/°C DFB），阈值电流变化，输出功率下降；APD 增益随温度升高而下降（雪崩倍增温度依赖）。</p>
+          <p><strong>对策：</strong>TEC 半导体热电制冷（长距模块）；APD 偏压温度补偿；MCU 实时温度监测+功率闭环控制。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">⏳ 2. 老化</div>
+          <p><strong>影响：</strong>激光器阈值电流随老化增加（~20% 寿命周期），输出功率下降；PD 响应度下降；Driver/TIA 增益漂移。</p>
+          <p><strong>对策：</strong>APC（自动功率控制）环路补偿；DDM 监测偏置电流趋势预测寿命；End-of-life 阈值告警。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🌈 3. 光纤色散</div>
+          <p><strong>影响：</strong>色度色散（CD）导致光脉冲展宽、码间干扰；偏振模色散（PMD）导致差分群延迟。1310nm 近零色散窗口，1550nm 色散较大（17 ps/nm/km）。</p>
+          <p><strong>对策：</strong>EML/SiPh 外调制减小啁啾；oDSP 电域均衡补偿；相干模块用 DSP 补偿 CD/PMD（容限数万 ps/nm）。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔌 4. 连接器损耗与反射</div>
+          <p><strong>影响：</strong>每个 LC/MPO 连接器插入损耗 0.3~0.5 dB；端面反射引起回损，干扰激光器工作（RIN 增加）。</p>
+          <p><strong>对策：</strong>APC 斜面抛光连接器（回损 ≥ 60 dB）；清洁端面；模块内部加光隔离器（长距）。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">📡 5. 信道串扰</div>
+          <p><strong>影响：</strong>多通道模块（8/16 通道）相邻通道电磁串扰（NEXT/FEXT），引起眼图恶化、误码增加；光域串扰（WDM 邻道泄漏）。</p>
+          <p><strong>对策：</strong>PCB 差分对间距加大、地屏蔽；WDM filter 邻道隔离度 ≥ 30 dB；oDSP 通道间独立均衡。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">⚡ 6. 电源噪声</div>
+          <p><strong>影响：</strong>PMIC 输出纹波耦合到 Driver/TIA，引起 RJ（随机抖动）增加；oDSP 核电压纹波导致时序抖动。</p>
+          <p><strong>对策：</strong>多级 LDO 稳压；去耦电容 0.1µF+10µF 并联；模拟地与数字地分离；PDN 阻抗优化。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">📉 7. 光纤非线性</div>
+          <p><strong>影响：</strong>高入纤功率（DWDM 长距）引发 SPM（自相位调制）、XPM（交叉相位调制）、FWM（四波混频）、SBS（受激布里渊散射）。</p>
+          <p><strong>对策：</strong>控制入纤功率 ≤ +8 dBm；色散补偿管理；相干 DSP 非线性补偿算法。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔍 8. 阻抗失配</div>
+          <p><strong>影响：</strong>电口阻抗不连续（连接器、过孔、PCB 走线突变）引起信号反射，回损恶化，眼图畸变。</p>
+          <p><strong>对策：</strong>100Ω 差分阻抗精确控制（±5%）；少用过孔；交流耦合电容选 0.1µF 高频低 ESL；TDR 阻抗验证。</p>
+        </div>
+      </div>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>RC 上升时间公式（光纤带宽估算）：</strong>
+      </div>
+      <div class="formula">
+        T_total = 1.1 × √(T_tx² + T_fiber² + T_rx²) &nbsp;|&nbsp; T_fiber = 441/BW_fiber (ps, GHz)
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);">其中 T_tx、T_fiber、T_rx 分别为发射、光纤、接收的 10%-90% 上升时间。系统总上升时间需 ≤ 0.7 UI（NRZ）或 0.35/BW（PAM4）。</p>
+    </div>
+  </div>
+</section>
+<!-- ═══════════ Section 7: 测试方法 ═══════════ -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法</h2>
+    </div>
+    <div class="card-body">
+      <p>光模块测试分<strong>电口测试</strong>、<strong>光口测试</strong>、<strong>系统测试</strong>、<strong>管理接口测试</strong>四大类，分别验证模块与主机/光纤/对端模块/管理软件的兼容性。</p>
+
+      <h3 style="color:var(--primary-dark);border-bottom:2px solid var(--primary);padding-bottom:8px;">📡 一、电口测试</h3>
+
+      <h4>7.1 误码率测试（BERT）</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>测试设备</h5><p>误码仪 BERT（Keysight N4903B J-BERT、Anritsu MP1900A），配置 PAM4/NRZ 模式发生器与误码检测器</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>测试码型</h5><p>PRBS7（短码，快速测试）/ PRBS13Q（PAM4 标准码）/ PRBS31（长码，捕获低频抖动）；码型须符合 IEEE 802.3 规范</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>测试连接</h5><p>BERT 发送端 → 模块 TX 电口 → 光纤环回（或对端模块）→ 模块 RX 电口 → BERT 接收端</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>测试指标</h5><p>记录误码率 BER（FEC 前后）、误码计数、误码秒；FEC 前 BER ≤ 1E-5，FEC 后 BER ≤ 1E-15 为合格</p></div></div>
+      </div>
+
+      <h4 style="margin-top:20px;">7.2 电口眼图测试</h4>
+      <table>
+        <thead><tr><th>测试设备</th><th>配置</th><th>测试指标</th></tr></thead>
+        <tbody>
+          <tr><td>Keysight DCA-M 86100D</td><td>86100D 主机 + 86108B 模块（>86GBaud）</td><td>眼高、眼宽、眼图模板、抖动、PAM4 3 眼分析</td></tr>
+          <tr><td> Tektronix DSAV334A</td><td>33GHz 带宽，4 通道</td><td>实时眼图、抖动分解</td></tr>
+          <tr><td>Teledyne LeCroy LabMaster</td><td>100GHz 带宽</td><td>212G PAM4 眼图、TDECQ</td></tr>
+        </tbody>
+      </table>
+      <div class="warn-box">
+        <strong>测试要点：</strong>PAM4 眼图必须按标准配置参考接收机（5-tap FFE 均衡），眼图模板测试需在 1E-5 BER 概率下采样 ≥ 100 万点。
+      </div>
+
+      <h4 style="margin-top:20px;">7.3 回波损耗与阻抗测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>VNA 网络分析仪</h5><p>Keysight E5080B ENA，频率范围 DC~50GHz；S11 测量回波损耗，要求 ≥ 10 dB</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>TDR 时域反射</h5><p> Tektronix 80E04 TDR 模块；测量 PCB 走线、过孔、连接器阻抗连续性，定位阻抗突变点</p></div></div>
+      </div>
+
+      <h3 style="margin-top:24px;color:var(--accent);border-bottom:2px solid var(--accent);padding-bottom:8px;">💡 二、光口测试</h3>
+
+      <h4>7.4 光功率测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>设备</h5><p>光功率计（Keysight 81618A、Yokogawa AQ2180、EXFO FPM-300）；量程覆盖 -40~+20 dBm</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>测试</h5><p>模块 TX 光口直接接光功率计；记录 Pavg（dBm）；多波长模块需配合 OSA 测每波长功率</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>判定</h5><p>Pavg 在 IEEE 802.3 规格范围内（如 400G-FR4 为 -3.5~+2.9 dBm）</p></div></div>
+      </div>
+
+      <h4 style="margin-top:20px;">7.5 光眼图与 OMA/ER 测试</h4>
+      <table>
+        <thead><tr><th>测试设备</th><th>配置</th><th>测试指标</th></tr></thead>
+        <tbody>
+          <tr><td>Keysight 86100D + N1078A/B</td><td>光采样模块 53/86 GBaud，参考接收机</td><td>PAM4/NRZ 光眼图、OMA、ER、眼图模板、TDECQ</td></tr>
+          <tr><td> Tektronix DPO75902SX + 光前端</td><td>70GHz 带宽</td><td>实时光眼图、抖动分析</td></tr>
+        </tbody>
+      </table>
+      <div class="info-box">
+        <strong>OMA 计算方法：</strong>测量 P1（逻辑 1 平均功率）和 P0（逻辑 0 平均功率），OMA = P1 - P0；ER = 10·log10(P1/P0)。PAM4 测 3 个眼，取 OMAouter（P3-P0）。
+      </div>
+
+      <h4 style="margin-top:20px;">7.6 光谱测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>设备</h5><p>光谱仪 OSA（Yokogawa AQ6370D/E、Anritsu MS9740A、Apex AP2040B）；分辨率 ≤ 0.05 nm</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>测试</h5><p>模块 TX 光口接 OSA；测量中心波长 λc、-20dB 谱宽、SMSR、RIN</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>判定</h5><p>波长偏差 ≤ ±0.1 nm；SMSR ≥ 40 dB（DFB/EML）；谱宽 ≤ 1.0 nm（-20dB）</p></div></div>
+      </div>
+
+      <h4 style="margin-top:20px;">7.7 接收灵敏度测试</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>测试链路</h5><p>对端模块 TX → 可调光衰 → 待测模块 RX；BERT 监测误码</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>逐步衰减</h5><p>从低衰减开始，逐步增大光衰，记录 RX 光功率与 BER 对应关系</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>灵敏度判定</h5><p>BER 达到规定阈值（FEC 前 1E-5，FEC 后 1E-15）时的 RX 光功率即为灵敏度（dBm）</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>过载测试</h5><p>减小光衰至 RX 功率达 +5 dBm，验证 BER 仍合格（过载功率测试）</p></div></div>
+      </div>
+
+      <h4 style="margin-top:20px;">7.8 TDP / TDECQ 测试</h4>
+      <p>TDP（发射色散代价）和 TDECQ（发射与色散眼图闭合代价）是评估发射机在色散光纤中性能退化的关键指标，测试需配置参考色散光纤与参考接收机。</p>
+      <div class="formula">
+        TDP = P_back-to-back - P_with-fiber (dB, @same BER) &nbsp;|&nbsp; TDECQ ≤ 1.8 dB (106G PAM4)
+      </div>
+
+      <h3 style="margin-top:24px;color:var(--accent2);border-bottom:2px solid var(--accent2);padding-bottom:8px;">🔧 三、系统与管理接口测试</h3>
+
+      <h4>7.9 DDM 数字诊断监测测试</h4>
+      <table>
+        <thead><tr><th>测试项</th><th>方法</th><th>合格判定</th></tr></thead>
+        <tbody>
+          <tr><td>温度读数</td><td>I2C 读取 A2 page 温度字段，对比热电偶实测</td><td>偏差 ≤ ±3°C</td></tr>
+          <tr><td>VCC 读数</td><td>I2C 读取 VCC 字段，对比万用表实测</td><td>偏差 ≤ ±0.1V</td></tr>
+          <tr><td>TX 光功率</td><td>I2C 读取 TX 功率字段，对比光功率计实测</td><td>偏差 ≤ ±3 dB</td></tr>
+          <tr><td>RX 光功率</td><td>I2C 读取 RX 功率字段，对比光功率计</td><td>偏差 ≤ ±2 dB</td></tr>
+          <tr><td>偏置电流</td><td>I2C 读取偏置字段，对比万用表（采样电阻压降）</td><td>偏差 ≤ ±10%</td></tr>
+          <tr><td>告警功能</td><td>人为制造过温/低功率，观察告警标志</td><td>告警在 100ms 内置位</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">7.10 I2C / CMIS / MDIO 协议测试</h4>
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>I2C 测试（EEPROM/CMIS）</h3>
+          <div class="formula" style="text-align:left;font-size:0.82rem;">
+# Linux i2c-tools 示例<br>
+i2cdetect -y 0  # 扫描地址 0x50/0x51<br>
+i2cdump -y 0 0x50  # 读取 A0 page<br>
+i2cdump -y 0 0x51  # 读取 A2 page (DDM)<br>
+# CMIS 5.0 状态机<br>
+i2cset -y 0 0x50 0x00 0x01  # 切换 page<br>
+i2cget -y 0 0x50 0x7F  # 读 ModuleState
+          </div>
+        </div>
+        <div class="compare-col green">
+          <h3>MDIO 测试（oDSP 寄存器）</h3>
+          <div class="formula" style="text-align:left;font-size:0.82rem;">
+# Linux mdio-tools 示例<br>
+mdio-tool  eth0 0x00 0x01  # Clause 22 read<br>
+mdio-tool  eth0 0x1.0x0000  # Clause 45 read<br>
+# 读 PMA/PMD (DEVAD=1) ID<br>
+mdio-tool  eth0 1.0x0000<br>
+# 读 FEC 误码计数<br>
+mdio-tool  eth0 1.0x8800<br>
+# Python smbus 示例<br>
+import smbus; bus=smbus.SMBus(0)<br>
+bus.read_i2c_block_data(0x50,0,128)
+          </div>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">7.11 链路 BER 与压力测试</h4>
+      <ul>
+        <li><strong>背靠背测试：</strong>对端模块直连，不加光纤，验证基础 BER</li>
+        <li><strong>满光纤测试：</strong>加标准长度光纤（如 10km LR4），验证带色散 BER</li>
+        <li><strong>压力测试：</strong>注入抖动、噪声、信道损耗，验证压力下 BER 是否仍合格</li>
+        <li><strong>老化测试：</strong>高温（70°C）长期运行 168 小时，监测 BER 与 DDM 趋势</li>
+        <li><strong>热插拔测试：</strong>带电插拔 ≥ 500 次，验证模块与主机无损伤</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 8: 注意事项 ═══════════ -->
+<section id="sec8">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">8</div><div class="icon">⚠️</div><h2>注意事项</h2>
+    </div>
+    <div class="card-body">
+      <div class="caution-grid">
+        <div class="caution-item">
+          <div class="ci-title">⚡ 1. 静电防护（ESD）</div>
+          <p>激光器与 PD 对 ESD 极敏感（HBM ≤ 500V）；操作必须戴防静电手环、防静电垫；模块存放在防静电袋中；测试设备良好接地。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔆 2. 光安全（Class 1/1M）</div>
+          <p>激光器属 Class 1 激光产品（部分长距为 Class 1M）；不可直视光口；不可加光学仪器直视；模块故障可能导致激光器持续发光，需通过 DDM 监测。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🌡️ 3. 热设计</div>
+          <p>QSFP-DD 800G 模块功耗 20W+，散热是关键；主机需提供足够风冷；模块有过温保护（典型 85°C 触发告警、95°C 关断）；禁止无散热条件下长时间工作。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">📌 4. I2C 地址冲突</div>
+          <p>同一 I2C 总线上多模块地址均为 0x50/0x51，必须通过 ModSelL 引脚分时选通；不可同时拉低多个模块的 ModSelL，否则 I2C 总线冲突。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔄 5. 上电时序</div>
+          <p>必须遵循 CMIS 上电时序：3.3V 上电 → ModPrsL 拉低（在位） → 主机初始化 → 模块 ModuleReady → 主机使能 TX/RX；时序错误可能损坏激光器或导致 oDSP 配置丢失。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🧹 6. 端面清洁</div>
+          <p>光口端面污染是导致链路故障的首要原因（占比 60%+）；插拔后必须用光纤清洁笔/无尘纸清洁；禁止徒手触摸端面；定期检查端面（光纤显微镜）。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">📋 7. 协议匹配</div>
+          <p>FEC 类型必须两端一致（KR4 对 KR4、KP4 对 KP4）；CMIS 版本兼容（主机驱动需支持模块 CMIS 版本）；速率协商失败时检查 CMIS 状态机是否进入 ModuleFault。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔧 8. 调试与日志</div>
+          <p>调试时优先读取 CMIS 状态机、DDM 值、FEC 误码计数；问题复现需保存 I2C dump 与 BERT 日志；激光器偏置电流异常升高通常预示老化。</p>
+        </div>
+      </div>
+
+      <h4 style="margin-top:24px;">常见故障速查表</h4>
+      <table>
+        <thead><tr><th>故障现象</th><th>可能原因</th><th>排查方法</th></tr></thead>
+        <tbody>
+          <tr><td>链路不通，BER = 0.5（无信号）</td><td>模块未使能/TX 关断/光纤断/极性反</td><td>查 CMIS TxReady；光功率计测 TX；检查 MPO 极性</td></tr>
+          <tr><td>BER 高但能通信</td><td>ER 不足/光纤色散/连接器脏/光功率过低</td><td>测 ER、清洁端面、测 RX 功率、查 DDM 温度</td></tr>
+          <tr><td>FEC 误码计数持续增长</td><td>信道损耗过大/oDSP 均衡不足/串扰</td><td>查电口眼图、调整预加重、检查 PCB 阻抗</td></tr>
+          <tr><td>温度告警</td><td>散热不足/环境温度过高/风扇故障</td><td>查 DDM 温度、检查风道、降速运行</td></tr>
+          <tr><td>I2C 读取失败</td><td>地址冲突/ModSelL 未选通/总线挂死</td><td>检查 ModSelL、I2C 上拉、复位模块</td></tr>
+          <tr><td>偏置电流异常升高</td><td>激光器老化/APC 失效/温度漂移</td><td>查 DDM 偏置趋势、TEC 是否工作、模块寿命预测</td></tr>
+          <tr><td>RX 功率低告警</td><td>对端 TX 功率低/光纤损耗大/连接器脏</td><td>测对端 TX 功率、OTDR 测光纤、清洁端面</td></tr>
+          <tr><td>模块识别失败</td><td>A0 page CRC 错误/CMIS 版本不兼容</td><td>I2C dump A0 page、查 CMIS 版本、升级主机驱动</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Section 9: 选型指南 ═══════════ -->
+<section id="sec9">
+  <div class="card">
+    <div class="card-header">
+      <div class="section-no">9</div><div class="icon">🧭</div><h2>选型指南</h2>
+    </div>
+    <div class="card-body">
+      <h4>9.1 按速率选择</h4>
+      <table>
+        <thead><tr><th>速率需求</th><th>推荐封装</th><th>推荐规格</th><th>典型场景</th></tr></thead>
+        <tbody>
+          <tr><td>10G/25G</td><td>SFP+/SFP28</td><td>10GBASE-SR/LR、25GBASE-SR/LR</td><td>接入层、5G 前传</td></tr>
+          <tr><td>50G/100G</td><td>SFP56/QSFP28</td><td>50GBASE-SR/LR、100GBASE-SR4/LR4</td><td>汇聚层、DC 叶子</td></tr>
+          <tr><td>200G/400G</td><td>QSFP56/QSFP-DD</td><td>200GBASE-SR4/FR4、400GBASE-DR4/FR4</td><td>DC 脊叶、AI 集群</td></tr>
+          <tr><td>800G</td><td>QSFP-DD800/OSFP</td><td>800GBASE-DR8/2xLR4</td><td>AI/ML 超算</td></tr>
+          <tr><td>1.6T</td><td>OSFP-XD/CPO</td><td>1.6T PAM4/PAM6</td><td>下一代超大规模 DC</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">9.2 按传输距离选择</h4>
+      <table>
+        <thead><tr><th>距离</th><th>规格</th><th>光纤</th><th>连接器</th><th>典型应用</th></tr></thead>
+        <tbody>
+          <tr><td>≤ 100m</td><td>SR/SR4/SR8</td><td>OM3/OM4 多模</td><td>MPO/LC</td><td>机架内/列内互联</td></tr>
+          <tr><td>100m~2km</td><td>DR4/FR4</td><td>OS2 单模</td><td>MPO/LC</td><td>数据中心内</td></tr>
+          <tr><td>2km~10km</td><td>LR/LR4</td><td>OS2 单模</td><td>LC Duplex</td><td>园区/DCI</td></tr>
+          <tr><td>10km~40km</td><td>ER/ER4/ER8</td><td>OS2 单模</td><td>LC Duplex</td><td>城域网</td></tr>
+          <tr><td>40km~120km</td><td>ZR/ZR4（相干）</td><td>OS2 单模</td><td>LC Duplex</td><td>长途骨干</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">9.3 按应用场景选择</h4>
+      <div class="compare-grid">
+        <div class="compare-col blue">
+          <h3>数据中心（DCI）</h3>
+          <ul>
+            <li><strong>距离：</strong>100m~10km 为主</li>
+            <li><strong>速率：</strong>100G/400G/800G</li>
+            <li><strong>封装：</strong>QSFP-DD/OSFP</li>
+            <li><strong>规格：</strong>SR8/DR4/FR4/LR4</li>
+            <li><strong>关注：</strong>功耗、密度、成本</li>
+          </ul>
+        </div>
+        <div class="compare-col green">
+          <h3>5G 无线</h3>
+          <ul>
+            <li><strong>前传：</strong>25G-SR/LR/BiDi（灰光/彩光）</li>
+            <li><strong>中传：</strong>50G-SR/LR（PAM4）</li>
+            <li><strong>回传：</strong>100G/200G LR4/ER4</li>
+            <li><strong>封装：</strong>SFP28/SFP56/QSFP28</li>
+            <li><strong>关注：</strong>温度范围（-40~+85°C 工业级）、可靠性</li>
+          </ul>
+        </div>
+        <div class="compare-col red">
+          <h3>电信长距</h3>
+          <ul>
+            <li><strong>距离：</strong>40km~120km+</li>
+            <li><strong>速率：</strong>100G/200G/400G/800G</li>
+            <li><strong>封装：</strong>CFP2/CFP4/CFP8（相干）</li>
+            <li><strong>规格：</strong>ZR/ZR+ 相干 DWDM</li>
+            <li><strong>关注：</strong>OSNR、色散容限、波长稳定</li>
+          </ul>
+        </div>
+        <div class="compare-col blue" style="background:#fef3c7;border-color:#f59e0b;">
+          <h3 style="color:#92400e;">AI/ML 集群</h3>
+          <ul>
+            <li><strong>距离：</strong>100m~2km 高密度</li>
+            <li><strong>速率：</strong>400G/800G/1.6T</li>
+            <li><strong>封装：</strong>QSFP-DD/OSFP-XD/CPO</li>
+            <li><strong>规格：</strong>DR8/2xLR4/AOC</li>
+            <li><strong>关注：</strong>吞吐、时延、功耗、CPO 趋势</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">9.4 选型决策流程</h4>
+      <div class="diagram-container">
+        <svg viewBox="0 0 900 280" width="880" height="280" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arr9" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1a56db"/></marker></defs>
+          <rect x="350" y="10" width="200" height="35" rx="6" fill="#1a56db" stroke="#0e3a8e" stroke-width="2"/>
+          <text x="450" y="32" fill="white" font-size="11" font-weight="700" text-anchor="middle">需求分析</text>
+          <line x1="450" y1="45" x2="450" y2="65" stroke="#1a56db" stroke-width="2" marker-end="url(#arr9)"/>
+          <rect x="350" y="70" width="200" height="35" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="450" y="92" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">① 速率需求</text>
+          <line x1="450" y1="105" x2="450" y2="125" stroke="#1a56db" stroke-width="2" marker-end="url(#arr9)"/>
+          <rect x="350" y="130" width="200" height="35" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="450" y="152" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">② 传输距离</text>
+          <line x1="450" y1="165" x2="450" y2="185" stroke="#1a56db" stroke-width="2" marker-end="url(#arr9)"/>
+          <rect x="350" y="190" width="200" height="35" rx="6" fill="#dbeafe" stroke="#1a56db" stroke-width="1.5"/>
+          <text x="450" y="212" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">③ 封装类型</text>
+          <line x1="450" y1="225" x2="450" y2="245" stroke="#1a56db" stroke-width="2" marker-end="url(#arr9)"/>
+          <rect x="350" y="250" width="200" height="25" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+          <text x="450" y="268" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">确定规格</text>
+          <!-- 左右分支 -->
+          <text x="150" y="90" fill="#666" font-size="9" text-anchor="middle">10/25G→SFP+/SFP28</text>
+          <text x="150" y="105" fill="#666" font-size="9" text-anchor="middle">100G→QSFP28</text>
+          <text x="150" y="120" fill="#666" font-size="9" text-anchor="middle">400G→QSFP-DD</text>
+          <text x="150" y="135" fill="#666" font-size="9" text-anchor="middle">800G→OSFP</text>
+          <line x1="350" y1="87" x2="240" y2="87" stroke="#1a56db" stroke-width="1.2" marker-end="url(#arr9)"/>
+          <text x="730" y="150" fill="#666" font-size="9" text-anchor="middle">100m→SR4/SR8</text>
+          <text x="730" y="165" fill="#666" font-size="9" text-anchor="middle">500m→DR4/DR8</text>
+          <text x="730" y="180" fill="#666" font-size="9" text-anchor="middle">2km→FR4</text>
+          <text x="730" y="195" fill="#666" font-size="9" text-anchor="middle">10km→LR4</text>
+          <text x="730" y="210" fill="#666" font-size="9" text-anchor="middle">40km+→ER/ZR</text>
+          <line x1="550" y1="152" x2="640" y2="152" stroke="#1a56db" stroke-width="1.2" marker-end="url(#arr9)"/>
+        </svg>
+      </div>
+
+      <div class="info-box" style="margin-top:16px;">
+        <strong>选型核心原则：</strong>① 速率匹配主机 SerDes 能力；② 距离匹配光纤长度（留 3dB 余量）；③ 封装匹配主机端口；④ FEC 类型两端一致；⑤ 温度等级匹配环境（工业级/商业级）；⑥ 关注功耗与散热能力；⑦ 优先选主流厂商（II-VI/Coherent、Cisco/Acacia、Innolight、Hisense 等）兼容互操作性好。
+      </div>
+
+      <div class="success-box">
+        <strong>未来趋势：</strong>① CPO（共封装光学）将光引擎与交换芯片共封装，缩短互连距离、降低功耗；② 1.6T 时代将引入 PAM6 或相干；③ 线性可插拔光学（LPO）省去 oDSP，降低成本与时延，适用于短距 DCI；④ 800G/1.6T 模块功耗挑战加剧，液冷与先进散热成为必需。
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  <p>AE 知识文档 · 光模块工作原理详解 · v1.0 · 2026-07</p>
+  <p>覆盖 SFP+/SFP28/QSFP28/QSFP-DD/OSFP 封装 · NRZ/PAM4 调制 · IEEE 802.3/CMIS/SFF MSA 协议</p>
+</div>
+</div>
+</body>
+</html>

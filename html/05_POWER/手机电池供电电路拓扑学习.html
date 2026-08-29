@@ -1,0 +1,1904 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>手机电池供电电路拓扑 — AE工程师学习手册</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --card: #f8f9fa;
+    --border: #dee2e6;
+    --text: #212529;
+    --muted: #6c757d;
+    --primary: #0d6efd;
+    --danger: #dc3545;
+    --success: #198754;
+    --warning: #fd7e14;
+    --info: #0dcaf0;
+    --highlight: #fff3cd;
+    --code-bg: #f1f3f5;
+    --table-stripe: #f2f4f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: #e9ecef;
+    color: var(--text);
+    line-height: 1.75;
+  }
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff;
+    padding: 48px 32px;
+    border-radius: 12px;
+    margin-bottom: 28px;
+    text-align: center;
+  }
+  .header h1 { font-size: 1.9em; font-weight: 700; margin-bottom: 6px; }
+  .header .sub { font-size: 1.05em; opacity: 0.85; }
+  .header .meta { margin-top: 14px; font-size: 0.85em; opacity: 0.65; }
+
+  /* Nav */
+  .toc {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 30px;
+    margin-bottom: 28px;
+  }
+  .toc h3 { font-size: 1.1em; margin-bottom: 10px; color: var(--primary); }
+  .toc ol { padding-left: 20px; columns: 2; column-gap: 40px; }
+  .toc li { margin-bottom: 6px; font-size: 0.92em; }
+  .toc a { color: var(--primary); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* Cards */
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 30px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  }
+  h2 {
+    font-size: 1.35em;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary);
+    margin-bottom: 16px;
+    color: var(--primary);
+  }
+  h3 {
+    font-size: 1.12em;
+    margin: 18px 0 10px;
+    color: #343a40;
+  }
+  h4 {
+    font-size: 1.0em;
+    margin: 14px 0 8px;
+    color: #495057;
+  }
+
+  /* SVG diagram area */
+  .diagram-wrap {
+    background: #fdfdfd;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-align: center;
+    padding: 16px;
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+  .diagram-wrap svg { max-width: 100%; height: auto; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    margin: 12px 0;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #e7f1ff;
+    font-weight: 600;
+  }
+  tr:nth-child(even) td { background: var(--table-stripe); }
+
+  /* Formula */
+  .formula {
+    background: #fef9e7;
+    border-left: 4px solid var(--warning);
+    padding: 10px 16px;
+    margin: 12px 0;
+    font-family: "Courier New", Consolas, monospace;
+    font-size: 0.92em;
+    border-radius: 4px;
+    overflow-x: auto;
+  }
+
+  /* Notes */
+  .note {
+    background: #e8f4fd;
+    border-left: 4px solid var(--info);
+    padding: 10px 16px;
+    margin: 12px 0;
+    border-radius: 4px;
+    font-size: 0.92em;
+  }
+  .warn {
+    background: #fff3cd;
+    border-left: 4px solid var(--warning);
+    padding: 10px 16px;
+    margin: 12px 0;
+    border-radius: 4px;
+    font-size: 0.92em;
+  }
+  .tip {
+    background: #d4edda;
+    border-left: 4px solid var(--success);
+    padding: 10px 16px;
+    margin: 12px 0;
+    border-radius: 4px;
+    font-size: 0.92em;
+  }
+
+  /* Key-value list */
+  .kv-list {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 4px 12px;
+    font-size: 0.92em;
+  }
+  .kv-list .key { font-weight: 600; color: #495057; }
+  .kv-list .val { color: var(--text); }
+
+  /* Pin table highlight */
+  .pin-vbus { background: #fff0f0 !important; }
+  .pin-bat { background: #f0fff0 !important; }
+  .pin-gnd { background: #f0f0f0 !important; }
+
+  /* Step number */
+  .step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.8em;
+    font-weight: 700;
+    margin-right: 6px;
+    flex-shrink: 0;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .toc ol { columns: 1; }
+    .kv-list { grid-template-columns: 1fr; }
+  }
+
+  .footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.82em;
+    padding: 24px;
+  }
+
+  /* print */
+  @media print {
+    body { background: #fff; }
+    .card { box-shadow: none; break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- ====== HEADER ====== -->
+<div class="header">
+  <h1>手机电池供电电路拓扑</h1>
+  <div class="sub">从 VBUS 到 Battery —— 电路原理、关键参数与测试方法</div>
+  <div class="meta">AE 工程师学习手册 &nbsp;|&nbsp; 2026-06</div>
+</div>
+
+<!-- ====== TOC ====== -->
+<div class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">整体电路拓扑框图</a></li>
+    <li><a href="#s2">VBUS / USB 输入端</a></li>
+    <li><a href="#s3">充电芯片 (Charger IC)</a></li>
+    <li><a href="#s4">电池保护芯片 (Protection IC)</a></li>
+    <li><a href="#s5">锂电池电芯 (Battery Cell)</a></li>
+    <li><a href="#s5_4">电量计 (Fuel Gauge / 库仑计)</a></li>
+    <li><a href="#s5_5">三芯功能对比 (Charger / Protection / Gauge)</a></li>
+    <li><a href="#s6">电池充放电参数与测试方法</a></li>
+    <li><a href="#s7">各模块电气指标及测试方法汇总</a></li>
+    <li><a href="#s8">典型故障排查思路</a></li>
+    <li><a href="#s9">总结与学习建议</a></li>
+  </ol>
+</div>
+
+<!-- ====== SECTION 1: 整体电路拓扑 ====== -->
+<div class="card" id="s1">
+  <h2>1. 整体电路拓扑框图</h2>
+
+  <p>典型手机电池供电路径由<strong>四大部分</strong>组成，按照功率流方向依次为：</p>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 880 460" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#0d6efd"/>
+        </marker>
+        <marker id="arrow-red" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#dc3545"/>
+        </marker>
+        <marker id="arrow-green" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#198754"/>
+        </marker>
+        <marker id="arrow-purple" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#6610f2"/>
+        </marker>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#0d6efd;stop-opacity:1"/>
+          <stop offset="100%" style="stop-color:#6610f2;stop-opacity:1"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Background -->
+      <rect x="0" y="0" width="880" height="460" fill="#fafbfc" rx="10"/>
+
+      <!-- === VBUS Module === -->
+      <rect x="30" y="120" width="180" height="170" rx="12" fill="#fff0f0" stroke="#dc3545" stroke-width="2"/>
+      <text x="120" y="152" text-anchor="middle" font-size="14" font-weight="700" fill="#dc3545">VBUS (USB)</text>
+      <text x="120" y="172" text-anchor="middle" font-size="11" fill="#dc3545">Typ: 5V / 9V / 12V</text>
+      <text x="120" y="190" text-anchor="middle" font-size="11" fill="#6c757d">USB Type-C / Micro-B</text>
+      <line x1="55" y1="205" x2="185" y2="205" stroke="#ddd" stroke-width="1"/>
+      <text x="65" y="224" font-size="10" fill="#495057">• OVP (过压保护)</text>
+      <text x="65" y="242" font-size="10" fill="#495057">• TVS ESD 防护</text>
+      <text x="65" y="260" font-size="10" fill="#495057">• CC 逻辑检测</text>
+      <text x="65" y="278" font-size="10" fill="#495057">• 共模扼流圈</text>
+
+      <!-- === Charger IC === -->
+      <rect x="310" y="105" width="260" height="200" rx="12" fill="#f0f4ff" stroke="#0d6efd" stroke-width="2"/>
+      <text x="440" y="135" text-anchor="middle" font-size="14" font-weight="700" fill="#0d6efd">充电芯片 Charger IC</text>
+      <text x="440" y="155" text-anchor="middle" font-size="11" fill="#0d6efd">(e.g. TI BQ2589x, MP26xx)</text>
+      <line x1="335" y1="167" x2="545" y2="167" stroke="#ddd" stroke-width="1"/>
+      <text x="345" y="185" font-size="10" fill="#495057">• CC/CV 充电控制</text>
+      <text x="345" y="201" font-size="10" fill="#495057">• Power Path (BATFET)</text>
+      <text x="345" y="217" font-size="10" fill="#495057">• NTC 温度监测</text>
+      <text x="345" y="233" font-size="10" fill="#495057">• I²C 寄存器配置</text>
+      <text x="345" y="249" font-size="10" fill="#495057">• 输入电流限制 (ILIM)</text>
+      <text x="345" y="265" font-size="10" fill="#495057">• Supplement 补充模式</text>
+      <!-- SYS pin label -->
+      <text x="440" y="298" text-anchor="middle" font-size="10" fill="#0d6efd" font-weight="700">SYS (系统供电输出)</text>
+
+      <!-- === Protection IC === -->
+      <rect x="660" y="120" width="190" height="170" rx="12" fill="#f0fff0" stroke="#198754" stroke-width="2"/>
+      <text x="755" y="150" text-anchor="middle" font-size="14" font-weight="700" fill="#198754">电池保护 IC</text>
+      <text x="755" y="170" text-anchor="middle" font-size="11" fill="#198754">(e.g. DW01 + Dual FET)</text>
+      <line x1="685" y1="182" x2="825" y2="182" stroke="#ddd" stroke-width="1"/>
+      <text x="695" y="200" font-size="10" fill="#495057">• 过充保护 OVP</text>
+      <text x="695" y="216" font-size="10" fill="#495057">• 过放保护 UVP</text>
+      <text x="695" y="232" font-size="10" fill="#495057">• 放电过流 OCP</text>
+      <text x="695" y="248" font-size="10" fill="#495057">• 充电过流 OCP</text>
+      <text x="695" y="264" font-size="10" fill="#495057">• 短路保护 SCP</text>
+      <text x="695" y="280" font-size="10" fill="#495057">• 0V 充电禁止</text>
+
+      <!-- === Battery === -->
+      <rect x="340" y="355" width="220" height="75" rx="10" fill="#fff8e1" stroke="#fd7e14" stroke-width="2"/>
+      <text x="450" y="383" text-anchor="middle" font-size="14" font-weight="700" fill="#fd7e14">锂电池电芯</text>
+      <text x="450" y="400" text-anchor="middle" font-size="10" fill="#6c757d">Nom: 3.7V (3.0~4.4V) | 单芯 Li-Po 4000~5000mAh</text>
+      <text x="450" y="418" text-anchor="middle" font-size="9" fill="#6c757d">内阻: 50~150mΩ (新电芯)</text>
+
+      <!-- === System load === -->
+      <rect x="55" y="355" width="150" height="75" rx="10" fill="#f5f5f5" stroke="#adb5bd" stroke-width="1.5"/>
+      <text x="130" y="383" text-anchor="middle" font-size="12" font-weight="600" fill="#495057">系统负载 SYS</text>
+      <text x="130" y="400" text-anchor="middle" font-size="9" fill="#6c757d">PMIC / AP / RF</text>
+      <text x="130" y="416" text-anchor="middle" font-size="9" fill="#6c757d">Display / Audio</text>
+
+      <!-- ===== POWER FLOW ARROWS ===== -->
+
+      <!-- ① Charge: VBUS → Charger (top) -->
+      <line x1="210" y1="175" x2="305" y2="175" stroke="url(#grad1)" stroke-width="3" marker-end="url(#arrow)"/>
+      <text x="258" y="166" text-anchor="middle" font-size="10" fill="#0d6efd" font-weight="600">V_BUS (5V)</text>
+
+      <!-- ② Charge/Discharge: Charger ↔ Protection (PACK+/PACK-) -->
+      <line x1="570" y1="190" x2="655" y2="190" stroke="url(#grad1)" stroke-width="3" marker-end="url(#arrow)"/>
+      <text x="613" y="182" text-anchor="middle" font-size="10" fill="#0d6efd" font-weight="600">PACK+ (接Charger BAT引脚)</text>
+
+      <!-- ③ Charge: Protection → Battery (via cell tabs B+/B-) -->
+      <line x1="755" y1="290" x2="755" y2="330" stroke="#198754" stroke-width="2"/>
+      <line x1="755" y1="330" x2="565" y2="330" stroke="#198754" stroke-width="2" marker-end="url(#arrow-green)"/>
+      <text x="660" y="325" text-anchor="middle" font-size="10" fill="#198754" font-weight="600">B+ / B- (电池极耳)</text>
+
+      <!-- ④ Discharge: Battery → Protection (reverse through MOSFET) -->
+      <line x1="450" y1="355" x2="450" y2="330" stroke="#dc3545" stroke-width="2" stroke-dasharray="6,3"/>
+      <line x1="450" y1="330" x2="680" y2="330" stroke="#dc3545" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrow-red)"/>
+      <text x="565" y="342" text-anchor="middle" font-size="9" fill="#dc3545" font-weight="600">放电电流 (经保护FET)</text>
+
+      <!-- ⑤ Discharge: Protection → Charger (reverse on V_BAT line) -->
+      <line x1="675" y1="208" x2="595" y2="208" stroke="#dc3545" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrow-red)"/>
+      <text x="635" y="222" text-anchor="middle" font-size="9" fill="#dc3545" font-weight="600">放电回路 (BAT pin)</text>
+
+      <!-- ⑥ System power: Charger SYS → System Load -->
+      <line x1="310" y1="293" x2="210" y2="293" stroke="#6610f2" stroke-width="2.5" marker-end="url(#arrow-purple)"/>
+      <line x1="210" y1="293" x2="210" y2="350" stroke="#6610f2" stroke-width="2.5"/>
+      <line x1="210" y1="350" x2="210" y2="355" stroke="#6610f2" stroke-width="2.5" marker-end="url(#arrow-purple)"/>
+      <text x="260" y="286" text-anchor="middle" font-size="10" fill="#6610f2" font-weight="600">SYS 供电 (VBUS 或 Battery)</text>
+
+      <!-- GND bus -->
+      <line x1="30" y1="445" x2="850" y2="445" stroke="#adb5bd" stroke-width="2"/>
+      <text x="860" y="450" font-size="10" fill="#adb5bd" font-weight="700">GND</text>
+      <!-- GND drops -->
+      <line x1="120" y1="290" x2="120" y2="443" stroke="#adb5bd" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="440" y1="305" x2="440" y2="443" stroke="#adb5bd" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="755" y1="290" x2="755" y2="443" stroke="#adb5bd" stroke-width="1" stroke-dasharray="3,3"/>
+
+      <!-- Legend -->
+      <rect x="40" y="10" width="800" height="55" rx="6" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+      <text x="60" y="32" font-size="11" font-weight="700" fill="#495057">功率流向图例：</text>
+      <line x1="170" y1="28" x2="220" y2="28" stroke="#0d6efd" stroke-width="3" marker-end="url(#arrow)"/>
+      <text x="230" y="32" font-size="11" fill="#495057">充电路径</text>
+      <line x1="330" y1="28" x2="380" y2="28" stroke="#dc3545" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrow-red)"/>
+      <text x="390" y="32" font-size="11" fill="#495057">放电路径</text>
+      <line x1="490" y1="28" x2="540" y2="28" stroke="#198754" stroke-width="2" marker-end="url(#arrow-green)"/>
+      <text x="550" y="32" font-size="11" fill="#495057">电池直连</text>
+      <line x1="650" y1="28" x2="700" y2="28" stroke="#6610f2" stroke-width="2.5" marker-end="url(#arrow-purple)"/>
+      <text x="710" y="32" font-size="11" fill="#495057">系统供电</text>
+
+      <text x="60" y="54" font-size="10" fill="#6c757d">充电时: VBUS→Charger(Buck+CC/CV)→PACK+(保护板输出)→充电FET→B+→Battery Cell。放电时: Battery Cell→B-→放电FET→PACK-→Charger BAT→BATFET→SYS→负载。PACK+/PACK-是保护板与Charger IC的接口。</text>
+    </svg>
+  </div>
+
+  <div class="note">
+    <strong>关键路径总结：</strong><br>
+    <strong>充电：</strong>VBUS(5V) → Charger IC (CC/CV 降压) → Protection IC (MOSFET 导通) → Battery Cell<br>
+    <strong>放电：</strong>Battery Cell → Protection IC (MOSFET 导通) → Charger IC (Power Path) → System Load<br>
+    <strong>直连供电：</strong>VBUS(5V) → Charger IC (Bypass/OTG) → System Load（电池不参与充放电）
+  </div>
+</div>
+
+<!-- ====== SECTION 2: VBUS / USB ====== -->
+<div class="card" id="s2">
+  <h2>2. VBUS / USB 输入端</h2>
+
+  <h3>2.1 功能与角色</h3>
+  <p>VBUS 来自 USB 适配器或电脑的 5V 供电线。在 USB Type-C 快充场景中，VBUS 电压可经 PD/PPS 协议协商到 9V、12V 甚至 20V。</p>
+
+  <h3>2.2 典型输入保护电路</h3>
+  <table>
+    <tr><th>保护元件</th><th>作用</th><th>典型参数</th></tr>
+    <tr><td>TVS 管</td><td>ESD 静电保护 (±8kV / ±15kV)</td><td>V<sub>RWM</sub>=5V, V<sub>c</sub> < 15V @ IEC 61000-4-2</td></tr>
+    <tr><td>OVP 芯片</td><td>输入过压保护，超过阈值关断通路</td><td>OVP Threshold = 6.0V~7.0V (可调)</td></tr>
+    <tr><td>共模扼流圈</td><td>抑制共模噪声，改善 EMI</td><td>90Ω @ 100MHz</td></tr>
+    <tr><td>输入电容</td><td>去耦、滤波</td><td>10μF MLCC + 0.1μF</td></tr>
+    <tr><td>自恢复保险丝</td><td>输入过流保护（可选）</td><td>I<sub>hold</sub> = 1.5~3A</td></tr>
+  </table>
+
+  <h3>2.3 USB Type-C CC 检测</h3>
+  <p>Type-C 接口通过 CC1/CC2 引脚进行插入方向检测和供电能力广播：</p>
+  <ul>
+    <li><strong>Rd (5.1kΩ 下拉):</strong> Sink 端 (手机端) 标配，表示自己是受电设备</li>
+    <li><strong>Rp (上拉):</strong> Source 端 (适配器端)，通过不同阻值/电流广播供电能力：<br>
+      Default USB (500mA / 900mA), 1.5A, 3.0A</li>
+    <li><strong>PD 协议:</strong> 通过 CC 线上的 BMC 编码进行 USB PD 通信，协商更高的 VBUS 电压</li>
+  </ul>
+
+  <div class="tip">
+    <strong>AE 测试关注点：</strong>VBUS 上电/下电时的浪涌电流、OVP 响应时间、TVS 残压是否满足后端耐压要求。
+  </div>
+</div>
+
+<!-- ====== SECTION 3: Charger IC ====== -->
+<div class="card" id="s3">
+  <h2>3. 充电芯片 (Charger IC)</h2>
+
+  <h3>3.1 核心功能框图</h3>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 880 340" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#0d6efd"/>
+        </marker>
+        <marker id="a2-g" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#198754"/>
+        </marker>
+        <marker id="a2-fb" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#6610f2"/>
+        </marker>
+      </defs>
+      <rect x="0" y="0" width="880" height="340" fill="#fafbfc" rx="10"/>
+
+      <!-- Input -->
+      <rect x="20" y="100" width="140" height="90" rx="8" fill="#fff0f0" stroke="#dc3545" stroke-width="1.5"/>
+      <text x="90" y="130" text-anchor="middle" font-size="12" font-weight="700" fill="#dc3545">VBUS 输入</text>
+      <text x="90" y="150" text-anchor="middle" font-size="10" fill="#6c757d">5V~12V</text>
+      <text x="90" y="168" text-anchor="middle" font-size="10" fill="#6c757d">OVP + UVLO + ILIM</text>
+
+      <!-- Buck Converter -->
+      <rect x="220" y="40" width="200" height="210" rx="8" fill="#e8f4fd" stroke="#0d6efd" stroke-width="2"/>
+      <text x="320" y="70" text-anchor="middle" font-size="12" font-weight="700" fill="#0d6efd">Buck 变换器</text>
+      <text x="320" y="90" text-anchor="middle" font-size="10" fill="#495057">(1~3MHz 开关频率)</text>
+      <line x1="240" y1="102" x2="400" y2="102" stroke="#ddd"/>
+      <text x="250" y="122" font-size="10" fill="#495057">• High-Side / Low-Side FETs</text>
+      <text x="250" y="140" font-size="10" fill="#495057">• 电感: 1.0~2.2uH</text>
+      <text x="250" y="158" font-size="10" fill="#495057">• 输出电容: 10~22uF</text>
+      <text x="250" y="176" font-size="10" fill="#495057">• 电流采样: R_SNS (10~20mOhm)</text>
+      <text x="250" y="194" font-size="10" fill="#495057">• 环路补偿 (Type II/III)</text>
+      <text x="250" y="212" font-size="10" fill="#495057">• 最大充电电流: 2~5A</text>
+      <text x="250" y="230" font-size="10" fill="#495057">• 输出: V_SYS (3.5~4.4V)</text>
+
+      <!-- Control logic -->
+      <rect x="480" y="50" width="190" height="190" rx="8" fill="#f3f0ff" stroke="#6610f2" stroke-width="1.5"/>
+      <text x="575" y="78" text-anchor="middle" font-size="12" font-weight="700" fill="#6610f2">充电控制逻辑</text>
+      <line x1="500" y1="90" x2="650" y2="90" stroke="#ddd"/>
+      <text x="510" y="110" font-size="10" fill="#495057">• CC 环路 (恒流)</text>
+      <text x="510" y="128" font-size="10" fill="#495057">• CV 环路 (恒压)</text>
+      <text x="510" y="146" font-size="10" fill="#495057">• 涓流/预充电控制</text>
+      <text x="510" y="164" font-size="10" fill="#495057">• 充电终止判定 (I_TERM)</text>
+      <text x="510" y="182" font-size="10" fill="#495057">• 安全定时器 (Watchdog)</text>
+      <text x="510" y="200" font-size="10" fill="#495057">• JEITA 温度档位管理</text>
+      <text x="510" y="218" font-size="10" fill="#495057">• I2C 寄存器接口 (SCL/SDA)</text>
+      <text x="510" y="236" font-size="10" fill="#495057">• 状态/中断 (STAT/INT)</text>
+
+      <!-- BATFET / Power Path -->
+      <rect x="720" y="100" width="140" height="90" rx="8" fill="#f0fff0" stroke="#198754" stroke-width="1.5"/>
+      <text x="790" y="130" text-anchor="middle" font-size="12" font-weight="700" fill="#198754">BATFET</text>
+      <text x="790" y="150" text-anchor="middle" font-size="10" fill="#495057">Power Path 管理</text>
+      <text x="790" y="168" text-anchor="middle" font-size="10" fill="#495057">SYS (输出) / BAT (电池)</text>
+
+      <!-- Power flow arrows -->
+      <line x1="160" y1="140" x2="218" y2="140" stroke="#0d6efd" stroke-width="2" marker-end="url(#a2)"/>
+      <text x="190" y="132" text-anchor="middle" font-size="8" fill="#0d6efd">V_BUS</text>
+      <line x1="420" y1="140" x2="478" y2="140" stroke="#0d6efd" stroke-width="2" marker-end="url(#a2)"/>
+      <text x="450" y="132" text-anchor="middle" font-size="8" fill="#0d6efd">V_SYS</text>
+      <line x1="670" y1="140" x2="718" y2="140" stroke="#0d6efd" stroke-width="2" marker-end="url(#a2)"/>
+
+      <!-- Feedback arrows (V/I sense back to control) -->
+      <line x1="440" y1="230" x2="520" y2="230" stroke="#6610f2" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#a2-fb)"/>
+      <text x="480" y="246" text-anchor="middle" font-size="8" fill="#6610f2">V_FB / I_FB 反馈</text>
+
+      <!-- NTC block -->
+      <rect x="480" y="260" width="120" height="32" rx="4" fill="#fff3cd" stroke="#fd7e14" stroke-width="1.5"/>
+      <text x="540" y="280" text-anchor="middle" font-size="10" fill="#fd7e14" font-weight="600">NTC 温度检测</text>
+      <!-- NTC → Control -->
+      <line x1="540" y1="260" x2="540" y2="242" stroke="#fd7e14" stroke-width="1.5" marker-end="url(#a2-fb)"/>
+
+      <!-- I2C to external MCU -->
+      <rect x="480" y="305" width="120" height="28" rx="4" fill="#e8f4fd" stroke="#0dcaf0" stroke-width="1"/>
+      <text x="540" y="323" text-anchor="middle" font-size="9" fill="#0dcaf0" font-weight="600">I2C → Host MCU</text>
+      <line x1="540" y1="305" x2="540" y2="242" stroke="#0dcaf0" stroke-width="1" stroke-dasharray="4,3"/>
+
+      <!-- Output labels -->
+      <text x="790" y="215" text-anchor="middle" font-size="10" font-weight="600" fill="#198754">→ SYS 给手机供电</text>
+      <text x="790" y="232" text-anchor="middle" font-size="10" font-weight="600" fill="#198754">→ BAT 给电池充电</text>
+    </svg>
+  </div>
+
+  <h3>3.2 CC/CV 充电曲线</h3>
+  <p>锂电池标准充电分为<strong>三个阶段</strong>：</p>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 780 340" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="cv-end" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4">
+          <circle cx="5" cy="5" r="4" fill="#198754"/>
+        </marker>
+      </defs>
+      <rect x="0" y="0" width="780" height="340" fill="#fff" rx="8"/>
+
+      <!-- Title -->
+      <text x="390" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="#343a40">锂电池 CC/CV 充电曲线</text>
+
+      <!-- === Y-axis (left: current I_CHG) === -->
+      <line x1="90" y1="45" x2="90" y2="280" stroke="#333" stroke-width="1.5"/>
+      <!-- tick marks -->
+      <line x1="82" y1="87" x2="90" y2="87" stroke="#333" stroke-width="1"/>
+      <line x1="82" y1="143" x2="90" y2="143" stroke="#333" stroke-width="1"/>
+      <line x1="82" y1="200" x2="90" y2="200" stroke="#333" stroke-width="1"/>
+      <line x1="82" y1="256" x2="90" y2="256" stroke="#333" stroke-width="1"/>
+      <!-- I axis labels -->
+      <text x="78" y="55" text-anchor="end" font-size="10" font-weight="700" fill="#dc3545">I_CHG</text>
+      <text x="78" y="91" text-anchor="end" font-size="9" fill="#6c757d">1C</text>
+      <text x="78" y="147" text-anchor="end" font-size="9" fill="#6c757d">0.5C</text>
+      <text x="78" y="204" text-anchor="end" font-size="9" fill="#6c757d">0.1C</text>
+      <text x="78" y="260" text-anchor="end" font-size="9" fill="#6c757d">0</text>
+
+      <!-- === Y-axis (right: voltage V_BAT) === -->
+      <line x1="700" y1="45" x2="700" y2="280" stroke="#333" stroke-width="1.5"/>
+      <line x1="700" y1="87" x2="708" y2="87" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="117" x2="708" y2="117" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="147" x2="708" y2="147" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="200" x2="708" y2="200" stroke="#333" stroke-width="1"/>
+      <line x1="700" y1="256" x2="708" y2="256" stroke="#333" stroke-width="1"/>
+      <!-- V axis labels -->
+      <text x="712" y="55" text-anchor="start" font-size="10" font-weight="700" fill="#0d6efd">V_BAT</text>
+      <text x="712" y="91" text-anchor="start" font-size="9" fill="#6c757d">4.4V</text>
+      <text x="712" y="121" text-anchor="start" font-size="9" fill="#6c757d">4.2V</text>
+      <text x="712" y="151" text-anchor="start" font-size="9" fill="#6c757d">4.0V</text>
+      <text x="712" y="204" text-anchor="start" font-size="9" fill="#6c757d">3.0V</text>
+      <text x="712" y="260" text-anchor="start" font-size="9" fill="#6c757d">2.5V</text>
+
+      <!-- === X-axis (time) === -->
+      <line x1="90" y1="280" x2="700" y2="280" stroke="#333" stroke-width="1.5"/>
+      <text x="395" y="298" text-anchor="middle" font-size="10" fill="#495057">充电时间 (t)</text>
+
+      <!-- === Phase dividers === -->
+      <line x1="210" y1="50" x2="210" y2="280" stroke="#adb5bd" stroke-width="1" stroke-dasharray="6,4"/>
+      <line x1="460" y1="50" x2="460" y2="280" stroke="#adb5bd" stroke-width="1" stroke-dasharray="6,4"/>
+
+      <!-- === Dashed grid lines (horizontal) === -->
+      <line x1="90" y1="87" x2="700" y2="87" stroke="#e9ecef" stroke-width="0.8" stroke-dasharray="3,3"/>
+      <line x1="90" y1="117" x2="700" y2="117" stroke="#e9ecef" stroke-width="0.8" stroke-dasharray="3,3"/>
+      <line x1="90" y1="143" x2="700" y2="143" stroke="#e9ecef" stroke-width="0.8" stroke-dasharray="3,3"/>
+      <line x1="90" y1="200" x2="700" y2="200" stroke="#e9ecef" stroke-width="0.8" stroke-dasharray="3,3"/>
+
+      <!-- ===== CURRENT CURVE (red) ===== -->
+      <!-- Trickle: low current ~0.08C, flat at y~235 -->
+      <!-- CC: jump to 1C at y=87, flat -->
+      <!-- CV: exponential decay from y=87 to y=256 (near 0) -->
+      <path d="M 90,238 L 210,238 L 210,87 L 460,87 L 460,87 Q 500,87 540,130 Q 580,170 620,210 Q 650,240 680,256"
+            fill="none" stroke="#dc3545" stroke-width="3" stroke-linejoin="round"/>
+
+      <!-- ===== VOLTAGE CURVE (blue) ===== -->
+      <!-- Trickle: V rises slowly ~2.5V to 3.0V, y=256 to y=200 -->
+      <!-- CC: V rises from 3.0V to 4.2V, y=200 to y=117 -->
+      <!-- CV: V stays at 4.2V, y=117 flat -->
+      <path d="M 90,256 Q 130,240 175,215 Q 200,200 210,200 Q 260,160 320,125 Q 370,110 460,117 L 680,117"
+            fill="none" stroke="#0d6efd" stroke-width="3" stroke-linejoin="round"/>
+
+      <!-- ===== PHASE LABELS (above the graph) ===== -->
+      <!-- Trickle phase label -->
+      <rect x="98" y="42" width="108" height="24" rx="4" fill="#fff3cd" stroke="#fd7e14" stroke-width="1"/>
+      <text x="152" y="58" text-anchor="middle" font-size="9" font-weight="700" fill="#fd7e14">涓流/预充电</text>
+
+      <!-- CC phase label -->
+      <rect x="218" y="42" width="235" height="24" rx="4" fill="#e8f4fd" stroke="#0d6efd" stroke-width="1"/>
+      <text x="335" y="58" text-anchor="middle" font-size="9" font-weight="700" fill="#0d6efd">CC 恒流充电 (快速充电)</text>
+
+      <!-- CV phase label -->
+      <rect x="468" y="42" width="225" height="24" rx="4" fill="#f0fff0" stroke="#198754" stroke-width="1"/>
+      <text x="580" y="58" text-anchor="middle" font-size="9" font-weight="700" fill="#198754">CV 恒压充电 (涓流)</text>
+
+      <!-- ===== ANNOTATIONS ===== -->
+
+      <!-- Trickle annotation: V_BAT rising slowly -->
+      <text x="150" y="270" text-anchor="middle" font-size="8" fill="#6c757d">V_BAT 缓升</text>
+      <!-- Trickle current annotation -->
+      <text x="150" y="235" text-anchor="middle" font-size="8" fill="#dc3545">I=0.05~0.1C</text>
+
+      <!-- CC annotation -->
+      <text x="335" y="270" text-anchor="middle" font-size="8" fill="#6c757d">V_BAT 升至 V_REG</text>
+      <line x1="280" y1="110" x2="320" y2="110" stroke="#dc3545" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <text x="325" y="100" font-size="8" fill="#dc3545">I=0.5~1C 恒定</text>
+
+      <!-- CV annotation -->
+      <text x="580" y="270" text-anchor="middle" font-size="8" fill="#6c757d">V_BAT=V_REG 恒定</text>
+      <!-- exponential decay curve label -->
+      <text x="560" y="155" font-size="8" fill="#dc3545">I 指数衰减</text>
+
+      <!-- Termination marker -->
+      <circle cx="680" cy="256" r="5" fill="#198754" stroke="#fff" stroke-width="1.5"/>
+      <text x="680" y="270" text-anchor="middle" font-size="8" fill="#198754" font-weight="600">终止</text>
+      <text x="680" y="245" text-anchor="middle" font-size="7" fill="#6c757d">I &lt; I_TERM</text>
+
+      <!-- Transition arrows -->
+      <text x="200" y="250" text-anchor="middle" font-size="8" fill="#adb5bd">V_BAT=3.0V</text>
+      <text x="450" y="100" text-anchor="middle" font-size="8" fill="#adb5bd">V_BAT=V_REG</text>
+
+      <!-- ===== LEGEND ===== -->
+      <rect x="140" y="312" width="500" height="22" rx="4" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+      <line x1="155" y1="323" x2="185" y2="323" stroke="#dc3545" stroke-width="3"/>
+      <text x="192" y="328" font-size="9" fill="#495057">充电电流 I_CHG</text>
+      <line x1="310" y1="323" x2="340" y2="323" stroke="#0d6efd" stroke-width="3"/>
+      <text x="347" y="328" font-size="9" fill="#495057">电池电压 V_BAT</text>
+      <line x1="465" y1="323" x2="495" y2="323" stroke="#adb5bd" stroke-width="1" stroke-dasharray="6,4"/>
+      <text x="502" y="328" font-size="9" fill="#adb5bd">阶段分界</text>
+    </svg>
+  </div>
+
+  <table>
+    <tr><th>充电阶段</th><th>条件</th><th>电流</th><th>电压</th><th>占充电时间</th></tr>
+    <tr><td>涓流 (Trickle)</td><td>V<sub>BAT</sub> < 3.0V</td><td>~50~100mA</td><td>缓慢上升</td><td>< 5%</td></tr>
+    <tr><td>CC (恒流)</td><td>3.0V < V<sub>BAT</sub> < V<sub>REG</sub></td><td>0.5C~1C (恒定)</td><td>上升至 V<sub>REG</sub></td><td>~60~70%</td></tr>
+    <tr><td>CV (恒压)</td><td>V<sub>BAT</sub> = V<sub>REG</sub></td><td>指数衰减至 I<sub>TERM</sub></td><td>V<sub>REG</sub> (恒定)</td><td>~25~35%</td></tr>
+    <tr><td>终止</td><td>I<sub>CHG</sub> < I<sub>TERM</sub></td><td>充电停止</td><td>略降</td><td>-</td></tr>
+  </table>
+
+  <h3>3.3 Power Path 管理</h3>
+  <p>现代充电 IC 内置 <strong>Power Path (电源路径管理)</strong>，通过 BATFET 将系统电源 (SYS) 与电池 (BAT) 隔离：</p>
+  <ul>
+    <li><strong>VBUS 接入时：</strong>SYS 由 VBUS 经 Buck 直接供电，同时 BAT 可独立充电，系统运行不受电池电压影响（即使电池深度放电，手机也能立即开机）</li>
+    <li><strong>VBUS 移除时：</strong>BATFET 全导通，SYS 由电池供电，导通阻抗 R<sub>DSON</sub> 仅 20~50mΩ</li>
+    <li><strong>补充模式 (Supplement Mode)：</strong>当系统峰值电流超过适配器能力时，BATFET 工作在线性区，电池补充供电</li>
+  </ul>
+</div>
+
+<!-- ====== SECTION 4: Protection IC ====== -->
+<div class="card" id="s4">
+  <h2>4. 电池保护芯片 (Protection IC)</h2>
+
+  <h3>4.1 典型电路结构</h3>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="p4a" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#333"/>
+        </marker>
+      </defs>
+      <rect x="0" y="0" width="860" height="300" fill="#fafbfc" rx="10"/>
+
+      <!-- Battery cell -->
+      <rect x="25" y="85" width="120" height="120" rx="8" fill="#fff8e1" stroke="#fd7e14" stroke-width="2"/>
+      <text x="85" y="125" text-anchor="middle" font-size="12" font-weight="700" fill="#fd7e14">Li-ion Cell</text>
+      <text x="85" y="148" text-anchor="middle" font-size="10" fill="#6c757d">3.7V Nom</text>
+      <text x="85" y="165" text-anchor="middle" font-size="10" fill="#6c757d">3.0~4.4V</text>
+      <text x="85" y="182" text-anchor="middle" font-size="9" fill="#6c757d">B+ / B-</text>
+
+      <!-- R1 (series resistor in VDD path) -->
+      <rect x="155" y="107" width="50" height="16" rx="3" fill="#e9ecef" stroke="#adb5bd" stroke-width="1"/>
+      <text x="180" y="119" text-anchor="middle" font-size="9" fill="#495057">R1 100R</text>
+      <!-- C1 (VDD to VSS decoupling) -->
+      <rect x="155" y="175" width="50" height="16" rx="3" fill="#e9ecef" stroke="#adb5bd" stroke-width="1"/>
+      <text x="180" y="187" text-anchor="middle" font-size="9" fill="#495057">C1 0.1uF</text>
+
+      <!-- Protection IC -->
+      <rect x="260" y="65" width="190" height="160" rx="8" fill="#f0fff0" stroke="#198754" stroke-width="2"/>
+      <text x="355" y="92" text-anchor="middle" font-size="12" font-weight="700" fill="#198754">DW01 / S-8261</text>
+      <text x="355" y="110" text-anchor="middle" font-size="10" fill="#198754">Li-ion Protector</text>
+      <line x1="280" y1="120" x2="430" y2="120" stroke="#ddd"/>
+      <text x="290" y="138" font-size="10" fill="#495057">• VDD (Pin 5) — 供电+检测</text>
+      <text x="290" y="156" font-size="10" fill="#495057">• VSS (Pin 2) — 地参考</text>
+      <text x="290" y="174" font-size="10" fill="#495057">• OD (Pin 1) — 放电FET Gate</text>
+      <text x="290" y="192" font-size="10" fill="#495057">• OC (Pin 3) — 充电FET Gate</text>
+      <text x="290" y="210" font-size="10" fill="#495057">• CS (Pin 4) — 电流检测输入</text>
+
+      <!-- Dual MOSFET -->
+      <rect x="520" y="80" width="140" height="130" rx="8" fill="#f3f0ff" stroke="#6610f2" stroke-width="2"/>
+      <text x="590" y="105" text-anchor="middle" font-size="11" font-weight="700" fill="#6610f2">Dual N-MOSFET</text>
+      <text x="590" y="125" text-anchor="middle" font-size="9" fill="#495057">FS8205A / AO8804</text>
+      <text x="590" y="145" text-anchor="middle" font-size="9" fill="#495057">共源极 (Common Source)</text>
+      <text x="590" y="162" text-anchor="middle" font-size="9" fill="#495057">R_DSON ~20~40mOhm</text>
+      <line x1="540" y1="173" x2="640" y2="173" stroke="#ddd"/>
+
+      <!-- FET labels inside -->
+      <rect x="530" y="183" width="50" height="20" rx="3" fill="#ffe0e0" stroke="#dc3545" stroke-width="1"/>
+      <text x="555" y="197" text-anchor="middle" font-size="9" fill="#dc3545">FET1</text>
+      <rect x="600" y="183" width="50" height="20" rx="3" fill="#e0e8ff" stroke="#0d6efd" stroke-width="1"/>
+      <text x="625" y="197" text-anchor="middle" font-size="9" fill="#0d6efd">FET2</text>
+
+      <!-- PACK terminals -->
+      <rect x="740" y="105" width="100" height="80" rx="6" fill="#f5f5f5" stroke="#adb5bd" stroke-width="1.5"/>
+      <text x="790" y="135" text-anchor="middle" font-size="11" font-weight="600" fill="#495057">PACK+</text>
+      <text x="790" y="155" text-anchor="middle" font-size="11" font-weight="600" fill="#495057">PACK-</text>
+      <text x="790" y="175" text-anchor="middle" font-size="8" fill="#6c757d">(接 Charger IC)</text>
+
+      <!-- ===== CONNECTIONS ===== -->
+
+      <!-- Battery+ to R1 to VDD -->
+      <line x1="145" y1="108" x2="155" y2="115" stroke="#333" stroke-width="1.5"/>
+      <line x1="205" y1="115" x2="260" y2="92" stroke="#333" stroke-width="1.5"/>
+      <text x="230" y="85" font-size="9" fill="#dc3545">VDD</text>
+
+      <!-- Battery- to VSS (through bottom path) -->
+      <line x1="85" y1="205" x2="85" y2="240" stroke="#333" stroke-width="1.5"/>
+      <line x1="85" y1="240" x2="310" y2="240" stroke="#333" stroke-width="1.5"/>
+      <line x1="310" y1="240" x2="310" y2="225" stroke="#333" stroke-width="1.5"/>
+      <text x="200" y="253" font-size="9" fill="#333">VSS (GND)</text>
+
+      <!-- C1 connection (VDD to VSS) -->
+      <line x1="180" y1="175" x2="180" y2="135" stroke="#333" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="180" y1="135" x2="205" y2="115" stroke="#333" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="180" y1="191" x2="180" y2="210" stroke="#333" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="180" y1="210" x2="310" y2="210" stroke="#333" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="200" y="128" font-size="7" fill="#6c757d">滤波</text>
+
+      <!-- OD/OC to FET gates -->
+      <line x1="450" y1="145" x2="505" y2="145" stroke="#333" stroke-width="1.5"/>
+      <line x1="505" y1="145" x2="505" y2="185" stroke="#333" stroke-width="1.5"/>
+      <line x1="505" y1="185" x2="528" y2="185" stroke="#333" stroke-width="1.5"/>
+      <!-- Separate OD and OC labels -->
+      <text x="478" y="138" font-size="8" fill="#0d6efd">OD</text>
+      <text x="488" y="165" font-size="8" fill="#dc3545">OC</text>
+
+      <!-- CS pin to source node (current sense) -->
+      <line x1="450" y1="205" x2="505" y2="205" stroke="#fd7e14" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <line x1="505" y1="205" x2="590" y2="210" stroke="#fd7e14" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="478" y="220" font-size="8" fill="#fd7e14" font-weight="600">CS (检流)</text>
+
+      <!-- MOSFET → PACK -->
+      <line x1="660" y1="145" x2="738" y2="145" stroke="#333" stroke-width="1.5" marker-end="url(#p4a)"/>
+      <line x1="660" y1="195" x2="738" y2="155" stroke="#333" stroke-width="1.5"/>
+      <text x="700" y="138" font-size="8" fill="#333">Drain</text>
+
+      <!-- Source node label -->
+      <circle cx="590" cy="210" r="3" fill="#fd7e14"/>
+      <text x="600" y="228" font-size="8" fill="#fd7e14">Source (共源极, 检流点)</text>
+
+      <!-- Protection IC pinout label -->
+      <rect x="30" y="260" width="420" height="30" rx="4" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+      <text x="240" y="280" text-anchor="middle" font-size="9" fill="#495057">R1(100R)+C1(0.1uF) 构成 VDD 低通滤波 | CS 引脚采样 Source 节点电压实现过流检测 | 充电时 FET1 导通&rarr; 过充时 OC 拉低关断 FET1</text>
+    </svg>
+  </div>
+
+  <div class="note">
+    <strong>管脚命名说明：</strong><br>
+    B+/B- (电池极耳)：电芯本体直接引出的正负极，焊接到保护板上。<br>
+    PACK+/PACK- (保护板输出)：经过 Protection IC + Dual MOSFET 后的对外接口，连接到 Charger IC 的 BAT 引脚。<br>
+    充电电流路径：Charger IC BAT → PACK+ → 充电FET(FET1) → B+ → 电芯 → B- → PACK- → Charger IC GND。<br>
+    放电电流路径：电芯 B+ → 放电FET(FET2) → PACK+ → Charger IC BAT → BATFET → SYS → 负载。
+  </div>
+
+  <h3>4.2 保护功能详解</h3>
+
+  <table>
+    <tr><th>保护类型</th><th>触发条件</th><th>动作</th><th>恢复条件</th><th>典型阈值</th></tr>
+    <tr>
+      <td><strong>过充保护<br>(Overcharge)</strong></td>
+      <td>V<sub>BAT</sub> > V<sub>OVP</sub></td>
+      <td>OC 引脚拉低 → 充电 FET 关断，切断充电回路</td>
+      <td>V<sub>BAT</sub> < V<sub>OVP_REL</sub> 或接入负载</td>
+      <td>V<sub>OVP</sub> = 4.28V ± 25mV<br>V<sub>OVP_REL</sub> = 4.08V</td>
+    </tr>
+    <tr>
+      <td><strong>过放保护<br>(Over-discharge)</strong></td>
+      <td>V<sub>BAT</sub> < V<sub>UVP</sub></td>
+      <td>OD 引脚拉低 → 放电 FET 关断，切断放电回路</td>
+      <td>V<sub>BAT</sub> > V<sub>UVP_REL</sub> (充电器接入)</td>
+      <td>V<sub>UVP</sub> = 2.40V ± 50mV<br>V<sub>UVP_REL</sub> = 3.00V</td>
+    </tr>
+    <tr>
+      <td><strong>放电过流保护<br>(Discharge OCP)</strong></td>
+      <td>I<sub>DISCHARGE</sub> > I<sub>OCP</sub><br>(通过 CS 引脚检测 V<sub>CS</sub>)</td>
+      <td>放电 FET 关断</td>
+      <td>移除负载或充电器接入</td>
+      <td>I<sub>OCP1</sub> = 0.15V / R<sub>DSON</sub><br>≈ 3~5A (典型)</td>
+    </tr>
+    <tr>
+      <td><strong>充电过流保护<br>(Charge OCP)</strong></td>
+      <td>I<sub>CHARGE</sub> > I<sub>CHG_OCP</sub></td>
+      <td>充电 FET 关断</td>
+      <td>移除充电器</td>
+      <td>I<sub>CHG_OCP</sub> ≈ −0.15V / R<sub>DSON</sub></td>
+    </tr>
+    <tr>
+      <td><strong>短路保护<br>(Short Circuit)</strong></td>
+      <td>V<sub>CS</sub> > V<sub>SCP</sub> (大电流)</td>
+      <td>放电 FET 立即关断 (μs 级)</td>
+      <td>移除短路或充电器接入</td>
+      <td>V<sub>SCP</sub> = 0.6V~1.0V<br>响应 ~10μs</td>
+    </tr>
+    <tr>
+      <td><strong>0V 充电禁止</strong></td>
+      <td>V<sub>BAT</sub> ≈ 0V (深度放电)</td>
+      <td>禁止充电 (安全考虑)</td>
+      <td>需外部激活或更换电池</td>
+      <td>部分型号支持 0V 充电</td>
+    </tr>
+  </table>
+
+  <div class="warn">
+    <strong>关键设计要点：</strong><br>
+    1. R<sub>1</sub> 和 C<sub>1</sub> 构成低通滤波器，防止浪涌/ESD 误触发保护；但 R<sub>1</sub> 太大会导致 VDD 采样不准，通常 &le; 1kΩ<br>
+    2. Dual MOSFET 的 R<sub>DSON</sub> 直接影响充放电效率与发热，手机应用通常选择 &le; 30mΩ<br>
+    3. 保护 IC 本身消耗 < 5μA (正常模式)，进入过放保护后 < 0.1μA
+  </div>
+</div>
+
+<!-- ====== SECTION 5: Battery Cell ====== -->
+<div class="card" id="s5">
+  <h2>5. 锂电池电芯 (Battery Cell)</h2>
+
+  <h3>5.1 电芯类型对比</h3>
+  <table>
+    <tr><th>特性</th><th>锂离子 (Li-ion)</th><th>锂聚合物 (Li-Po)</th></tr>
+    <tr><td>电解质</td><td>液态有机溶剂</td><td>固态/凝胶聚合物</td></tr>
+    <tr><td>外壳</td><td>金属壳 (钢/铝)</td><td>软包 (铝塑膜)</td></tr>
+    <tr><td>能量密度</td><td>较高 (~250 Wh/kg)</td><td>稍低 (~200 Wh/kg)</td></tr>
+    <tr><td>形状</td><td>圆柱/方形固定</td><td>任意形状，可做薄</td></tr>
+    <tr><td>安全</td><td>较好 (硬壳)</td><td>需防穿刺/鼓包</td></tr>
+    <tr><td>手机应用</td><td>早期</td><td>当前主流</td></tr>
+  </table>
+
+  <h3>5.2 电芯关键化学参数</h3>
+  <table>
+    <tr><th>参数</th><th>典型值</th><th>说明</th></tr>
+    <tr><td>标称电压 V<sub>nom</sub></td><td>3.6V / 3.7V / 3.8V</td><td>取决于正极材料 (LCO / NMC / LFP)</td></tr>
+    <tr><td>满充电压 V<sub>full</sub></td><td>4.20V / 4.35V / 4.40V / 4.45V</td><td>高电压电芯 (HV Li-Po) 可到 4.45V</td></tr>
+    <tr><td>放电终止电压</td><td>3.0V (软关断) / 2.5V (硬关断)</td><td>低于此电压可能损伤电芯</td></tr>
+    <tr><td>额定容量</td><td>4000~5000mAh (手机)</td><td>1C 放电至 3.0V 测得</td></tr>
+    <tr><td>内阻 DC IR</td><td>50~150mΩ (新电芯)</td><td>随老化增大，> 300mΩ 需更换</td></tr>
+    <tr><td>充放电效率</td><td>> 99% (库仑效率)</td><td>充入容量 / 放出容量 &times; 100%</td></tr>
+    <tr><td>循环寿命</td><td>300~500 次 (至 80% 容量)</td><td>0.5C 充放，25°C</td></tr>
+    <tr><td>自放电率</td><td>< 3% / 月</td><td>25°C 存储</td></tr>
+  </table>
+
+  <h3>5.3 电池等效电路模型 (2RC-ECM)</h3>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 860 280" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="i-load" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#dc3545"/>
+        </marker>
+      </defs>
+      <rect x="0" y="0" width="860" height="280" fill="#fff" rx="8"/>
+
+      <!-- Title -->
+      <text x="430" y="22" text-anchor="middle" font-size="12" font-weight="700" fill="#343a40">二阶 RC 等效电路模型 (2nd-order RC-ECM)</text>
+
+      <!-- ===== MAIN SERIES WIRE AT y=110 ===== -->
+      <!-- The wire runs from left terminal all the way to right terminal -->
+
+      <!-- === Positive terminal (+) === -->
+      <circle cx="45" cy="110" r="8" fill="#198754" stroke="#fff" stroke-width="2"/>
+      <text x="45" y="114" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">+</text>
+      <text x="45" y="96" text-anchor="middle" font-size="9" font-weight="600" fill="#198754">Vt (端电压)</text>
+
+      <!-- Wire: terminal to OCV -->
+      <line x1="53" y1="110" x2="80" y2="110" stroke="#333" stroke-width="2"/>
+
+      <!-- === OCV: Voltage Source Symbol === -->
+      <!-- Circle with + and - polarity -->
+      <circle cx="115" cy="110" r="24" fill="#f0f4ff" stroke="#0d6efd" stroke-width="2"/>
+      <text x="115" y="107" text-anchor="middle" font-size="10" font-weight="700" fill="#0d6efd">OCV</text>
+      <!-- + pole (left/top) -->
+      <line x1="100" y1="100" x2="112" y2="100" stroke="#dc3545" stroke-width="1.5"/>
+      <line x1="106" y1="96" x2="106" y2="104" stroke="#dc3545" stroke-width="1.5"/>
+      <!-- - pole (right/bottom) -->
+      <line x1="118" y1="120" x2="130" y2="120" stroke="#333" stroke-width="1.5"/>
+      <text x="115" y="83" text-anchor="middle" font-size="8" fill="#6c757d">开路电压源</text>
+
+      <!-- Wire: OCV to R0 -->
+      <line x1="139" y1="110" x2="175" y2="110" stroke="#333" stroke-width="2"/>
+
+      <!-- === R0: Ohmic Resistance === -->
+      <rect x="175" y="93" width="60" height="34" rx="4" fill="#f8d7da" stroke="#dc3545" stroke-width="2"/>
+      <text x="205" y="115" text-anchor="middle" font-size="12" font-weight="700" fill="#dc3545">R0</text>
+      <text x="205" y="80" text-anchor="middle" font-size="8" fill="#6c757d">欧姆内阻</text>
+      <text x="205" y="140" text-anchor="middle" font-size="8" fill="#6c757d">50~150mOhm</text>
+
+      <!-- Wire: R0 to RC#1 -->
+      <line x1="235" y1="110" x2="275" y2="110" stroke="#333" stroke-width="2"/>
+
+      <!-- === RC Network #1: R1 || C1 === -->
+      <!-- Top branch: R1 -->
+      <rect x="275" y="68" width="55" height="30" rx="4" fill="#fff3cd" stroke="#fd7e14" stroke-width="1.5"/>
+      <text x="302" y="87" text-anchor="middle" font-size="12" font-weight="700" fill="#fd7e14">R1</text>
+      <!-- Bottom branch: C1 (capacitor symbol - two parallel plates) -->
+      <line x1="290" y1="130" x2="290" y2="150" stroke="#0dcaf0" stroke-width="2.5"/>
+      <line x1="315" y1="130" x2="315" y2="150" stroke="#0dcaf0" stroke-width="2.5"/>
+      <text x="302" y="167" text-anchor="middle" font-size="12" font-weight="700" fill="#0dcaf0">C1</text>
+
+      <!-- Wire splits (left side of RC) -->
+      <line x1="275" y1="110" x2="275" y2="83" stroke="#333" stroke-width="1.5"/>
+      <line x1="275" y1="83" x2="275" y2="83" stroke="#333" stroke-width="1.5"/>
+      <line x1="275" y1="110" x2="275" y2="140" stroke="#333" stroke-width="1.5"/>
+      <!-- Wire from R1.right to junction -->
+      <line x1="330" y1="83" x2="360" y2="83" stroke="#333" stroke-width="1.5"/>
+      <line x1="360" y1="83" x2="360" y2="110" stroke="#333" stroke-width="1.5"/>
+      <!-- Wire from C1.right to junction -->
+      <line x1="315" y1="140" x2="360" y2="140" stroke="#333" stroke-width="1.5"/>
+      <line x1="360" y1="140" x2="360" y2="110" stroke="#333" stroke-width="1.5"/>
+      <!-- Wire: junction to RC#2 -->
+      <line x1="360" y1="110" x2="400" y2="110" stroke="#333" stroke-width="2"/>
+
+      <!-- RC#1 label -->
+      <text x="318" y="60" text-anchor="middle" font-size="8" fill="#6c757d">RC#1 (电化学极化)</text>
+      <text x="318" y="180" text-anchor="middle" font-size="8" fill="#6c757d">tau1=R1*C1 ~ ms</text>
+
+      <!-- === RC Network #2: R2 || C2 === -->
+      <!-- Top branch: R2 -->
+      <rect x="400" y="68" width="55" height="30" rx="4" fill="#fff3cd" stroke="#fd7e14" stroke-width="1.5"/>
+      <text x="427" y="87" text-anchor="middle" font-size="12" font-weight="700" fill="#fd7e14">R2</text>
+      <!-- Bottom branch: C2 -->
+      <line x1="415" y1="130" x2="415" y2="150" stroke="#0dcaf0" stroke-width="2.5"/>
+      <line x1="440" y1="130" x2="440" y2="150" stroke="#0dcaf0" stroke-width="2.5"/>
+      <text x="427" y="167" text-anchor="middle" font-size="12" font-weight="700" fill="#0dcaf0">C2</text>
+
+      <!-- Wire splits (left side of RC#2) -->
+      <line x1="400" y1="110" x2="400" y2="83" stroke="#333" stroke-width="1.5"/>
+      <line x1="400" y1="110" x2="400" y2="140" stroke="#333" stroke-width="1.5"/>
+      <!-- Wire from R2.right to junction -->
+      <line x1="455" y1="83" x2="485" y2="83" stroke="#333" stroke-width="1.5"/>
+      <line x1="485" y1="83" x2="485" y2="110" stroke="#333" stroke-width="1.5"/>
+      <!-- Wire from C2.right to junction -->
+      <line x1="440" y1="140" x2="485" y2="140" stroke="#333" stroke-width="1.5"/>
+      <line x1="485" y1="140" x2="485" y2="110" stroke="#333" stroke-width="1.5"/>
+      <!-- Wire: junction to negative terminal -->
+      <line x1="485" y1="110" x2="535" y2="110" stroke="#333" stroke-width="2"/>
+
+      <!-- RC#2 label -->
+      <text x="443" y="60" text-anchor="middle" font-size="8" fill="#6c757d">RC#2 (浓差极化)</text>
+      <text x="443" y="180" text-anchor="middle" font-size="8" fill="#6c757d">tau2=R2*C2 ~ s</text>
+
+      <!-- === Negative terminal (-) === -->
+      <circle cx="550" cy="110" r="8" fill="#333" stroke="#fff" stroke-width="2"/>
+      <text x="550" y="114" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">-</text>
+
+      <!-- === Current arrow (discharge direction) === -->
+      <line x1="55" y1="170" x2="55" y2="150" stroke="#dc3545" stroke-width="1.5"/>
+      <line x1="55" y1="150" x2="535" y2="150" stroke="#dc3545" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#i-load)"/>
+      <text x="295" y="165" text-anchor="middle" font-size="9" fill="#dc3545" font-weight="600">放电电流 I_load (方向: 电流流出正极 → 负载)</text>
+
+      <!-- ===== EQUATION PANEL ===== -->
+      <rect x="580" y="45" width="265" height="195" rx="8" fill="#fef9e7" stroke="#fd7e14" stroke-width="1.5"/>
+      <text x="712" y="68" text-anchor="middle" font-size="11" font-weight="700" fill="#fd7e14">端电压方程 (放电时)</text>
+      <line x1="600" y1="78" x2="825" y2="78" stroke="#fd7e14" stroke-width="0.5"/>
+
+      <!-- Equation breakdown -->
+      <text x="600" y="100" font-size="10" fill="#333" font-family="Consolas,monospace">Vt = OCV - I*R0</text>
+      <text x="600" y="120" font-size="10" fill="#333" font-family="Consolas,monospace">     - I*R1*(1-e^(-t/tau1))</text>
+      <text x="600" y="140" font-size="10" fill="#333" font-family="Consolas,monospace">     - I*R2*(1-e^(-t/tau2))</text>
+
+      <line x1="600" y1="152" x2="825" y2="152" stroke="#ddd" stroke-width="0.5"/>
+
+      <!-- Component explanation -->
+      <text x="600" y="168" font-size="9" fill="#495057">OCV: 开路电压 = f(SOC, 温度)</text>
+      <text x="600" y="184" font-size="9" fill="#dc3545">R0:  欧姆内阻 (瞬时压降 I*R0)</text>
+      <text x="600" y="200" font-size="9" fill="#fd7e14">R1C1: SEI膜/电荷转移 (~ms)</text>
+      <text x="600" y="216" font-size="9" fill="#0dcaf0">R2C2: Li+扩散/浓差 (~s)</text>
+
+      <text x="712" y="235" text-anchor="middle" font-size="8" fill="#6c757d">充电时: Vt = OCV + I*R0 + ... (符号取反)</text>
+    </svg>
+  </div>
+
+  <p><strong>二阶 RC 等效电路模型 (2RC-ECM)</strong> 是电池建模的工业标准：</p>
+  <ul>
+    <li><strong>OCV (Open Circuit Voltage):</strong> 电池开路电压，是 SOC 和温度的函数，由 Nernst 方程决定</li>
+    <li><strong>R<sub>0</sub>:</strong> 欧姆内阻 — 电解液、电极、集流体、极耳等纯电阻性分量，引起瞬时压降</li>
+    <li><strong>R<sub>1</sub>C<sub>1</sub>:</strong> 电化学极化 — SEI 膜 / 电荷转移，时间常数 ~ ms 级</li>
+    <li><strong>R<sub>2</sub>C<sub>2</sub>:</strong> 浓差极化 — Li⁺ 扩散，时间常数 ~ s 级</li>
+  </ul>
+</div>
+
+<!-- ====== SECTION 5.4: 电量计 (Fuel Gauge) ====== -->
+<div class="card" id="s5_4">
+  <h2>5.4 电量计 (Fuel Gauge / 库仑计)</h2>
+
+  <h3>5.4.1 电量计在电路中的位置</h3>
+  <p>电量计的核心功能是通过<strong>高精度电流积分</strong>跟踪电池的剩余电量 (SOC)。它需要一个采样电阻 Rsns 串入电池主回路，测量 Rsns 上的压降来计算电流。</p>
+
+  <p><strong>两种常见放置方案：</strong></p>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 860 420" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="fg-a" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#0d6efd"/>
+        </marker>
+        <marker id="fg-a2" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#fd7e14"/>
+        </marker>
+      </defs>
+      <rect x="0" y="0" width="860" height="420" fill="#fafbfc" rx="10"/>
+
+      <!-- ===== Option A: System-side ===== -->
+      <rect x="10" y="10" width="415" height="400" rx="8" fill="#f8f9fa" stroke="#adb5bd" stroke-width="1" stroke-dasharray="6,3"/>
+      <text x="217" y="32" text-anchor="middle" font-size="11" font-weight="700" fill="#0d6efd">方案 A: 系统侧电量计 (主板端)</text>
+
+      <!-- Charger IC -->
+      <rect x="40" y="50" width="160" height="60" rx="8" fill="#f0f4ff" stroke="#0d6efd" stroke-width="1.5"/>
+      <text x="120" y="75" text-anchor="middle" font-size="11" font-weight="700" fill="#0d6efd">Charger IC</text>
+      <text x="120" y="95" text-anchor="middle" font-size="9" fill="#495057">BAT | GND</text>
+
+      <!-- Protection IC block -->
+      <rect x="250" y="50" width="160" height="60" rx="8" fill="#f0fff0" stroke="#198754" stroke-width="1.5"/>
+      <text x="330" y="75" text-anchor="middle" font-size="11" font-weight="700" fill="#198754">Protection IC</text>
+      <text x="330" y="95" text-anchor="middle" font-size="9" fill="#495057">+ Dual MOSFET</text>
+
+      <!-- Arrow Charger → Protection (PACK+/PACK-) -->
+      <line x1="200" y1="80" x2="248" y2="80" stroke="#0d6efd" stroke-width="2" marker-end="url(#fg-a)"/>
+      <text x="224" y="73" text-anchor="middle" font-size="8" fill="#0d6efd">PACK+</text>
+
+      <!-- Battery -->
+      <rect x="250" y="145" width="160" height="50" rx="8" fill="#fff8e1" stroke="#fd7e14" stroke-width="1.5"/>
+      <text x="330" y="168" text-anchor="middle" font-size="11" font-weight="700" fill="#fd7e14">Battery Cell</text>
+      <text x="330" y="184" text-anchor="middle" font-size="9" fill="#6c757d">3.7V 4000mAh</text>
+
+      <!-- Wire Protection → Battery (B+/B-) -->
+      <line x1="330" y1="110" x2="330" y2="143" stroke="#198754" stroke-width="2"/>
+      <text x="345" y="130" font-size="8" fill="#198754">B+/B-</text>
+
+      <!-- Rsns on PACK- side (system-side) -->
+      <rect x="40" y="230" width="160" height="40" rx="4" fill="#ffe0e0" stroke="#dc3545" stroke-width="1.5"/>
+      <text x="120" y="248" text-anchor="middle" font-size="10" font-weight="700" fill="#dc3545">Rsns (5~10mOhm)</text>
+      <text x="120" y="262" text-anchor="middle" font-size="8" fill="#6c757d">PACK- 串接到 GND</text>
+
+      <!-- Fuel Gauge IC -->
+      <rect x="40" y="300" width="160" height="70" rx="8" fill="#fff3cd" stroke="#fd7e14" stroke-width="2"/>
+      <text x="120" y="325" text-anchor="middle" font-size="12" font-weight="700" fill="#fd7e14">Fuel Gauge IC</text>
+      <text x="120" y="345" text-anchor="middle" font-size="9" fill="#495057">(e.g. BQ27426)</text>
+      <text x="120" y="361" text-anchor="middle" font-size="8" fill="#6c757d">I2C → Host SoC</text>
+
+      <!-- Rsns connections to Fuel Gauge (Kelvin sense) -->
+      <line x1="120" y1="270" x2="120" y2="298" stroke="#dc3545" stroke-width="1.5"/>
+      <!-- Kelvin lines from Rsns ends to FG -->
+      <line x1="80" y1="240" x2="80" y2="310" stroke="#dc3545" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="160" y1="240" x2="160" y2="310" stroke="#dc3545" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="70" y="295" font-size="7" fill="#dc3545">Kelvin S+</text>
+      <text x="160" y="295" font-size="7" fill="#dc3545">Kelvin S-</text>
+
+      <!-- Ground path -->
+      <line x1="200" y1="250" x2="350" y2="250" stroke="#333" stroke-width="1.5"/>
+      <text x="275" y="245" text-anchor="middle" font-size="8" fill="#333">PACK- 回流路径</text>
+      <!-- Battery negative to GND via Rsns -->
+      <line x1="290" y1="195" x2="290" y2="250" stroke="#333" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="305" y="225" font-size="7" fill="#6c757d">B-</text>
+
+      <!-- ===== Option B: Pack-side ===== -->
+      <rect x="435" y="10" width="415" height="400" rx="8" fill="#f8f9fa" stroke="#adb5bd" stroke-width="1" stroke-dasharray="6,3"/>
+      <text x="642" y="32" text-anchor="middle" font-size="11" font-weight="700" fill="#198754">方案 B: 电池包内电量计 (Pack-side)</text>
+
+      <!-- Charger IC -->
+      <rect x="460" y="50" width="160" height="60" rx="8" fill="#f0f4ff" stroke="#0d6efd" stroke-width="1.5"/>
+      <text x="540" y="75" text-anchor="middle" font-size="11" font-weight="700" fill="#0d6efd">Charger IC</text>
+      <text x="540" y="95" text-anchor="middle" font-size="9" fill="#495057">BAT | GND</text>
+
+      <!-- "Pack" boundary -->
+      <rect x="460" y="130" width="370" height="270" rx="8" fill="#f8fff8" stroke="#198754" stroke-width="1.5" stroke-dasharray="8,4"/>
+      <text x="645" y="150" text-anchor="middle" font-size="10" font-weight="700" fill="#198754">电池包内部 (Pack Internal)</text>
+
+      <!-- Protection IC -->
+      <rect x="480" y="165" width="150" height="50" rx="6" fill="#f0fff0" stroke="#198754" stroke-width="1.5"/>
+      <text x="555" y="186" text-anchor="middle" font-size="10" font-weight="700" fill="#198754">Protection IC</text>
+      <text x="555" y="202" text-anchor="middle" font-size="8" fill="#495057">+ Dual MOSFET</text>
+
+      <!-- Rsns -->
+      <rect x="480" y="240" width="150" height="30" rx="4" fill="#ffe0e0" stroke="#dc3545" stroke-width="1.5"/>
+      <text x="555" y="260" text-anchor="middle" font-size="10" font-weight="700" fill="#dc3545">Rsns (5~10mOhm)</text>
+
+      <!-- Battery Cell -->
+      <rect x="480" y="295" width="150" height="45" rx="6" fill="#fff8e1" stroke="#fd7e14" stroke-width="1.5"/>
+      <text x="555" y="316" text-anchor="middle" font-size="10" font-weight="700" fill="#fd7e14">Battery Cell</text>
+      <text x="555" y="332" text-anchor="middle" font-size="8" fill="#6c757d">3.7V</text>
+
+      <!-- Fuel Gauge IC -->
+      <rect x="660" y="240" width="150" height="95" rx="8" fill="#fff3cd" stroke="#fd7e14" stroke-width="2"/>
+      <text x="735" y="265" text-anchor="middle" font-size="12" font-weight="700" fill="#fd7e14">Fuel Gauge IC</text>
+      <text x="735" y="285" text-anchor="middle" font-size="9" fill="#495057">(e.g. BQ27546)</text>
+      <text x="735" y="305" text-anchor="middle" font-size="8" fill="#495057">V_BAT sense</text>
+      <text x="735" y="320" text-anchor="middle" font-size="8" fill="#495057">I_sense (Kelvin)</text>
+      <text x="735" y="335" text-anchor="middle" font-size="7" fill="#6c757d">I2C/HDQ → Host</text>
+
+      <!-- Interconnections for pack-side -->
+      <!-- PACK+ line -->
+      <line x1="620" y1="80" x2="480" y2="190" stroke="#0d6efd" stroke-width="2"/>
+      <text x="550" y="130" font-size="8" fill="#0d6efd">PACK+</text>
+      <!-- Protection → Rsns -->
+      <line x1="555" y1="215" x2="555" y2="238" stroke="#198754" stroke-width="2"/>
+      <!-- Rsns → Battery -->
+      <line x1="555" y1="270" x2="555" y2="293" stroke="#333" stroke-width="2"/>
+      <!-- Kelvin from Rsns to FG -->
+      <line x1="525" y1="255" x2="525" y2="265" stroke="#dc3545" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="525" y1="265" x2="660" y2="275" stroke="#dc3545" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="585" y1="255" x2="585" y2="280" stroke="#dc3545" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="585" y1="280" x2="660" y2="285" stroke="#dc3545" stroke-width="1" stroke-dasharray="3,2"/>
+      <!-- V_BAT to FG -->
+      <line x1="555" y1="180" x2="700" y2="180" stroke="#0d6efd" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="700" y1="180" x2="700" y2="238" stroke="#0d6efd" stroke-width="1" stroke-dasharray="3,2"/>
+
+      <!-- Legend -->
+      <rect x="240" y="385" width="380" height="25" rx="4" fill="#e8f4fd" stroke="#0dcaf0" stroke-width="1"/>
+      <text x="430" y="402" text-anchor="middle" font-size="9" fill="#495057">系统侧: FG在主板, Rsns在PACK-↔GND之间 | 包内: FG在电池包内, Rsns在主回路</text>
+    </svg>
+  </div>
+
+  <h3>5.4.2 电量计工作原理</h3>
+
+  <p>电量计估算 SOC (State of Charge) 有三种主流方法，从简单到复杂依次为：</p>
+
+  <h4>方法一：电压查表法 (OCV-SOC Lookup)</h4>
+  <div class="note">
+    <strong>原理：</strong>电池开路电压 (OCV) 与 SOC 存在确定的映射关系。电池静置足够久后，测 OCV → 查表得 SOC。<br>
+    <strong>优点：</strong>不需要电流采样，电路最简单<br>
+    <strong>缺点：</strong>带负载时端电压 ≠ OCV (有 IR Drop)，必须等电池静置 (几分钟到几十分钟)，无法实时跟踪
+  </div>
+
+  <h4>方法二：库仑计数 (Coulomb Counting)</h4>
+  <div class="note">
+    <strong>原理：</strong>对流入/流出电池的电流进行时间积分，计算净电荷量变化。
+  </div>
+
+  <div class="formula">
+    SOC(t) = SOC(t0) + (1 / C_rated) × ∫ I(τ) dτ × 100%<br><br>
+    其中：C_rated = 电池额定容量 (mAh)，I(τ) = 充放电电流 (mA，充电为正、放电为负)
+  </div>
+
+  <p><strong>库仑计硬件实现：</strong></p>
+  <ul>
+    <li><strong>采样电阻 Rsns：</strong> 5~10mΩ 精密电阻，串入电池主回路</li>
+    <li><strong>ΔΣ ADC：</strong> 14~16 bit 高精度 ADC，持续采样 Rsns 两端压降 V = I × Rsns</li>
+    <li><strong>积分器 (Accumulator)：</strong> 将每个采样周期的电荷量累加：ΔQ = I × Δt</li>
+  </ul>
+
+  <table>
+    <tr><th>参数</th><th>典型值</th><th>说明</th></tr>
+    <tr><td>采样电阻 Rsns</td><td>5~10mΩ</td><td>太小 → SNR 差；太大 → 损耗大 (I²R)</td></tr>
+    <tr><td>ADC 分辨率</td><td>14~16 bit</td><td>对应电流分辨率 ~1mA (16-bit @ 5mΩ, ±8A 量程)</td></tr>
+    <tr><td>采样频率</td><td>1~8 kHz</td><td>需覆盖脉冲负载 (如 RF PA 突发)</td></tr>
+    <tr><td>积分周期</td><td>1s (典型)</td><td>每秒更新一次 SOC</td></tr>
+  </table>
+
+  <div class="warn">
+    <strong>库仑计的固有缺陷 — 累积误差 (Drift)：</strong><br>
+    每毫安时的测量误差会随时间不断累积。例如 ±1mA 偏置 × 24h = ±24mAh 误差，一周就是 ±168mAh。必须定期校准纠正漂移。
+  </div>
+
+  <h4>方法三：阻抗跟踪 (Impedance Track — TI 专利)</h4>
+  <div class="note">
+    <strong>原理：</strong>将库仑计数与 OCV-电池模型融合。正常运行时用库仑计数追踪电量，当电池进入静置状态 (电流接近零) 时，测 OCV 并查表校准 SOC。同时利用 2RC 等效电路模型估算负载下的"等效 OCV"，无需等待静置即可获得较准确的 SOC。
+  </div>
+
+  <p><strong>Impedance Track 工作流程：</strong></p>
+  <ol>
+    <li><strong>初始化 (上电/Golden Image)：</strong>从 Flash 加载电池的 OCV-SOC 曲线表、R0(SOC,T) 表、R1C1/R2C2 参数表</li>
+    <li><strong>正常运行：</strong>库仑计持续积分 I×dt，同时用电池模型 Vt = OCV − I×Z 反推 OCV</li>
+    <li><strong>静置校准 (Relaxation)：</strong>当 |I| < 阈值 (如 10mA) 且持续 > 30min，实测 OCV → 查表 → 修正 SOC 累积误差</li>
+    <li><strong>满充/满放校准：</strong>充电终止 (I < I_TERM) → SOC=100%；电压到 V_cutoff → SOC=0%</li>
+    <li><strong>老化补偿：</strong>随着循环次数增加，更新 Full Charge Capacity (FCC) 和内部阻抗参数</li>
+  </ol>
+
+  <h3>5.4.3 电量计关键参数与测试方法</h3>
+
+  <table>
+    <tr><th>测试项</th><th>测试方法</th><th>判定标准</th><th>仪器</th></tr>
+    <tr>
+      <td>SOC 精度 (静态)</td>
+      <td>满充 → 以 0.2C 放电 → 每 10% SOC 静置 1h → 对比 FG 读数 vs 实际放电容量</td>
+      <td>误差 < ±1% (25°C，静置后)</td>
+      <td>电池测试柜 + I2C 读取 FG 寄存器</td>
+    </tr>
+    <tr>
+      <td>SOC 精度 (动态)</td>
+      <td>模拟真实使用负载 (脉冲电流)，持续放电，对比 FG SOC vs 实际积分容量</td>
+      <td>误差 < ±3% (全程，不静置)</td>
+      <td>电子负载 (脉冲模式) + I2C</td>
+    </tr>
+    <tr>
+      <td>电流测量精度</td>
+      <td>施加已知恒流负载 (如 1A)，读取 FG 电流寄存器</td>
+      <td>误差 < ±1mA 或 ±1% (取大者)</td>
+      <td>精密电流源 + DMM</td>
+    </tr>
+    <tr>
+      <td>库仑计漂移</td>
+      <td>电池 50% SOC 静置，连续 24h 读取 Accumulated Charge 寄存器变化</td>
+      <td>漂移 < 1mAh / 24h</td>
+      <td>I2C 数据记录</td>
+    </tr>
+    <tr>
+      <td>满充检测</td>
+      <td>正常充电至终止，检查 FG 是否将 SOC 置 100%、更新 FCC</td>
+      <td>充电终止后 SOC=100% (误差 < 1%)</td>
+      <td>Charger IC + FG I2C</td>
+    </tr>
+    <tr>
+      <td>FCC 学习 (Golden Learning)</td>
+      <td>电池从满放 (V_cutoff) 充至满充 (I_TERM)，FG 自动学习实际容量</td>
+      <td>FCC 与实际容量误差 < 3%</td>
+      <td>电池测试柜 + I2C</td>
+    </tr>
+    <tr>
+      <td>Rsns 电阻值</td>
+      <td>四线 Kelvin 测量 Rsns 的精确阻值 (断电)</td>
+      <td>与标称值偏差 < ±1%</td>
+      <td>精密 DMM (4线)</td>
+    </tr>
+    <tr>
+      <td>I2C/HDQ 通信</td>
+      <td>读写 FG 寄存器，验证 CRC 校验</td>
+      <td>无 NACK，数据 CRC 通过</td>
+      <td>I2C 分析仪 / MCU</td>
+    </tr>
+  </table>
+
+  <div class="tip">
+    <strong>AE 面试应用：</strong><br>
+    Q: 手机电量从 50% 突然掉到 10%，可能是什么原因？<br>
+    → 电池老化导致实际 FCC 远小于 FG 中记录的 Design Capacity；或长时间未满充校准，累积误差过大。<br>
+    Q: 如何验证电量计精度？<br>
+    → 用电池测试柜跑一次完整的 0.2C 放电，以实际放电容量为基准，每秒记录 FG 的 SOC 读数，绘制 SOC Error vs Time 曲线。
+  </div>
+</div>
+
+<!-- ====== SECTION 5.5: 三芯功能对比 (Charger / Protection / Fuel Gauge) ====== -->
+<div class="card" id="s5_5">
+  <h2>5.5 三芯功能对比：Charger vs Protection vs Fuel Gauge 二合一</h2>
+
+  <h3>5.5.1 功能矩阵总览</h3>
+
+  <p>手机电池管理系统的三颗核心芯片各自承担不同的角色。TI 的产品线演进中，<strong>BQ41Z5x</strong> 系列把 <strong>保护 + 电量计</strong> 合为一颗 IC，减少了 PCB 面积和 BOM 成本。</p>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 860 240" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="860" height="240" fill="#fff" rx="8"/>
+
+      <!-- Architecture A: Discrete -->
+      <rect x="20" y="15" width="395" height="215" rx="8" fill="#f8f9fa" stroke="#adb5bd" stroke-width="1" stroke-dasharray="8,4"/>
+      <text x="217" y="38" text-anchor="middle" font-size="11" font-weight="700" fill="#dc3545">传统分立方案 (3颗IC)</text>
+
+      <rect x="40" y="55" width="170" height="45" rx="6" fill="#f0f4ff" stroke="#0d6efd" stroke-width="1.5"/>
+      <text x="125" y="74" text-anchor="middle" font-size="11" font-weight="700" fill="#0d6efd">BQ25890</text>
+      <text x="125" y="90" text-anchor="middle" font-size="9" fill="#495057">Charger (充电芯片)</text>
+
+      <rect x="40" y="115" width="80" height="45" rx="6" fill="#f0fff0" stroke="#198754" stroke-width="1.5"/>
+      <text x="80" y="134" text-anchor="middle" font-size="10" font-weight="700" fill="#198754">BQ2980</text>
+      <text x="80" y="150" text-anchor="middle" font-size="8" fill="#495057">Protection</text>
+
+      <rect x="140" y="115" width="80" height="45" rx="6" fill="#fff3cd" stroke="#fd7e14" stroke-width="1.5"/>
+      <text x="180" y="134" text-anchor="middle" font-size="10" font-weight="700" fill="#fd7e14">BQ27426</text>
+      <text x="180" y="150" text-anchor="middle" font-size="8" fill="#495057">Fuel Gauge</text>
+
+      <text x="125" y="185" text-anchor="middle" font-size="9" fill="#6c757d">BOM: 3颗IC + 3套外围</text>
+      <text x="125" y="200" text-anchor="middle" font-size="9" fill="#6c757d">PCB面积: 大</text>
+
+      <!-- Architecture B: Combo -->
+      <rect x="425" y="15" width="420" height="215" rx="8" fill="#f8f9fa" stroke="#adb5bd" stroke-width="1" stroke-dasharray="8,4"/>
+      <text x="635" y="38" text-anchor="middle" font-size="11" font-weight="700" fill="#198754">二合一方案 (2颗IC)</text>
+
+      <rect x="445" y="55" width="170" height="45" rx="6" fill="#f0f4ff" stroke="#0d6efd" stroke-width="1.5"/>
+      <text x="530" y="74" text-anchor="middle" font-size="11" font-weight="700" fill="#0d6efd">BQ25890</text>
+      <text x="530" y="90" text-anchor="middle" font-size="9" fill="#495057">Charger (充电芯片)</text>
+
+      <rect x="445" y="115" width="200" height="45" rx="6" fill="#f3f0ff" stroke="#6610f2" stroke-width="2"/>
+      <text x="545" y="134" text-anchor="middle" font-size="11" font-weight="700" fill="#6610f2">BQ41Z5x</text>
+      <text x="545" y="150" text-anchor="middle" font-size="9" fill="#495057">Protection + Fuel Gauge (二合一)</text>
+
+      <text x="545" y="185" text-anchor="middle" font-size="9" fill="#6c757d">BOM: 2颗IC + 精简外围</text>
+      <text x="545" y="200" text-anchor="middle" font-size="9" fill="#6c757d">PCB面积: 小 (省一颗IC)</text>
+
+      <!-- Plus signs / arrows -->
+      <text x="125" y="112" text-anchor="middle" font-size="16" fill="#adb5bd">+</text>
+      <text x="235" y="112" text-anchor="middle" font-size="16" fill="#adb5bd">+</text>
+    </svg>
+  </div>
+
+  <h3>5.5.2 三颗芯片功能详细对比</h3>
+
+  <table>
+    <tr>
+      <th>功能域</th>
+      <th>BQ25890 (Charger)</th>
+      <th>BQ2980 (Protection)</th>
+      <th>BQ41Z5x (Protect+Gauge 二合一)</th>
+    </tr>
+    <tr>
+      <td><strong>核心角色</strong></td>
+      <td>充电管理 — 把 VBUS 降压后安全地充入电池</td>
+      <td>安全保护 — 检测故障并切断回路</td>
+      <td>电量监测 + 安全保护 + 电池认证</td>
+    </tr>
+    <tr>
+      <td><strong>供电方式</strong></td>
+      <td>由 VBUS 供电，内部 LDO 产生偏置</td>
+      <td>由电池直接供电 (VDD=B+)，无外部电源</td>
+      <td>由电池供电 (低功耗)，支持 ship mode 关断</td>
+    </tr>
+    <tr>
+      <td><strong>充电控制</strong></td>
+      <td><strong>核心功能</strong>：3A Buck, CC/CV, 涓流, 终止, NTC JEITA, Power Path</td>
+      <td><strong>不涉及</strong> — 仅被动保护</td>
+      <td><strong>不涉及</strong> — 仅被动保护</td>
+    </tr>
+    <tr>
+      <td><strong>电压保护</strong></td>
+      <td>VBUS OVP (6V), BAT OVP 可寄存器配置</td>
+      <td><strong>核心功能</strong>：COV 4.28V, CUV 2.40V 硬件阈值</td>
+      <td><strong>核心功能</strong>：可编程 OV/UV 阈值，精度优于分立方案</td>
+    </tr>
+    <tr>
+      <td><strong>电流保护</strong></td>
+      <td>输入电流限制 (ILIM), 充电电流限制 (ICHG)</td>
+      <td><strong>核心功能</strong>：OCD1/OCD2 (放电过流), OCC (充电过流), SCD (短路)</td>
+      <td><strong>核心功能</strong>：可编程 OCC/OCD/SCD 阈值，支持分级保护</td>
+    </tr>
+    <tr>
+      <td><strong>温度保护</strong></td>
+      <td>NTC JEITA 档位 (0/10/45/60°C)，控制充电电流</td>
+      <td><strong>核心功能</strong>：OT/UT 硬件关断 (BQ2982 版本)</td>
+      <td><strong>核心功能</strong>：可编程 OT/UT，集成 NTC 检测</td>
+    </tr>
+    <tr>
+      <td><strong>电量计 (SOC)</strong></td>
+      <td>❌ 不具备</td>
+      <td>❌ 不具备</td>
+      <td><strong>核心功能</strong>：Impedance Track, SOC/SOH 计算, 剩余时间预测</td>
+    </tr>
+    <tr>
+      <td><strong>库仑计数</strong></td>
+      <td>❌ 不具备</td>
+      <td>❌ 不具备</td>
+      <td><strong>核心功能</strong>：16-bit ΔΣ ADC + 积分器, mA 级精度</td>
+    </tr>
+    <tr>
+      <td><strong>电池认证</strong></td>
+      <td>❌ 不具备</td>
+      <td>❌ 不具备</td>
+      <td><strong>核心功能</strong>：SHA-1 加密认证，防止劣质第三方电池</td>
+    </tr>
+    <tr>
+      <td><strong>MOSFET 驱动</strong></td>
+      <td>内部集成 BATFET (Power Path)，不驱动外部保护 FET</td>
+      <td>直接驱动 Dual N-MOSFET 栅极 (CHG/DSG 引脚)</td>
+      <td>驱动外部保护 FET，同时采样 FET 状态用于故障诊断</td>
+    </tr>
+    <tr>
+      <td><strong>通信接口</strong></td>
+      <td>I²C (寄存器配置/状态读取)</td>
+      <td>无通信接口，全部硬件阈值</td>
+      <td>I²C / SMBus (电压/电流/SOC/温度/状态/认证数据)</td>
+    </tr>
+    <tr>
+      <td><strong>功耗</strong></td>
+      <td>充电时 ~mW 级，待机 ~30μA</td>
+      <td>正常工作 ~3μA，过放后 ~0.1μA</td>
+      <td>正常工作 ~100μA，sleep ~10μA，ship mode ~1μA</td>
+    </tr>
+    <tr>
+      <td><strong>封装/尺寸</strong></td>
+      <td>WCSP 2.5×2.5mm 或 QFN</td>
+      <td>X2QFN 1.2×1.6mm</td>
+      <td>VQFN 3.5×4.5mm 或类似（比 PROT+FG 分立总和更小）</td>
+    </tr>
+  </table>
+
+  <h3>5.5.3 BQ41Z5x 的独特功能</h3>
+
+  <p>作为 Protection + Fuel Gauge 二合一，BQ41Z5x 除了覆盖 BQ2980 + BQ27426 的全部功能外，还提供了分立方案无法实现的融合能力：</p>
+
+  <table>
+    <tr><th>融合功能</th><th>分立方案做不到的原因</th></tr>
+    <tr>
+      <td><strong>自适应保护阈值</strong></td>
+      <td>BQ2980 的 OV/UV/OC 阈值是硬件固定值，无法根据电池老化调整。BQ41Z5x 可以根据 SOH 动态调整保护阈值（老化电池内阻大 → 适当放宽 OCP 阈值防止误触发）</td>
+    </tr>
+    <tr>
+      <td><strong>预判性保护</strong></td>
+      <td>分立保护 IC 只能"事后"检测（电压/电流超过阈值才动作）。BQ41Z5x 利用电量计的实时电流/电压数据 + 电池模型，可以预判即将发生的过放/过温并提前降电流</td>
+    </tr>
+    <tr>
+      <td><strong>精准 SOC 触发保护</strong></td>
+      <td>分立方案只能靠电压判断 SOC（不准）。BQ41Z5x 可以在 SOC=0% 时精确触发关机，避免"有电压但没容量"导致突然断电</td>
+    </tr>
+    <tr>
+      <td><strong>SOH (健康度) 追踪</strong></td>
+      <td>只有电量计能追踪循环次数、容量衰减、内阻增长。BQ41Z5x 将此数据通过 SMBus 上报给系统，用于电池健康提示</td>
+    </tr>
+    <tr>
+      <td><strong>SHA-1 电池认证</strong></td>
+      <td>防止劣质/仿冒电池引发安全事故。系统通过 challenge-response 协议验证电池身份，认证失败可拒绝充电</td>
+    </tr>
+    <tr>
+      <td><strong>Black Box (黑匣子)</strong></td>
+      <td>记录电池的极端事件（过温、过放、短路发生时间和次数），用于售后分析和品质追溯</td>
+    </tr>
+  </table>
+
+  <h3>5.5.4 系统架构总结</h3>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 860 190" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="top-a" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#0d6efd"/>
+        </marker>
+      </defs>
+      <rect x="0" y="0" width="860" height="190" fill="#fff" rx="8"/>
+
+      <text x="430" y="22" text-anchor="middle" font-size="11" font-weight="700" fill="#343a40">完整系统架构：Charger + 二合一保护/电量计</text>
+
+      <!-- VBUS -->
+      <rect x="20" y="45" width="100" height="45" rx="6" fill="#fff0f0" stroke="#dc3545" stroke-width="1.5"/>
+      <text x="70" y="63" text-anchor="middle" font-size="11" font-weight="700" fill="#dc3545">VBUS</text>
+      <text x="70" y="79" text-anchor="middle" font-size="8" fill="#6c757d">USB 5V</text>
+
+      <!-- Arrow -->
+      <line x1="120" y1="67" x2="155" y2="67" stroke="#0d6efd" stroke-width="2" marker-end="url(#top-a)"/>
+
+      <!-- Charger -->
+      <rect x="160" y="45" width="180" height="80" rx="8" fill="#f0f4ff" stroke="#0d6efd" stroke-width="1.5"/>
+      <text x="250" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="#0d6efd">BQ25890</text>
+      <text x="250" y="86" text-anchor="middle" font-size="9" fill="#495057">Charger IC (充电+Buck)</text>
+      <text x="250" y="102" text-anchor="middle" font-size="9" fill="#495057">SYS供电 / BAT充电 / NTC</text>
+      <text x="250" y="118" text-anchor="middle" font-size="8" fill="#6c757d">I2C (config/status)</text>
+
+      <!-- Arrow -->
+      <line x1="340" y1="67" x2="400" y2="67" stroke="#0d6efd" stroke-width="2" marker-end="url(#top-a)"/>
+
+      <!-- BQ41Z5x + Battery -->
+      <rect x="405" y="40" width="240" height="105" rx="8" fill="#f3f0ff" stroke="#6610f2" stroke-width="2"/>
+      <text x="525" y="62" text-anchor="middle" font-size="12" font-weight="700" fill="#6610f2">BQ41Z5x</text>
+      <text x="525" y="78" text-anchor="middle" font-size="9" fill="#495057">Protection + Fuel Gauge (二合一)</text>
+      <line x1="425" y1="88" x2="625" y2="88" stroke="#ddd"/>
+      <text x="435" y="104" font-size="8" fill="#495057">保护: OV/UV/OC/SC/OT (驱动外部FET)</text>
+      <text x="435" y="118" font-size="8" fill="#495057">电量计: Impedance Track SOC/SOH</text>
+      <text x="435" y="132" font-size="8" fill="#495057">认证: SHA-1 电池身份认证</text>
+      <text x="435" y="146" font-size="8" fill="#6c757d">I2C/SMBus → Host AP</text>
+
+      <!-- Arrow -->
+      <line x1="645" y1="80" x2="680" y2="80" stroke="#6610f2" stroke-width="2" marker-end="url(#top-a)"/>
+
+      <!-- Battery cell -->
+      <rect x="685" y="55" width="120" height="50" rx="6" fill="#fff8e1" stroke="#fd7e14" stroke-width="1.5"/>
+      <text x="745" y="78" text-anchor="middle" font-size="11" font-weight="700" fill="#fd7e14">Battery Cell</text>
+      <text x="745" y="95" text-anchor="middle" font-size="8" fill="#6c757d">3.7V Li-Po</text>
+
+      <!-- I2C bus -->
+      <rect x="160" y="145" width="600" height="30" rx="4" fill="#e8f4fd" stroke="#0dcaf0" stroke-width="1"/>
+      <text x="460" y="165" text-anchor="middle" font-size="9" fill="#0dcaf0" font-weight="600">I2C/SMBus 共享总线 (Host AP 同时读写 Charger 和 BQ41Z5x)</text>
+    </svg>
+  </div>
+
+  <div class="note">
+    <strong>一句话总结：</strong><br>
+    BQ25890 = 充电的"司机" (怎么充)；BQ2980 = 安全的"保险丝" (什么时候必须停)；BQ41Z5x = 安全的"保险丝" + 电量的"油表" + 电池的"身份证"三合一。在实际产品中，BQ41Z5x + BQ25890 两颗 IC 就构成了完整的电池管理系统。
+  </div>
+</div>
+
+<!-- ====== SECTION 6: 电池充放电参数与测试方法 ====== -->
+<div class="card" id="s6">
+  <h2>6. 电池充放电参数与测试方法</h2>
+
+  <h3>6.1 核心测试参数一览</h3>
+  <table>
+    <tr><th>参数</th><th>符号</th><th>单位</th><th>说明</th><th>测试设备</th></tr>
+    <tr><td>开路电压</td><td>OCV</td><td>V</td><td>静置后开路端电压</td><td>精密万用表 (DMM 6½位)</td></tr>
+    <tr><td>额定容量</td><td>C<sub>rated</sub></td><td>mAh / Ah</td><td>标准充放电条件下测得的放电容量</td><td>电池测试柜 (Arbin / Neware / Maccor)</td></tr>
+    <tr><td>直流内阻</td><td>DC IR</td><td>mΩ</td><td>脉冲放电/充电下的 ΔV/ΔI</td><td>电池测试柜或内阻仪 (Hioki BT356x)</td></tr>
+    <tr><td>交流内阻</td><td>AC IR</td><td>mΩ</td><td>1kHz 交流阻抗 (实部)</td><td>交流毫欧表 / EIS</td></tr>
+    <tr><td>充放电效率</td><td>η</td><td>%</td><td>放电容量 / 充电容量 × 100%</td><td>电池测试柜</td></tr>
+    <tr><td>自放电率</td><td>-</td><td>%/月</td><td>满充存放 N 天后剩余容量</td><td>电池测试柜 + 恒温箱</td></tr>
+    <tr><td>循环寿命</td><td>-</td><td>次</td><td>容量衰减至 80% 时的循环次数</td><td>电池测试柜</td></tr>
+    <tr><td>温度特性</td><td>-</td><td>-</td><td>−20°C / 0°C / 25°C / 45°C / 60°C 各温度下容量</td><td>恒温箱 + 测试柜</td></tr>
+    <tr><td>倍率特性</td><td>-</td><td>-</td><td>0.2C / 0.5C / 1C / 2C 各倍率下放电容量</td><td>电池测试柜</td></tr>
+  </table>
+
+  <h3>6.2 OCVR (开路电压) 测量</h3>
+  <div class="note">
+    <strong>目的：</strong>通过 OCV 推算电池 SOC，评估电芯一致性。
+  </div>
+
+  <p><strong>测试步骤：</strong></p>
+  <ol>
+    <li>将电池以标准充放电程序循环 3 次，确定实际容量</li>
+    <li>满充至 4.4V (或规格书指定的 V<sub>full</sub>)，截止电流 0.05C</li>
+    <li>静置 1 小时，记录 OCV → 对应 SOC = 100%</li>
+    <li>以 0.5C 放电 10% 容量，静置 30 分钟，记录 OCV → SOC = 90%</li>
+    <li>重复步骤 4，获得 OCV-SOC 曲线 (SOC: 100% → 0%，步长 5%~10%)</li>
+    <li>0% SOC 定义为放电至 V<sub>cutoff</sub> = 3.0V</li>
+  </ol>
+
+  <div class="tip">
+    <strong>AE 验收关注：</strong>出厂时 OCV 通常在 3.7~3.9V (约 50% SOC)，这是锂电池最佳存储电压。OCV 低于 3.4V 或高于 4.1V 可能暗示电芯异常。
+  </div>
+
+  <h3>6.3 DC IR (直流内阻) 测量 — HPPC 法</h3>
+  <div class="note">
+    <strong>HPPC (Hybrid Pulse Power Characterization)</strong> 是测电池内阻的标准方法，参考 USABC / FreedomCAR 协议。
+  </div>
+
+  <p><strong>放电内阻测试流程：</strong></p>
+  <ol>
+    <li>将电池调整到目标 SOC (如 50%)，静置 1 小时</li>
+    <li>记录静置后的电压 V<sub>0</sub></li>
+    <li>施加 1C 放电脉冲，持续 10 秒 (或 18 秒/30 秒)</li>
+    <li>记录脉冲开始时刻的电压 V<sub>1</sub> (通常取 0.1s 或 1s 后的电压，取决于标准)</li>
+    <li>记录脉冲结束时刻的电压 V<sub>2</sub> (通常取 10s)</li>
+  </ol>
+
+  <div class="formula">
+    R<sub>0</sub> (欧姆内阻) = (V<sub>0</sub> − V<sub>1</sub>) / I<sub>pulse</sub><br>
+    R<sub>total</sub> (总内阻) = (V<sub>0</sub> − V<sub>2</sub>) / I<sub>pulse</sub><br>
+    R<sub>polarization</sub> = R<sub>total</sub> − R<sub>0</sub>
+  </div>
+
+  <p><strong>不同 SOC 下的典型内阻测试矩阵：</strong></p>
+  <table>
+    <tr><th>SOC</th><th>90%</th><th>70%</th><th>50%</th><th>30%</th><th>10%</th></tr>
+    <tr><td>R<sub>0</sub> (放电) / mΩ</td><td>45~55</td><td>42~50</td><td>40~48</td><td>43~55</td><td>60~90</td></tr>
+    <tr><td>R<sub>0</sub> (充电) / mΩ</td><td>40~50</td><td>38~48</td><td>38~46</td><td>40~52</td><td>50~70</td></tr>
+  </table>
+  <p style="font-size:0.82em;color:#6c757d;">注：以上为 4000mAh Li-Po 新电芯参考值，实际值因厂家/材料/温度而异。</p>
+
+  <h3>6.4 容量测试</h3>
+  <p><strong>标准充放电制度 (以 4000mAh 电芯为例)：</strong></p>
+  <table>
+    <tr><th>步骤</th><th>操作</th><th>参数</th><th>截止条件</th></tr>
+    <tr><td>1. 充电</td><td>CC 恒流充电</td><td>I = 0.5C = 2000mA</td><td>V<sub>BAT</sub> = 4.4V</td></tr>
+    <tr><td>2. 充电</td><td>CV 恒压充电</td><td>V = 4.4V</td><td>I < 0.05C = 200mA</td></tr>
+    <tr><td>3. 静置</td><td>开路静置</td><td>-</td><td>30 min</td></tr>
+    <tr><td>4. 放电</td><td>CC 恒流放电</td><td>I = 0.2C = 800mA</td><td>V<sub>BAT</sub> = 3.0V</td></tr>
+    <tr><td>5. 计算</td><td>积分容量</td><td>C = ∫ I·dt</td><td>放电容量即为额定容量</td></tr>
+  </table>
+
+  <div class="formula">
+    放电容量 C = I<sub>discharge</sub> × T<sub>discharge</sub> &nbsp;&nbsp;&nbsp; [单位: mAh 或 Ah]<br>
+    能量 E = ∫ V(t) × I<sub>discharge</sub> dt &nbsp;&nbsp;&nbsp; [单位: Wh]
+  </div>
+
+  <h3>6.5 自放电测试</h3>
+  <ol>
+    <li>电池满充至 V<sub>full</sub>，记录容量 C<sub>0</sub></li>
+    <li>在 25°C 环境下开路存储 28 天</li>
+    <li>以 0.2C 放电至 3.0V，记录剩余容量 C<sub>28</sub></li>
+    <li>自放电率 = (C<sub>0</sub> − C<sub>28</sub>) / C<sub>0</sub> × 100%</li>
+  </ol>
+  <div class="note">典型手机电芯自放电率应低于 3%/月。过高的自放电率暗示微短路 (Internal Short) 缺陷。</div>
+
+  <h3>6.6 循环寿命测试</h3>
+  <ol>
+    <li>以 0.5C CC/CV 充电至 V<sub>full</sub>，截止 0.05C</li>
+    <li>以 1C CC 放电至 V<sub>cutoff</sub> (3.0V)</li>
+    <li>循环重复，每 50 次做一次标准容量标定 (0.2C 放)</li>
+    <li>当标准容量低于初始容量的 80% 时，循环次数即为寿命</li>
+  </ol>
+  <div class="warn">循环测试通常需 2~3 个月，是电池验证中最耗时的项目。加速老化可在 45°C 下进行，但结果不可直接等同于常温寿命。</div>
+</div>
+
+<!-- ====== SECTION 7: 各模块电气指标及测试方法汇总 ====== -->
+<div class="card" id="s7">
+  <h2>7. 各模块电气指标及测试方法汇总</h2>
+
+  <h3>7.1 VBUS 输入端测试项</h3>
+  <table>
+    <tr><th>测试项</th><th>测试方法</th><th>判定标准</th><th>仪器</th></tr>
+    <tr>
+      <td>OVP 阈值</td>
+      <td>缓慢提升 VBUS 电压，监测输入电流，记录关断点</td>
+      <td>规格书 ±5% 以内 (e.g. 6.0V ± 0.2V)</td>
+      <td>DC Source + DMM</td>
+    </tr>
+    <tr>
+      <td>OVP 响应时间</td>
+      <td>VBUS 阶跃 (3V→8V)，示波器捕获 V<sub>BUS</sub> 和后端 V<sub>SYS</sub></td>
+      <td>响应 < 1μs (TVS) / < 10μs (OVP IC)</td>
+      <td>示波器 + 脉冲发生器</td>
+    </tr>
+    <tr>
+      <td>ESD 耐受</td>
+      <td>IEC 61000-4-2 接触放电 ±8kV，空气放电 ±15kV</td>
+      <td>无 latch-up，功能正常</td>
+      <td>ESD 枪</td>
+    </tr>
+    <tr>
+      <td>输入浪涌电流</td>
+      <td>VBUS 冷插入瞬间，电流探头捕获峰值电流</td>
+      <td>< 1.5A (无自恢复保险丝)<br>< 3A (有保险丝)</td>
+      <td>示波器 + 电流探头</td>
+    </tr>
+    <tr>
+      <td>CC 检测电阻</td>
+      <td>断电测 CC1/CC2 对地电阻</td>
+      <td>Rd = 5.1kΩ ± 20%</td>
+      <td>DMM</td>
+    </tr>
+  </table>
+
+  <h3>7.2 Charger IC 测试项</h3>
+  <table>
+    <tr><th>测试项</th><th>测试方法</th><th>判定标准</th><th>仪器</th></tr>
+    <tr>
+      <td>充电电流精度</td>
+      <td>设置不同 I<sub>CHG</sub> 档位 (通过 I²C)，实际测量 BAT 电流</td>
+      <td>误差 < ±5% (CC 阶段)</td>
+      <td>电子负载 (CC mode) + DMM</td>
+    </tr>
+    <tr>
+      <td>充电电压精度</td>
+      <td>CV 阶段稳定后，测量 BAT 引脚电压</td>
+      <td>误差 < ±0.5% (e.g. 4.40V ± 22mV)</td>
+      <td>精密 DMM (6½位)</td>
+    </tr>
+    <tr>
+      <td>充电效率</td>
+      <td>η = (V<sub>BAT</sub> × I<sub>BAT</sub>) / (V<sub>BUS</sub> × I<sub>BUS</sub>) × 100%</td>
+      <td>> 90% @ 5V/2A 充电；> 85% @ 1A</td>
+      <td>4-ch DMM 同步采集</td>
+    </tr>
+    <tr>
+      <td>终止电流精度</td>
+      <td>监控 CV 阶段 BAT 电流，记录充电停止时的电流</td>
+      <td>误差 < ±20% of I<sub>TERM</sub> 设定值</td>
+      <td>DMM (电流串联采样)</td>
+    </tr>
+    <tr>
+      <td>涓流预充电电流</td>
+      <td>使用放电至 2.5V 的模拟电池，测量充电电流</td>
+      <td>设定值的 ±20%</td>
+      <td>模拟电池 (Source/Sink) + DMM</td>
+    </tr>
+    <tr>
+      <td>BATFET R<sub>DSON</sub></td>
+      <td>VBUS 移除，SYS 接 1A 负载，测 BAT-SYS 压差</td>
+      <td>ΔV / 1A = 20~50mΩ (规格书 ± 30%)</td>
+      <td>DMM (4线 Kelvin)</td>
+    </tr>
+    <tr>
+      <td>NTC 温度保护</td>
+      <td>改变 NTC 引脚电阻，模拟 −10°C ~ 60°C，观察充电状态</td>
+      <td>JEITA 档位：< 0°C 停充，0~10°C 减半，> 45°C 减半，> 60°C 停充</td>
+      <td>可调电阻箱 + DMM</td>
+    </tr>
+    <tr>
+      <td>开关纹波</td>
+      <td>示波器测 SW 节点波形和 V<sub>BAT</sub> 输出纹波</td>
+      <td>纹波 < 20mV<sub>pp</sub> @ V<sub>BAT</sub></td>
+      <td>示波器 (200MHz BW)</td>
+    </tr>
+    <tr>
+      <td>输入电流限制 (ILIM)</td>
+      <td>改变 ILIM 电阻或寄存器，测 VBUS 输入电流</td>
+      <td>设定值 ±10%</td>
+      <td>DC Source + DMM</td>
+    </tr>
+    <tr>
+      <td>静态电流 (I<sub>Q</sub>)</td>
+      <td>VBUS=0, BAT=4.0V, SYS 空载，测 BAT 电流</td>
+      <td>I<sub>Q</sub> < 30μA (ship mode) / < 150μA (normal)</td>
+      <td>精密 DMM (μA 档)</td>
+    </tr>
+  </table>
+
+  <h3>7.3 Protection IC 测试项</h3>
+  <table>
+    <tr><th>测试项</th><th>测试方法</th><th>判定标准</th><th>仪器</th></tr>
+    <tr>
+      <td>过充检测电压 V<sub>OVP</sub></td>
+      <td>DC Source 模拟电池电压缓慢上升，监测 CO 引脚跳变</td>
+      <td>4.28V ± 25mV</td>
+      <td>DC Source + DMM + 示波器</td>
+    </tr>
+    <tr>
+      <td>过充释放电压 V<sub>OVP_REL</sub></td>
+      <td>从 V<sub>OVP</sub> 缓慢下降，监测 CO 引脚恢复</td>
+      <td>4.08V ± 50mV</td>
+      <td>同上</td>
+    </tr>
+    <tr>
+      <td>过放检测电压 V<sub>UVP</sub></td>
+      <td>DC Source 模拟电池电压缓慢下降，监测 DO 引脚跳变</td>
+      <td>2.40V ± 50mV</td>
+      <td>同上</td>
+    </tr>
+    <tr>
+      <td>过放释放电压 V<sub>UVP_REL</sub></td>
+      <td>从 V<sub>UVP</sub> 缓慢上升，监测 DO 引脚恢复</td>
+      <td>3.00V ± 100mV</td>
+      <td>同上</td>
+    </tr>
+    <tr>
+      <td>放电过流检测 V<sub>OCP</sub></td>
+      <td>突然增大放电电流，通过 CS 引脚压降触发</td>
+      <td>0.15V ± 20% (对应 I ≈ 3~5A @ 30mΩ)</td>
+      <td>电子负载 (脉冲模式) + 示波器</td>
+    </tr>
+    <tr>
+      <td>短路检测 V<sub>SCP</sub></td>
+      <td>输出端短路 (< 100mΩ)，测量保护动作延迟</td>
+      <td>V<sub>CS</sub> > 0.6V, 响应 < 10μs</td>
+      <td>短路开关 + 示波器 + 电流探头</td>
+    </tr>
+    <tr>
+      <td>自耗电流 I<sub>DD</sub></td>
+      <td>V<sub>DD</sub>=4.0V, 正常工作模式，测 V<sub>DD</sub> 电流</td>
+      <td>< 5μA (典型 3μA)</td>
+      <td>精密 DMM (μA 档)</td>
+    </tr>
+    <tr>
+      <td>过放后耗电 I<sub>PDN</sub></td>
+      <td>进入过放保护后，测 V<sub>DD</sub> 电流</td>
+      <td>< 0.1μA</td>
+      <td>精密 DMM (nA 档) / SMU</td>
+    </tr>
+    <tr>
+      <td>MOSFET R<sub>DSON</sub></td>
+      <td>1A 电流流过 Dual FET，测 Drain-Source 压降</td>
+      <td>单 FET < 30mΩ，双 FET 串联 < 60mΩ</td>
+      <td>DMM (4线) + DC Load</td>
+    </tr>
+  </table>
+
+  <h3>7.4 整体系统测试项 (AE 验收)</h3>
+  <table>
+    <tr><th>测试项</th><th>方法</th><th>关注点</th></tr>
+    <tr>
+      <td>冷启动 (Dead Battery Boot)</td>
+      <td>电池 0V 或极低电压，插入充电器，计时到屏幕亮起</td>
+      <td>能否在 < 2 min 内完成开机</td>
+    </tr>
+    <tr>
+      <td>热插拔 (Hot Plug)</td>
+      <td>系统满载运行时反复插拔充电器 (±20 次)</td>
+      <td>无死机、无复位、V<sub>SYS</sub> 无跌落</td>
+    </tr>
+    <tr>
+      <td>充电温升</td>
+      <td>最大充电功率下，热电偶测 Charger IC 和电池表面温度</td>
+      <td>IC T<sub>J</sub> < 125°C; 电池表面 < 45°C</td>
+    </tr>
+    <tr>
+      <td>系统电压纹波</td>
+      <td>不同负载 (轻载→满载)，示波器测 SYS 节点</td>
+      <td>< 50mV<sub>pp</sub></td>
+    </tr>
+    <tr>
+      <td>BAT-SYS 切换瞬态</td>
+      <td>VBUS 移除瞬间，示波器捕获 SYS 电压</td>
+      <td>SYS 跌落 < 200mV, 恢复 < 100μs</td>
+    </tr>
+    <tr>
+      <td>满充满放循环</td>
+      <td>使手机从 100% 到自动关机，再充回 100%</td>
+      <td>电量计 (Fuel Gauge) SOC 精度 ±3%</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ====== SECTION 8: 典型故障排查 ====== -->
+<div class="card" id="s8">
+  <h2>8. 典型故障排查思路</h2>
+
+  <table>
+    <tr><th>故障现象</th><th>优先排查项</th><th>可能原因</th></tr>
+    <tr>
+      <td>手机完全不充电</td>
+      <td>VBUS 是否到达 Charger 输入？<br>CC 检测是否正常？</td>
+      <td>TVS 短路、OVP 触发了、USB 座虚焊、CC 电阻值异常</td>
+    </tr>
+    <tr>
+      <td>充电很慢</td>
+      <td>充电电流是否达到设定值？<br>NTC 阻值是否正常？</td>
+      <td>NTC 误判高温 → 降电流；ILIM 设置偏低；电池内阻偏大 → CV 过早进入</td>
+    </tr>
+    <tr>
+      <td>电池充不满</td>
+      <td>CV 阶段电压是否达到 V<sub>REG</sub>？<br>终止电流 I<sub>TERM</sub> 设置？</td>
+      <td>IR Drop 在 BAT 线上导致采样不准；V<sub>REG</sub> 寄存器配错</td>
+    </tr>
+    <tr>
+      <td>手机自动关机 (有电)</td>
+      <td>电池电压 vs 系统电压？<br>保护 IC 是否误触发？</td>
+      <td>BATFET R<sub>DSON</sub> 过大导致大负载时 SYS 跌落；保护 IC UVP 误触发</td>
+    </tr>
+    <tr>
+      <td>电池鼓包</td>
+      <td>满充电压是否超标？<br>充电温度是否过高？</td>
+      <td>V<sub>REG</sub> 超调 → 过充；NTC 失效 → 高温下仍大电流充电</td>
+    </tr>
+    <tr>
+      <td>VBUS 插入后不能开机<br>(电池已过放)</td>
+      <td>Power Path 是否工作？<br>BATFET 是否导通？</td>
+      <td>保护 IC 处于过放锁死；Charger 的 dead-battery 模式未正常激活</td>
+    </tr>
+  </table>
+
+  <div class="warn">
+    <strong>排障黄金法则：</strong>先量电压、再看波形、最后怀疑 IC。<br>
+    90% 的充电问题出在连接器/PCB/外围无源器件，而非 Charger IC 本身。
+  </div>
+</div>
+
+<!-- ====== SECTION 9: 总结 ====== -->
+<div class="card" id="s9">
+  <h2>9. 总结与学习建议</h2>
+
+  <h3>9.1 完整供电路径回顾</h3>
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 860 200" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="sum-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#0d6efd"/>
+        </marker>
+        <marker id="sum-arrow-g" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#198754"/>
+        </marker>
+        <marker id="sum-arrow-o" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#fd7e14"/>
+        </marker>
+      </defs>
+      <rect x="0" y="0" width="860" height="200" fill="#fafbfc" rx="10"/>
+
+      <!-- Flow blocks -->
+      <rect x="20" y="55" width="130" height="70" rx="10" fill="#fff0f0" stroke="#dc3545" stroke-width="2"/>
+      <text x="85" y="85" text-anchor="middle" font-size="12" font-weight="700" fill="#dc3545">VBUS</text>
+      <text x="85" y="105" text-anchor="middle" font-size="9" fill="#6c757d">5V (快充9~20V)</text>
+
+      <polygon points="160,90 180,75 180,85 200,85 200,95 180,95 180,105" fill="#0d6efd"/>
+      <text x="170" y="120" text-anchor="middle" font-size="8" fill="#0d6efd">充电</text>
+
+      <rect x="210" y="55" width="140" height="70" rx="10" fill="#f0f4ff" stroke="#0d6efd" stroke-width="2"/>
+      <text x="280" y="80" text-anchor="middle" font-size="12" font-weight="700" fill="#0d6efd">Charger IC</text>
+      <text x="280" y="98" text-anchor="middle" font-size="9" fill="#495057">Buck + Power Path</text>
+      <text x="280" y="114" text-anchor="middle" font-size="9" fill="#495057">+ NTC</text>
+
+      <polygon points="360,90 380,75 380,85 400,85 400,95 380,95 380,105" fill="#198754"/>
+      <text x="370" y="120" text-anchor="middle" font-size="8" fill="#198754">保护</text>
+
+      <rect x="410" y="55" width="140" height="70" rx="10" fill="#f0fff0" stroke="#198754" stroke-width="2"/>
+      <text x="480" y="80" text-anchor="middle" font-size="12" font-weight="700" fill="#198754">Protection IC</text>
+      <text x="480" y="98" text-anchor="middle" font-size="9" fill="#495057">DW01 + Dual FET</text>
+      <text x="480" y="114" text-anchor="middle" font-size="9" fill="#495057">OVP/UVP/OCP/SCP</text>
+
+      <polygon points="560,90 580,75 580,85 600,85 600,95 580,95 580,105" fill="#fd7e14"/>
+      <text x="570" y="120" text-anchor="middle" font-size="8" fill="#fd7e14">储能</text>
+
+      <rect x="610" y="55" width="130" height="70" rx="10" fill="#fff8e1" stroke="#fd7e14" stroke-width="2"/>
+      <text x="675" y="80" text-anchor="middle" font-size="12" font-weight="700" fill="#fd7e14">Battery Cell</text>
+      <text x="675" y="98" text-anchor="middle" font-size="9" fill="#495057">3.7V 4000mAh</text>
+      <text x="675" y="114" text-anchor="middle" font-size="9" fill="#495057">Li-Po 软包</text>
+
+      <!-- SYS output from Charger -->
+      <line x1="280" y1="125" x2="280" y2="150" stroke="#0d6efd" stroke-width="2.5" marker-end="url(#sum-arrow)"/>
+      <line x1="280" y1="150" x2="60" y2="150" stroke="#0d6efd" stroke-width="2"/>
+      <line x1="60" y1="150" x2="60" y2="170" stroke="#0d6efd" stroke-width="2" marker-end="url(#sum-arrow)"/>
+      <rect x="25" y="170" width="70" height="20" rx="4" fill="#e7f1ff" stroke="#0d6efd" stroke-width="1"/>
+      <text x="60" y="184" text-anchor="middle" font-size="9" fill="#0d6efd" font-weight="600">SYS供电</text>
+
+      <!-- Discharge path: Battery → Protection (reverse) -->
+      <line x1="610" y1="90" x2="555" y2="90" stroke="#dc3545" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#sum-arrow-o)"/>
+      <text x="583" y="82" text-anchor="middle" font-size="7" fill="#dc3545">放电</text>
+
+      <!-- Legend -->
+      <rect x="25" y="5" width="810" height="40" rx="6" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+      <text x="40" y="22" font-size="10" font-weight="700" fill="#495057">完整供电路径：</text>
+      <text x="160" y="22" font-size="10" fill="#0d6efd">充电：VBUS → Charger → Protection → Battery</text>
+      <text x="460" y="22" font-size="10" fill="#dc3545">放电：Battery → Protection → Charger(BATFET) → SYS → 手机系统</text>
+      <text x="160" y="38" font-size="9" fill="#6c757d">插入充电器时：VBUS 经 Charger 的 Power Path 直接给 SYS 供电，同时独立给电池充电，系统运行不受电池电量影响</text>
+    </svg>
+  </div>
+
+  <h3>9.2 核心公式速查</h3>
+  <table>
+    <tr><th>公式</th><th>用途</th></tr>
+    <tr><td>C = I × T</td><td>容量 (mAh) = 放电电流 (mA) × 时间 (h)</td></tr>
+    <tr><td>R<sub>0</sub> = ΔV / I</td><td>DC 内阻 = 脉冲初始压降 / 脉冲电流</td></tr>
+    <tr><td>η = C<sub>discharge</sub> / C<sub>charge</sub> × 100%</td><td>充放电库仑效率</td></tr>
+    <tr><td>η<sub>charger</sub> = (V<sub>BAT</sub>·I<sub>BAT</sub>) / (V<sub>BUS</sub>·I<sub>BUS</sub>)</td><td>充电芯片效率</td></tr>
+    <tr><td>P<sub>loss</sub> = I² × R<sub>DSON</sub></td><td>MOSFET 导通损耗</td></tr>
+    <tr><td>I<sub>OCP</sub> = V<sub>CS</sub> / R<sub>DSON</sub></td><td>保护 IC 过流检测阈值</td></tr>
+    <tr><td>OCV = f(SOC, T)</td><td>电池开路电压 — SOC 映射</td></tr>
+  </table>
+
+  <h3>9.3 推荐学习路径</h3>
+  <ol>
+    <li>先吃透 DW01 / S-8261 的 datasheet，理解保护 IC 的状态机</li>
+    <li>选一颗 Charger IC (如 TI BQ25890)，精读 register map，对每个寄存器理解其物理意义</li>
+    <li>在 EVM 板上实测：CC/CV 切换波形、Power Path 切换瞬态、BATFET R<sub>DSON</sub></li>
+    <li>用电池测试柜跑一次完整的 HPPC + OCV-SOC + 循环寿命，直观感受电池特性</li>
+    <li>关注 JEITA 标准和 USB PD/PPS 协议规范，这是面试中的加分项</li>
+  </ol>
+
+  <div class="tip">
+    <strong>面试高频问题预警：</strong><br>
+    Q: CC 切换到 CV 的判据是什么？→ V<sub>BAT</sub> = V<sub>REG</sub><br>
+    Q: 为什么需要涓流充电？→ 深度放电电池内阻大，大电流充电会析锂损伤<br>
+    Q: Power Path 相比传统方案有什么优势？→ 电池没电也能开机、系统电压不受电池电压拖低<br>
+    Q: NTC 电阻选多大？→ 通常 10kΩ @ 25°C, B=3435/3380，与内部 10kΩ 分压匹配
+  </div>
+</div>
+
+<!-- ====== FOOTER ====== -->
+<div class="footer">
+  AE 工程师学习手册 · 手机电池供电电路拓扑 · 2026-06 &nbsp;|&nbsp; 仅供学习参考，具体参数以各 IC datasheet 为准
+</div>
+
+</div><!-- .container -->
+
+</body>
+</html>

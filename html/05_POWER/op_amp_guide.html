@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>运算放大器全面指南 — 从原理到有源滤波器设计</title>
+<style>
+  :root {
+    --primary: #1a56db;
+    --primary-light: #e8edff;
+    --accent: #dc2626;
+    --accent-light: #fef2f2;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --orange: #ea580c;
+    --orange-light: #fff7ed;
+    --purple: #9333ea;
+    --purple-light: #faf5ff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    color: var(--gray-900);
+    background: #fff;
+    line-height: 1.8;
+    font-size: 15px;
+  }
+  /* ---------- Sidebar Nav ---------- */
+  .sidebar {
+    position: fixed; top:0; left:0; width:260px; height:100vh;
+    background: var(--gray-900); color:#fff; overflow-y:auto; z-index:100;
+    padding: 24px 0;
+  }
+  .sidebar h2 {
+    font-size: 15px; padding: 0 20px 12px; letter-spacing: 1px;
+    color: var(--gray-300); border-bottom: 1px solid rgba(255,255,255,.1);
+    margin-bottom: 8px; text-transform: uppercase;
+  }
+  .sidebar a {
+    display: block; padding: 8px 20px 8px 28px; color: rgba(255,255,255,.75);
+    text-decoration: none; font-size: 13.5px; transition: all .2s;
+    border-left: 3px solid transparent;
+  }
+  .sidebar a:hover, .sidebar a.active {
+    color: #fff; background: rgba(255,255,255,.08);
+    border-left-color: var(--primary);
+  }
+  .sidebar a.sub { padding-left: 44px; font-size: 13px; }
+  .main { margin-left: 260px; padding: 40px 48px 80px; max-width: 920px; }
+
+  /* ---------- Headings ---------- */
+  h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
+  h1 + p { color: var(--gray-500); font-size: 16px; margin-bottom: 36px; }
+  h2 {
+    font-size: 24px; font-weight: 700; margin: 48px 0 20px;
+    padding-bottom: 10px; border-bottom: 2px solid var(--primary);
+    color: var(--primary);
+  }
+  h3 { font-size: 18px; font-weight: 600; margin: 28px 0 14px; color: var(--gray-900); }
+  h4 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; color: var(--gray-700); }
+
+  /* ---------- Blocks ---------- */
+  p { margin-bottom: 14px; }
+  .card {
+    background: var(--gray-50); border: 1px solid var(--gray-200);
+    border-radius: var(--radius); padding: 20px 24px; margin: 16px 0;
+  }
+  .card.blue { background: var(--primary-light); border-color: #c7d6f5; }
+  .card.red  { background: var(--accent-light); border-color: #f5c6c6; }
+  .card.green { background: var(--green-light); border-color: #bbf0c8; }
+  .card.orange { background: var(--orange-light); border-color: #fdd9a8; }
+  .card.purple { background: var(--purple-light); border-color: #ddd0f5; }
+  .card-title {
+    font-weight: 700; font-size: 15px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tag {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 12px; font-weight: 600;
+  }
+  .tag.blue { background: var(--primary); color: #fff; }
+  .tag.red  { background: var(--accent); color: #fff; }
+  .tag.green { background: var(--green); color: #fff; }
+  .tag.orange { background: var(--orange); color: #fff; }
+  .tag.purple { background: var(--purple); color: #fff; }
+
+  /* ---------- Tables ---------- */
+  table {
+    width: 100%; border-collapse: collapse; margin: 14px 0 20px;
+    font-size: 14px;
+  }
+  th {
+    background: var(--gray-900); color: #fff; padding: 10px 14px;
+    text-align: left; font-weight: 600; font-size: 13px;
+  }
+  td {
+    padding: 9px 14px; border-bottom: 1px solid var(--gray-200);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--gray-50); }
+  tr:hover td { background: var(--primary-light); }
+
+  /* ---------- Formulas ---------- */
+  .formula {
+    background: #fffbe6; border-left: 4px solid #eab308;
+    padding: 12px 18px; margin: 14px 0; font-family: "Cambria Math", "Times New Roman", serif;
+    font-size: 16px; border-radius: 0 var(--radius) var(--radius) 0;
+    overflow-x: auto;
+  }
+  .formula code {
+    font-family: "Cambria Math", "Consolas", monospace;
+    font-size: 15px; color: var(--gray-900);
+  }
+
+  /* ---------- SVG container ---------- */
+  .fig {
+    text-align: center; margin: 20px 0; padding: 16px;
+    background: var(--gray-50); border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+  }
+  .fig svg { max-width: 100%; }
+  .fig-caption { font-size: 13px; color: var(--gray-500); margin-top: 8px; }
+
+  /* ---------- Steps ---------- */
+  .steps { counter-reset: step; margin: 16px 0; }
+  .step {
+    counter-increment: step; position: relative;
+    padding: 14px 16px 14px 56px; margin-bottom: 8px;
+    background: var(--gray-50); border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+  }
+  .step::before {
+    content: counter(step); position: absolute; left: 16px; top: 14px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--primary); color: #fff; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .step strong { display: block; margin-bottom: 4px; }
+
+  /* ---------- Lists ---------- */
+  ul, ol { margin: 8px 0 14px 24px; }
+  li { margin-bottom: 6px; }
+
+  /* ---------- Accordion ---------- */
+  details { margin: 10px 0; border: 1px solid var(--gray-200); border-radius: var(--radius); }
+  summary {
+    padding: 12px 18px; cursor: pointer; font-weight: 600;
+    background: var(--gray-50); border-radius: var(--radius);
+    list-style: none; display: flex; justify-content: space-between;
+  }
+  summary::after { content: "▶"; font-size: 12px; transition: transform .2s; }
+  details[open] summary::after { transform: rotate(90deg); }
+  details > div, details > p { padding: 14px 18px; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 24px 20px; }
+  }
+
+  /* ---------- Scrollbar ---------- */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+
+  /* ---------- Print ---------- */
+  @media print {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+  }
+
+  .compare-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0;
+  }
+  @media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
+  .compare-grid .card { margin: 0; }
+
+  .param-table td:first-child { white-space: nowrap; font-weight: 600; }
+  .arrow { color: var(--primary); font-weight: 700; }
+  .arrow.down { color: var(--accent); }
+
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 12px; font-weight: 600; margin-right: 6px;
+  }
+  .badge.affects { background: #dcfce7; color: #166534; }
+  .badge.affected { background: #fee2e2; color: #991b1b; }
+</style>
+</head>
+<body>
+
+<!-- ==================== SIDEBAR ==================== -->
+<nav class="sidebar">
+  <h2>目录导航</h2>
+  <a href="#ch1">1 运放概述</a>
+  <a href="#ch2">2 运放种类</a>
+  <a href="#ch2-1" class="sub">2.1 按工艺分类</a>
+  <a href="#ch2-2" class="sub">2.2 按性能分类</a>
+  <a href="#ch3">3 工作原理</a>
+  <a href="#ch3-1" class="sub">3.1 理想运放模型</a>
+  <a href="#ch3-2" class="sub">3.2 负反馈与虚短虚断</a>
+  <a href="#ch3-3" class="sub">3.3 开环与闭环</a>
+  <a href="#ch4">4 电气指标详解</a>
+  <a href="#ch4-1" class="sub">4.1 输入失调电压 Vos</a>
+  <a href="#ch4-2" class="sub">4.2 输入偏置电流 Ib</a>
+  <a href="#ch4-3" class="sub">4.3 增益带宽积 GBW</a>
+  <a href="#ch4-4" class="sub">4.4 压摆率 SR</a>
+  <a href="#ch4-5" class="sub">4.5 共模抑制比 CMRR</a>
+  <a href="#ch4-6" class="sub">4.6 指标影响关系矩阵</a>
+  <a href="#ch5">5 测试方法</a>
+  <a href="#ch6">6 基本应用电路</a>
+  <a href="#ch6-1" class="sub">6.1 反相放大器</a>
+  <a href="#ch6-2" class="sub">6.2 同相放大器</a>
+  <a href="#ch6-3" class="sub">6.3 加法器</a>
+  <a href="#ch6-4" class="sub">6.4 减法器 / 差分放大器</a>
+  <a href="#ch6-5" class="sub">6.5 积分器与微分器</a>
+  <a href="#ch7">7 有源低通滤波器专题</a>
+  <a href="#ch7-1" class="sub">7.1 为什么需要"有源"</a>
+  <a href="#ch7-2" class="sub">7.2 滤波器逼近类型</a>
+  <a href="#ch7-3" class="sub">7.3 一阶有源低通滤波器</a>
+  <a href="#ch7-4" class="sub">7.4 二阶有源低通滤波器</a>
+  <a href="#ch7-5" class="sub">7.5 Sallen-Key vs MFB</a>
+  <a href="#ch7-6" class="sub">7.6 高阶滤波器：级联设计</a>
+  <a href="#ch7-7" class="sub">7.7 设计实战</a>
+  <a href="#ch8">8 常见运放选型速查</a>
+</nav>
+
+<!-- ==================== MAIN ==================== -->
+<div class="main">
+
+<h1 id="ch1">运算放大器全面指南</h1>
+<p>从基本原理到有源低通滤波器设计 — 一份面向电子工程师的系统学习文档</p>
+
+<!-- ============================================================ -->
+<h2 id="ch1">1 运放概述</h2>
+
+<p>运算放大器（Operational Amplifier, Op-Amp）是一种高增益、差分输入的电压放大器件。最初在模拟计算机中用于执行数学运算（加、减、积分、微分等），如今已成为模拟电路设计中使用最广泛的核心器件。</p>
+
+<div class="card blue">
+  <div class="card-title">⚡ 核心特征</div>
+  <ul>
+    <li><strong>差分输入</strong>：同相端 (V+) 和反相端 (V−)，放大两者之差</li>
+    <li><strong>高开环增益</strong>：典型 10<sup>5</sup> ~ 10<sup>6</sup>（100 dB ~ 120 dB）</li>
+    <li><strong>高输入阻抗</strong>：>MΩ 级别（FET 输入可达 TΩ）</li>
+    <li><strong>低输出阻抗</strong>：< 100 Ω，理想模型中近似为零</li>
+    <li><strong>单端输出</strong>：输出以地为参考</li>
+  </ul>
+</div>
+
+<div class="fig">
+  <svg viewBox="0 0 440 240" style="width:440px;max-width:100%">
+    <polygon points="160,40 330,120 160,200" fill="#f0f4ff" stroke="#1a56db" stroke-width="2.5" stroke-linejoin="round"/>
+    <text x="180" y="86" font-size="18" fill="#dc2626" font-weight="bold">−</text>
+    <text x="180" y="162" font-size="18" fill="#16a34a" font-weight="bold">+</text>
+    <line x1="55" y1="75" x2="160" y2="75" stroke="#dc2626" stroke-width="2.5"/>
+    <text x="28" y="80" font-size="15" fill="#dc2626" font-weight="bold">V−</text>
+    <line x1="55" y1="155" x2="160" y2="155" stroke="#16a34a" stroke-width="2.5"/>
+    <text x="28" y="160" font-size="15" fill="#16a34a" font-weight="bold">V+</text>
+    <line x1="330" y1="120" x2="400" y2="120" stroke="#1a56db" stroke-width="2.5"/>
+    <text x="405" y="126" font-size="15" fill="#1a56db" font-weight="bold">Vout</text>
+    <line x1="245" y1="40" x2="245" y2="18" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="218" y="14" font-size="12" fill="#6b7280">+Vcc</text>
+    <line x1="245" y1="200" x2="245" y2="222" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="218" y="234" font-size="12" fill="#6b7280">−Vee</text>
+  </svg>
+  <div class="fig-caption">图 1-1 运算放大器标准符号</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="ch2">2 运放种类</h2>
+
+<h3 id="ch2-1">2.1 按工艺分类</h3>
+
+<table>
+  <tr><th>工艺类型</th><th>输入结构</th><th>Ib 典型值</th><th>Vos 典型值</th><th>特点</th></tr>
+  <tr><td><strong>BJT 双极型</strong></td><td>BJT 差分对</td><td>10 nA ~ 1 μA</td><td>0.1 ~ 5 mV</td><td>GBW 高、噪声低、偏置电流大</td></tr>
+  <tr><td><strong>JFET 输入</strong></td><td>JFET + BJT</td><td>1 ~ 100 pA</td><td>0.5 ~ 10 mV</td><td>高输入阻抗、中等速度</td></tr>
+  <tr><td><strong>CMOS</strong></td><td>MOSFET 差分对</td><td>0.1 ~ 10 pA</td><td>1 ~ 20 mV</td><td>极低功耗、Ib 极小、Vos 偏大</td></tr>
+  <tr><td><strong>BiFET</strong></td><td>JFET 输入 + BJT 输出</td><td>1 ~ 50 pA</td><td>0.5 ~ 5 mV</td><td>兼顾高阻抗与高驱动</td></tr>
+  <tr><td><strong>Auto-Zero / 斩波稳定</strong></td><td>CMOS + 校准</td><td>1 ~ 50 pA</td><td>0.1 ~ 5 μV</td><td>超低 Vos 漂移、有开关噪声</td></tr>
+</table>
+
+<h3 id="ch2-2">2.2 按性能/用途分类</h3>
+
+<table>
+  <tr><th>类型</th><th>代表型号</th><th>关键指标</th><th>典型应用</th></tr>
+  <tr><td><strong>通用型</strong></td><td>LM358, LM324, TL072</td><td>GBW 1~5 MHz, SR 0.5~13 V/μs</td><td>音频、信号调理、通用放大</td></tr>
+  <tr><td><strong>高精度型</strong></td><td>OP07, OPA277, AD8628</td><td>Vos < 50 μV, 漂移 < 0.6 μV/°C</td><td>仪表放大、传感器前端、医疗</td></tr>
+  <tr><td><strong>高速型</strong></td><td>AD811, THS3091, LM7171</td><td>GBW > 50 MHz, SR > 500 V/μs</td><td>视频驱动、ADC 缓冲、脉冲放大</td></tr>
+  <tr><td><strong>低噪声型</strong></td><td>OPA1612, NE5532, AD797</td><td>en < 5 nV/√Hz</td><td>麦克风前置、高保真音频、精密测量</td></tr>
+  <tr><td><strong>低功耗型</strong></td><td>MCP6001, TLV2462, OPA376</td><td>Iq < 50 μA</td><td>电池供电、IoT 传感器</td></tr>
+  <tr><td><strong>轨到轨型</strong></td><td>MCP6291, OPA350, TLV9062</td><td>Vout 摆幅至 VCC ± 50 mV</td><td>单电源低电压系统</td></tr>
+  <tr><td><strong>高压型</strong></td><td>OPA454, PA85, APEX SA01</td><td>供电 ±50V ~ ±200V</td><td>压电驱动、高压偏置</td></tr>
+  <tr><td><strong>电流反馈型 (CFA)</strong></td><td>AD8001, THS3001</td><td>带宽与增益近似无关</td><td>高速视频、高频信号</td></tr>
+</table>
+
+<div class="card orange">
+  <div class="card-title">⚠️ VFA vs CFA 速辨</div>
+  <p><strong>电压反馈型 (VFA)</strong>：传统运放，带宽随闭环增益增大而减小（GBW 恒定）。<br>
+  <strong>电流反馈型 (CFA)</strong>：同相输入高阻抗、反相输入低阻抗，带宽主要由反馈电阻决定，增益变化对带宽影响小。CFA 的反馈电阻 <strong>不可随意更改</strong>，必须按 datasheet 推荐值选取。</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="ch3">3 工作原理</h2>
+
+<h3 id="ch3-1">3.1 理想运放模型</h3>
+
+<p>分析运放电路时，通常先使用理想模型简化推导，再根据实际指标修正误差。</p>
+
+<table>
+  <tr><th>理想参数</th><th>理想值</th><th>物理含义</th></tr>
+  <tr><td>开环增益 A<sub>OL</sub></td><td>∞</td><td>任何微小差分输入都能驱动输出</td></tr>
+  <tr><td>输入阻抗 Z<sub>in</sub></td><td>∞</td><td>输入端不取电流</td></tr>
+  <tr><td>输出阻抗 Z<sub>out</sub></td><td>0</td><td>输出可驱动任意负载</td></tr>
+  <tr><td>带宽 BW</td><td>∞</td><td>无频率限制</td></tr>
+  <tr><td>失调电压 Vos</td><td>0</td><td>零输入时零输出</td></tr>
+  <tr><td>共模抑制 CMRR</td><td>∞</td><td>仅放大差分信号</td></tr>
+</table>
+
+<h3 id="ch3-2">3.2 负反馈与"虚短虚断"</h3>
+
+<p>运放几乎总是在<strong>负反馈</strong>配置下工作。负反馈将输出信号的一部分回送到反相输入端，使净输入趋近于零。由此得出两条核心法则：</p>
+
+<div class="card green">
+  <div class="card-title">📌 虚短 (Virtual Short)</div>
+  <p>在负反馈且未饱和时，V<sub>+</sub> ≈ V<sub>−</sub>。两个输入端电压几乎相等，但<strong>并没有真正短接</strong>——这是运放高增益闭环工作的结果，不是物理连接。</p>
+  <div class="formula"><code>V+ − V− = Vout / A<sub>OL</sub> ≈ 0 &nbsp;(当 A<sub>OL</sub> → ∞)</code></div>
+</div>
+
+<div class="card green">
+  <div class="card-title">📌 虚断 (Virtual Open)</div>
+  <p>由于输入阻抗极高，流入输入端的电流可忽略：<code>I<sub>+</sub> ≈ 0, I<sub>−</sub> ≈ 0</code></p>
+</div>
+
+<h3 id="ch3-3">3.3 开环与闭环</h3>
+
+<div class="formula"><code>闭环增益：A<sub>CL</sub> = A<sub>OL</sub> / (1 + A<sub>OL</sub>·β) ≈ 1/β &nbsp;(当 A<sub>OL</sub>·β ≫ 1)</code></div>
+<p>其中 β 是反馈系数（反馈到反相端的输出信号比例）。闭环增益由外部电阻决定，几乎与开环增益无关——这是运放电路设计灵活性的根源。</p>
+
+<div class="fig">
+  <svg width="520" height="200" viewBox="0 0 520 200">
+    <text x="260" y="16" font-size="14" fill="#6b7280" text-anchor="middle">增益 vs 频率 — 开环 vs 闭环</text>
+    <!-- Axes -->
+    <line x1="60" y1="170" x2="480" y2="170" stroke="#374151" stroke-width="1.5"/>
+    <line x1="60" y1="30" x2="60" y2="170" stroke="#374151" stroke-width="1.5"/>
+    <text x="50" y="40" font-size="11" fill="#6b7280">100dB</text>
+    <text x="50" y="100" font-size="11" fill="#6b7280">60dB</text>
+    <text x="50" y="168" font-size="11" fill="#6b7280">0dB</text>
+    <text x="60" y="186" font-size="11" fill="#6b7280">1Hz</text>
+    <text x="180" y="186" font-size="11" fill="#6b7280">10Hz</text>
+    <text x="300" y="186" font-size="11" fill="#6b7280">1kHz</text>
+    <text x="420" y="186" font-size="11" fill="#6b7280">1MHz</text>
+    <!-- Open loop response -->
+    <path d="M60,35 L100,35 L280,140 L480,170" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="6,3"/>
+    <text x="145" y="30" font-size="12" fill="#dc2626">A<sub>OL</sub> 开环</text>
+    <!-- Closed loop (gain=40dB) -->
+    <path d="M60,100 L300,100 L420,170" fill="none" stroke="#1a56db" stroke-width="2.5"/>
+    <text x="100" y="95" font-size="12" fill="#1a56db">A<sub>CL</sub> 闭环 (40dB)</text>
+    <!-- -3dB point -->
+    <circle cx="300" cy="100" r="4" fill="#1a56db"/>
+    <line x1="300" y1="100" x2="300" y2="170" stroke="#1a56db" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="300" y="116" font-size="11" fill="#1a56db">f<sub>-3dB</sub></text>
+    <!-- Slope annotation -->
+    <text x="370" y="155" font-size="11" fill="#dc2626">−20dB/dec</text>
+  </svg>
+  <div class="fig-caption">图 3-1 开环与闭环增益频率响应对比</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="ch4">4 电气指标详解</h2>
+
+<p>运放的关键电气参数决定了其在具体应用中的表现。以下逐项介绍，重点说明每个指标<strong>影响什么</strong>以及<strong>被什么影响</strong>。</p>
+
+<h3 id="ch4-1">4.1 输入失调电压 V<sub>OS</sub></h3>
+
+<div class="card">
+  <div class="card-title">定义</div>
+  <p>使输出为零时，需要在输入端施加的差分电压。本质是输入级差分对的不对称。</p>
+  <div class="formula"><code>V<sub>out,error</sub> = V<sub>OS</sub> · (1 + R<sub>f</sub>/R<sub>in</sub>) = V<sub>OS</sub> · A<sub>noise</sub></code></div>
+</div>
+
+<table>
+  <tr><th>影响</th><th>说明</th></tr>
+  <tr><td><span class="badge affects">影响</span> 输出直流偏移</td><td>被噪声增益放大后叠加到输出</td></tr>
+  <tr><td><span class="badge affects">影响</span> 传感器小信号测量</td><td>V<sub>OS</sub> 可能淹没问题信号（如热电偶 μV 级）</td></tr>
+  <tr><td><span class="badge affected">受影响</span> 温度</td><td>温漂 TCV<sub>OS</sub> 通常 0.1~10 μV/°C，斩波运放可 < 0.05 μV/°C</td></tr>
+  <tr><td><span class="badge affected">受影响</span> 电源电压</td><td>PSRR 有限时，VCC 变化会调制 V<sub>OS</sub></td></tr>
+  <tr><td><span class="badge affected">受影响</span> 时间</td><td>长期漂移（aging），典型 1~10 μV/月</td></tr>
+</table>
+
+<h3 id="ch4-2">4.2 输入偏置电流 I<sub>B</sub> 与失调电流 I<sub>OS</sub></h3>
+
+<div class="card">
+  <div class="card-title">定义</div>
+  <p><strong>偏置电流 I<sub>B</sub></strong> = (I<sub>B+</sub> + I<sub>B−</sub>)/2，流过两输入端的直流电流平均值。<br>
+  <strong>失调电流 I<sub>OS</sub></strong> = |I<sub>B+</sub> − I<sub>B−</sub>|，两输入端偏置电流之差。</p>
+  <div class="formula"><code>V<sub>out,error</sub> = I<sub>B−</sub>·R<sub>eq−</sub>·A<sub>noise</sub> − I<sub>B+</sub>·R<sub>eq+</sub>·A<sub>noise</sub></code></div>
+  <p>当 R<sub>eq+</sub> = R<sub>eq−</sub> 时，偏置电流引起的误差抵消，只剩 I<sub>OS</sub> 的影响。</p>
+</div>
+
+<div class="card blue">
+  <div class="card-title">💡 消除偏置电流误差的经典技巧</div>
+  <p>在同相输入端到地之间接一个<strong>补偿电阻</strong> R<sub>comp</sub> = R<sub>f</sub> ∥ R<sub>in</sub>，使两输入端看出去的直流等效电阻相等，从而让 I<sub>B</sub> 引入的电压相互抵消。</p>
+</div>
+
+<h3 id="ch4-3">4.3 增益带宽积 GBW (GBP)</h3>
+
+<div class="card">
+  <div class="card-title">定义</div>
+  <p>开环增益下降到 0 dB（单位增益）时的频率，也是开环增益与带宽的乘积（对 VFA 恒定）：</p>
+  <div class="formula"><code>GBW = A<sub>OL</sub> × f<sub>3dB</sub> = A<sub>CL</sub> × f<sub>CL,−3dB</sub></code></div>
+</div>
+
+<table>
+  <tr><th>影响</th><th>说明</th></tr>
+  <tr><td><span class="badge affects">影响</span> 闭环带宽</td><td>f<sub>−3dB</sub> = GBW / A<sub>CL,noise</sub>，噪声增益越大带宽越窄</td></tr>
+  <tr><td><span class="badge affects">影响</span> 信号保真度</td><td>在闭环带宽附近，增益衰减、相移增大，信号失真</td></tr>
+  <tr><td><span class="badge affected">受影响</span> 电源电压</td><td>低电压下 GBW 可能下降 30%~50%</td></tr>
+  <tr><td><span class="badge affected">受影响</span> 负载电容</td><td>大容性负载可引起不稳定，需串联隔离电阻</td></tr>
+</table>
+
+<div class="card orange">
+  <div class="card-title">⚠️ 设计准则</div>
+  <p>实际设计中，要求 GBW ≥ <strong>10 × A<sub>CL</sub> × f<sub>signal,max</sub></strong>，留出足够裕量。例如：闭环增益 100 倍，信号最高 20 kHz，则 GBW ≥ 10 × 100 × 20k = 20 MHz。</p>
+</div>
+
+<h3 id="ch4-4">4.4 压摆率 SR (Slew Rate)</h3>
+
+<div class="card">
+  <div class="card-title">定义</div>
+  <p>输出电压在阶跃输入下能达到的最大变化速率，由内部补偿电容和驱动电流决定：</p>
+  <div class="formula"><code>SR = I<sub>tail</sub> / C<sub>comp</sub> &nbsp;(V/μs)</code></div>
+  <p>满功率带宽（FPBW）与 SR 的关系：</p>
+  <div class="formula"><code>FPBW = SR / (2π · V<sub>pp</sub>) &nbsp;— 输出正弦波不失真的最高频率</code></div>
+</div>
+
+<table>
+  <tr><th>影响</th><th>说明</th></tr>
+  <tr><td><span class="badge affects">影响</span> 大信号带宽</td><td>大振幅输出时，SR 限制比 GBW 更先到达</td></tr>
+  <tr><td><span class="badge affects">影响</span> 瞬态响应</td><td>阶跃响应的上升/下降沿线性，不是指数</td></tr>
+  <tr><td><span class="badge affected">受影响</span> 电源电压</td><td>低电压下 I<sub>tail</sub> 减小，SR 下降</td></tr>
+  <tr><td><span class="badge affected">受影响</span> 温度</td><td>I<sub>tail</sub> 随温度变化，SR 有温漂</td></tr>
+</table>
+
+<h3 id="ch4-5">4.5 共模抑制比 CMRR</h3>
+
+<div class="formula"><code>CMRR = A<sub>DM</sub> / A<sub>CM</sub> = 20·log<sub>10</sub>(A<sub>DM</sub>/A<sub>CM</sub>) dB</code></div>
+
+<table>
+  <tr><th>影响</th><th>说明</th></tr>
+  <tr><td><span class="badge affects">影响</span> 差分放大精度</td><td>CMRR 不够 → 共模信号泄漏到输出，等效为 V<sub>OS</sub> 变化</td></tr>
+  <tr><td><span class="badge affects">影响</span> 电路对电源纹波的抑制</td><td>CMRR 与 PSRR 相关但不同</td></tr>
+  <tr><td><span class="badge affected">受影响</span> 频率</td><td>CMRR 在高频急剧下降，典型 −20dB/dec</td></tr>
+  <tr><td><span class="badge affected">受影响</span> 外部电阻匹配</td><td>差分放大电路中，电阻失配 1% 可使 CMRR 降至 40 dB</td></tr>
+</table>
+
+<h3 id="ch4-6">4.6 指标影响关系矩阵</h3>
+
+<p>下表汇总了运放关键指标之间的相互影响关系：<span class="badge affects">影响→</span> 表示"该指标影响对方"，<span class="badge affected">受影响←</span> 表示"该指标被对方影响"。</p>
+
+<table>
+  <tr><th>指标 ↓ 影响→</th><th>带宽</th><th>精度</th><th>噪声</th><th>功耗</th><th>稳定性</th><th>摆幅</th></tr>
+  <tr><td><strong>V<sub>OS</sub></strong></td><td>—</td><td class="arrow">●</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td><strong>I<sub>B</sub></strong></td><td>—</td><td class="arrow">●</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td><strong>GBW</strong></td><td class="arrow">●</td><td>—</td><td class="arrow">●</td><td class="arrow down">●</td><td class="arrow">●</td><td>—</td></tr>
+  <tr><td><strong>SR</strong></td><td class="arrow">●</td><td>—</td><td>—</td><td class="arrow down">●</td><td>—</td><td>—</td></tr>
+  <tr><td><strong>CMRR</strong></td><td>—</td><td class="arrow">●</td><td class="arrow">●</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td><strong>PSRR</strong></td><td>—</td><td class="arrow">●</td><td class="arrow">●</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td><strong>e<sub>n</sub> (电压噪声)</strong></td><td>—</td><td class="arrow">●</td><td class="arrow">●</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr><td><strong>I<sub>q</sub> (静态电流)</strong></td><td class="arrow down">●</td><td>—</td><td class="arrow down">●</td><td class="arrow">●</td><td>—</td><td>—</td></tr>
+  <tr><td><strong>电源电压</strong></td><td class="arrow">●</td><td class="arrow">●</td><td>—</td><td>—</td><td class="arrow">●</td><td class="arrow">●</td></tr>
+</table>
+<p style="font-size:13px; color:var(--gray-500);">● = 有影响；<span class="arrow">蓝色</span> = 正向/关键影响；<span class="arrow down">红色</span> = 反向/折中影响</p>
+
+<!-- ============================================================ -->
+<h2 id="ch5">5 测试方法</h2>
+
+<h4>5.1 输入失调电压 V<sub>OS</sub> 测试</h4>
+<div class="card">
+  <div class="card-title">测试方法</div>
+  <p>将运放接成高噪声增益的缓冲器（如 A<sub>noise</sub> = 1001），测量输出电压：</p>
+  <div class="formula"><code>V<sub>OS</sub> = V<sub>out</sub> / A<sub>noise</sub> = V<sub>out</sub> / (1 + R<sub>f</sub>/R<sub>in</sub>)</code></div>
+  <p>例如 R<sub>f</sub> = 100 kΩ, R<sub>in</sub> = 100 Ω, 测得 V<sub>out</sub> = 50 mV → V<sub>OS</sub> = 50 mV / 1001 ≈ 50 μV</p>
+</div>
+
+<h4>5.2 输入偏置电流 I<sub>B</sub> 测试</h4>
+<div class="card">
+  <div class="card-title">测试方法</div>
+  <p>在运放输入端串联大阻值电阻 R<sub>s</sub>（如 10 MΩ），测量电阻上的压降：</p>
+  <div class="formula"><code>I<sub>B</sub> = V<sub>drop</sub> / R<sub>s</sub></code></div>
+  <p>分别测 I<sub>B+</sub> 和 I<sub>B−</sub>。FET 输入运放 Ib 极小，需用静电计或积分法。</p>
+</div>
+
+<h4>5.3 GBW 测试</h4>
+<div class="card">
+  <div class="card-title">测试方法</div>
+  <p>将运放接成单位增益缓冲器，扫频测量 −3 dB 点频率 f<sub>u</sub>，即 GBW。或用闭环增益 A<sub>CL</sub> > 1 的配置：</p>
+  <div class="formula"><code>GBW = A<sub>CL</sub> × f<sub>−3dB</sub></code></div>
+</div>
+
+<h4>5.4 压摆率 SR 测试</h4>
+<div class="card">
+  <div class="card-title">测试方法</div>
+  <p>单位增益配置，输入方波（大信号，V<sub>pp</sub> 接近满幅），测量输出上升沿的斜率：</p>
+  <div class="formula"><code>SR = ΔV<sub>out</sub> / Δt &nbsp;(取线性段)</code></div>
+</div>
+
+<h4>5.5 CMRR 测试</h4>
+<div class="card">
+  <div class="card-title">测试方法</div>
+  <p>将运放接成差分放大电路，同时改变两输入端的共模电压（保持差分输入为零），测量输出变化：</p>
+  <div class="formula"><code>CMRR = ΔV<sub>CM</sub> / ΔV<sub>OS,eff</sub> = 20·log<sub>10</sub>(ΔV<sub>CM</sub> / ΔV<sub>OS,eff</sub>) dB</code></div>
+</div>
+
+<h4>5.6 PSRR 测试</h4>
+<div class="card">
+  <div class="card-title">测试方法</div>
+  <p>在电源引脚叠加交流纹波 ΔV<sub>supply</sub>，测量等效输入失调变化 ΔV<sub>OS</sub>：</p>
+  <div class="formula"><code>PSRR = ΔV<sub>supply</sub> / ΔV<sub>OS</sub> &nbsp;(dB)</code></div>
+</div>
+
+<h4>5.7 噪声测试</h4>
+<div class="card">
+  <div class="card-title">测试方法</div>
+  <p>将运放接成高增益配置，输入短路，用频谱分析仪测量输出噪声密度，再除以噪声增益：</p>
+  <div class="formula"><code>e<sub>n</sub> = e<sub>out</sub> / A<sub>noise</sub> &nbsp;(nV/√Hz)</code></div>
+  <p>电流噪声 i<sub>n</sub> 可在输入端接已知电阻，从输出噪声增量反推。</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="ch6">6 基本应用电路</h2>
+
+<h3 id="ch6-1">6.1 反相放大器</h3>
+
+<div class="fig">
+  <svg viewBox="0 0 500 260" style="width:500px;max-width:100%">
+    <!-- Op-amp -->
+    <polygon points="250,55 390,130 250,205" fill="#f0f4ff" stroke="#1a56db" stroke-width="2.5" stroke-linejoin="round"/>
+    <text x="267" y="100" font-size="18" fill="#dc2626" font-weight="bold">−</text>
+    <text x="267" y="172" font-size="18" fill="#16a34a" font-weight="bold">+</text>
+    <!-- Supply -->
+    <line x1="320" y1="55" x2="320" y2="32" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="293" y="26" font-size="11" fill="#6b7280">+Vcc</text>
+    <line x1="320" y1="205" x2="320" y2="228" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="293" y="242" font-size="11" fill="#6b7280">−Vee</text>
+    <!-- Vin → Rin → V- -->
+    <text x="8" y="100" font-size="14" fill="#374151" font-weight="bold">Vin</text>
+    <line x1="42" y1="96" x2="68" y2="96" stroke="#374151" stroke-width="2"/>
+    <rect x="68" y="84" width="65" height="24" rx="3" fill="#fff" stroke="#374151" stroke-width="2"/>
+    <text x="100" y="101" font-size="12" fill="#374151" text-anchor="middle" font-weight="600">Rin</text>
+    <line x1="133" y1="96" x2="250" y2="96" stroke="#374151" stroke-width="2"/>
+    <!-- Junction at V- -->
+    <circle cx="195" cy="96" r="5" fill="#374151"/>
+    <!-- Rf feedback path -->
+    <line x1="195" y1="96" x2="195" y2="28" stroke="#ea580c" stroke-width="2"/>
+    <line x1="195" y1="28" x2="220" y2="28" stroke="#ea580c" stroke-width="2"/>
+    <rect x="220" y="16" width="65" height="24" rx="3" fill="#fff" stroke="#ea580c" stroke-width="2"/>
+    <text x="252" y="33" font-size="12" fill="#ea580c" text-anchor="middle" font-weight="600">Rf</text>
+    <line x1="285" y1="28" x2="435" y2="28" stroke="#ea580c" stroke-width="2"/>
+    <line x1="435" y1="28" x2="435" y2="130" stroke="#ea580c" stroke-width="2"/>
+    <!-- Output -->
+    <line x1="390" y1="130" x2="485" y2="130" stroke="#1a56db" stroke-width="2.5"/>
+    <circle cx="435" cy="130" r="5" fill="#ea580c"/>
+    <text x="488" y="136" font-size="14" fill="#1a56db" font-weight="bold">Vout</text>
+    <!-- V+ to GND -->
+    <line x1="250" y1="165" x2="170" y2="165" stroke="#374151" stroke-width="2"/>
+    <line x1="170" y1="165" x2="170" y2="205" stroke="#374151" stroke-width="2"/>
+    <line x1="157" y1="205" x2="183" y2="205" stroke="#374151" stroke-width="2.5"/>
+    <line x1="161" y1="210" x2="179" y2="210" stroke="#374151" stroke-width="2"/>
+    <line x1="165" y1="215" x2="175" y2="215" stroke="#374151" stroke-width="1.5"/>
+  </svg>
+  <div class="fig-caption">图 6-1 反相放大器</div>
+</div>
+
+<div class="formula"><code>A<sub>v</sub> = −R<sub>f</sub> / R<sub>in</sub></code></div>
+<ul>
+  <li>输入阻抗 = R<sub>in</sub></li>
+  <li>输出反相，增益绝对值可 > 1 或 < 1</li>
+  <li>虚地点：反相输入端电压 ≈ 0（虚地）</li>
+</ul>
+
+<h3 id="ch6-2">6.2 同相放大器</h3>
+
+<div class="fig">
+  <svg viewBox="0 0 520 280" style="width:520px;max-width:100%">
+    <!-- Op-amp -->
+    <polygon points="260,60 400,140 260,220" fill="#f0f4ff" stroke="#1a56db" stroke-width="2.5" stroke-linejoin="round"/>
+    <text x="277" y="108" font-size="18" fill="#dc2626" font-weight="bold">−</text>
+    <text x="277" y="185" font-size="18" fill="#16a34a" font-weight="bold">+</text>
+    <!-- Supply -->
+    <line x1="330" y1="60" x2="330" y2="36" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="303" y="30" font-size="11" fill="#6b7280">+Vcc</text>
+    <line x1="330" y1="220" x2="330" y2="244" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="303" y="258" font-size="11" fill="#6b7280">−Vee</text>
+    <!-- Vin → V+ -->
+    <text x="8" y="185" font-size="14" fill="#16a34a" font-weight="bold">Vin</text>
+    <line x1="44" y1="180" x2="260" y2="180" stroke="#16a34a" stroke-width="2.5"/>
+    <!-- V- → junction -->
+    <line x1="260" y1="105" x2="170" y2="105" stroke="#374151" stroke-width="2"/>
+    <circle cx="170" cy="105" r="5" fill="#374151"/>
+    <!-- Rf: junction → up → across → down to output -->
+    <line x1="170" y1="105" x2="170" y2="30" stroke="#ea580c" stroke-width="2"/>
+    <line x1="170" y1="30" x2="195" y2="30" stroke="#ea580c" stroke-width="2"/>
+    <rect x="195" y="18" width="65" height="24" rx="3" fill="#fff" stroke="#ea580c" stroke-width="2"/>
+    <text x="227" y="34" font-size="12" fill="#ea580c" text-anchor="middle" font-weight="600">Rf</text>
+    <line x1="260" y1="30" x2="445" y2="30" stroke="#ea580c" stroke-width="2"/>
+    <line x1="445" y1="30" x2="445" y2="140" stroke="#ea580c" stroke-width="2"/>
+    <!-- Output -->
+    <line x1="400" y1="140" x2="500" y2="140" stroke="#1a56db" stroke-width="2.5"/>
+    <circle cx="445" cy="140" r="5" fill="#ea580c"/>
+    <text x="503" y="146" font-size="14" fill="#1a56db" font-weight="bold">Vout</text>
+    <!-- Rin: junction → down → GND -->
+    <line x1="170" y1="105" x2="170" y2="135" stroke="#374151" stroke-width="2"/>
+    <rect x="158" y="135" width="24" height="55" rx="3" fill="#fff" stroke="#374151" stroke-width="2"/>
+    <text x="190" y="168" font-size="12" fill="#374151" font-weight="600">Rin</text>
+    <line x1="170" y1="190" x2="170" y2="220" stroke="#374151" stroke-width="2"/>
+    <!-- GND -->
+    <line x1="157" y1="220" x2="183" y2="220" stroke="#374151" stroke-width="2.5"/>
+    <line x1="161" y1="225" x2="179" y2="225" stroke="#374151" stroke-width="2"/>
+    <line x1="165" y1="230" x2="175" y2="230" stroke="#374151" stroke-width="1.5"/>
+  </svg>
+  <div class="fig-caption">图 6-2 同相放大器</div>
+</div>
+
+<div class="formula"><code>A<sub>v</sub> = 1 + R<sub>f</sub> / R<sub>in</sub></code></div>
+<ul>
+  <li>输入阻抗极高（= 运放输入阻抗）</li>
+  <li>增益始终 ≥ 1</li>
+  <li>输出与输入同相</li>
+</ul>
+
+<div class="card purple">
+  <div class="card-title">📌 电压跟随器（特例）</div>
+  <p>R<sub>f</sub> = 0, R<sub>in</sub> = ∞ → A<sub>v</sub> = 1。输入阻抗最高、输出阻抗最低，常用作缓冲器（Buffer）。</p>
+</div>
+
+<h3 id="ch6-3">6.3 加法器（反相求和放大器）</h3>
+
+<div class="fig">
+  <svg viewBox="0 0 540 320" style="width:540px;max-width:100%">
+    <!-- Op-amp -->
+    <polygon points="280,55 420,150 280,245" fill="#f0f4ff" stroke="#1a56db" stroke-width="2.5" stroke-linejoin="round"/>
+    <text x="297" y="118" font-size="18" fill="#dc2626" font-weight="bold">−</text>
+    <text x="297" y="200" font-size="18" fill="#16a34a" font-weight="bold">+</text>
+    <!-- Supply -->
+    <line x1="350" y1="55" x2="350" y2="30" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="323" y="24" font-size="11" fill="#6b7280">+Vcc</text>
+    <line x1="350" y1="245" x2="350" y2="270" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="323" y="284" font-size="11" fill="#6b7280">−Vee</text>
+    <!-- V1 → R1 → bus -->
+    <text x="8" y="98" font-size="14" fill="#374151" font-weight="bold">V1</text>
+    <line x1="34" y1="94" x2="62" y2="94" stroke="#374151" stroke-width="2"/>
+    <rect x="62" y="82" width="55" height="24" rx="3" fill="#fff" stroke="#374151" stroke-width="2"/>
+    <text x="89" y="99" font-size="12" fill="#374151" text-anchor="middle" font-weight="600">R1</text>
+    <line x1="117" y1="94" x2="220" y2="94" stroke="#374151" stroke-width="2"/>
+    <!-- V2 → R2 → bus -->
+    <text x="8" y="152" font-size="14" fill="#374151" font-weight="bold">V2</text>
+    <line x1="34" y1="148" x2="62" y2="148" stroke="#374151" stroke-width="2"/>
+    <rect x="62" y="136" width="55" height="24" rx="3" fill="#fff" stroke="#374151" stroke-width="2"/>
+    <text x="89" y="153" font-size="12" fill="#374151" text-anchor="middle" font-weight="600">R2</text>
+    <line x1="117" y1="148" x2="220" y2="148" stroke="#374151" stroke-width="2"/>
+    <!-- V3 → R3 → bus -->
+    <text x="8" y="206" font-size="14" fill="#374151" font-weight="bold">V3</text>
+    <line x1="34" y1="202" x2="62" y2="202" stroke="#374151" stroke-width="2"/>
+    <rect x="62" y="190" width="55" height="24" rx="3" fill="#fff" stroke="#374151" stroke-width="2"/>
+    <text x="89" y="207" font-size="12" fill="#374151" text-anchor="middle" font-weight="600">R3</text>
+    <line x1="117" y1="202" x2="220" y2="202" stroke="#374151" stroke-width="2"/>
+    <!-- Summing bus (vertical) → V- input -->
+    <line x1="220" y1="94" x2="220" y2="202" stroke="#374151" stroke-width="2.5"/>
+    <circle cx="220" cy="94" r="4" fill="#374151"/>
+    <circle cx="220" cy="148" r="4" fill="#374151"/>
+    <circle cx="220" cy="202" r="4" fill="#374151"/>
+    <line x1="220" y1="148" x2="280" y2="148" stroke="#374151" stroke-width="2"/>
+    <!-- Junction for Rf -->
+    <circle cx="220" cy="148" r="5" fill="#ea580c"/>
+    <!-- Rf feedback: from bus junction up → across → down to output -->
+    <line x1="220" y1="148" x2="220" y2="28" stroke="#ea580c" stroke-width="2"/>
+    <line x1="220" y1="28" x2="248" y2="28" stroke="#ea580c" stroke-width="2"/>
+    <rect x="248" y="16" width="65" height="24" rx="3" fill="#fff" stroke="#ea580c" stroke-width="2"/>
+    <text x="280" y="33" font-size="12" fill="#ea580c" text-anchor="middle" font-weight="600">Rf</text>
+    <line x1="313" y1="28" x2="458" y2="28" stroke="#ea580c" stroke-width="2"/>
+    <line x1="458" y1="28" x2="458" y2="150" stroke="#ea580c" stroke-width="2"/>
+    <!-- Output -->
+    <line x1="420" y1="150" x2="515" y2="150" stroke="#1a56db" stroke-width="2.5"/>
+    <circle cx="458" cy="150" r="5" fill="#ea580c"/>
+    <text x="518" y="156" font-size="14" fill="#1a56db" font-weight="bold">Vout</text>
+    <!-- V+ to GND -->
+    <line x1="280" y1="195" x2="190" y2="195" stroke="#374151" stroke-width="2"/>
+    <line x1="190" y1="195" x2="190" y2="240" stroke="#374151" stroke-width="2"/>
+    <line x1="177" y1="240" x2="203" y2="240" stroke="#374151" stroke-width="2.5"/>
+    <line x1="181" y1="245" x2="199" y2="245" stroke="#374151" stroke-width="2"/>
+    <line x1="185" y1="250" x2="195" y2="250" stroke="#374151" stroke-width="1.5"/>
+  </svg>
+  <div class="fig-caption">图 6-3 反相加法器</div>
+</div>
+
+<div class="formula"><code>V<sub>out</sub> = −(V<sub>1</sub>·R<sub>f</sub>/R<sub>1</sub> + V<sub>2</sub>·R<sub>f</sub>/R<sub>2</sub> + V<sub>3</sub>·R<sub>f</sub>/R<sub>3</sub>)</code></div>
+
+<p>当 R<sub>1</sub> = R<sub>2</sub> = R<sub>3</sub> = R 时：</p>
+<div class="formula"><code>V<sub>out</sub> = −(R<sub>f</sub>/R)·(V<sub>1</sub> + V<sub>2</sub> + V<sub>3</sub>)</code></div>
+
+<div class="card blue">
+  <div class="card-title">💡 关键特性</div>
+  <ul>
+    <li>各输入通道之间<strong>互相隔离</strong>（虚地点）</li>
+    <li>可独立调整每个通道的加权系数</li>
+    <li>可扩展为任意多路加法</li>
+    <li>输出反相，如需同相可后接反相器</li>
+  </ul>
+</div>
+
+<h3 id="ch6-4">6.4 减法器 / 差分放大器</h3>
+
+<div class="fig">
+  <svg viewBox="0 0 540 300" style="width:540px;max-width:100%">
+    <!-- Op-amp -->
+    <polygon points="280,60 420,150 280,240" fill="#f0f4ff" stroke="#1a56db" stroke-width="2.5" stroke-linejoin="round"/>
+    <text x="297" y="118" font-size="18" fill="#dc2626" font-weight="bold">−</text>
+    <text x="297" y="198" font-size="18" fill="#16a34a" font-weight="bold">+</text>
+    <!-- Supply -->
+    <line x1="350" y1="60" x2="350" y2="36" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="323" y="30" font-size="11" fill="#6b7280">+Vcc</text>
+    <line x1="350" y1="240" x2="350" y2="264" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="323" y="278" font-size="11" fill="#6b7280">−Vee</text>
+    <!-- === V1 → R1 → V- === -->
+    <text x="8" y="112" font-size="14" fill="#374151" font-weight="bold">V1</text>
+    <line x1="34" y1="108" x2="62" y2="108" stroke="#374151" stroke-width="2"/>
+    <rect x="62" y="96" width="55" height="24" rx="3" fill="#fff" stroke="#374151" stroke-width="2"/>
+    <text x="89" y="113" font-size="12" fill="#374151" text-anchor="middle" font-weight="600">R1</text>
+    <line x1="117" y1="108" x2="280" y2="108" stroke="#374151" stroke-width="2"/>
+    <!-- Junction at V- -->
+    <circle cx="200" cy="108" r="5" fill="#374151"/>
+    <!-- Rf feedback: V- junction → up → Rf → across → down → output -->
+    <line x1="200" y1="108" x2="200" y2="32" stroke="#ea580c" stroke-width="2"/>
+    <line x1="200" y1="32" x2="228" y2="32" stroke="#ea580c" stroke-width="2"/>
+    <rect x="228" y="20" width="65" height="24" rx="3" fill="#fff" stroke="#ea580c" stroke-width="2"/>
+    <text x="260" y="36" font-size="12" fill="#ea580c" text-anchor="middle" font-weight="600">Rf</text>
+    <line x1="293" y1="32" x2="458" y2="32" stroke="#ea580c" stroke-width="2"/>
+    <line x1="458" y1="32" x2="458" y2="150" stroke="#ea580c" stroke-width="2"/>
+    <!-- Output -->
+    <line x1="420" y1="150" x2="515" y2="150" stroke="#1a56db" stroke-width="2.5"/>
+    <circle cx="458" cy="150" r="5" fill="#ea580c"/>
+    <text x="518" y="156" font-size="14" fill="#1a56db" font-weight="bold">Vout</text>
+    <!-- === V2 → R2 → V+ === -->
+    <text x="8" y="202" font-size="14" fill="#374151" font-weight="bold">V2</text>
+    <line x1="34" y1="198" x2="62" y2="198" stroke="#374151" stroke-width="2"/>
+    <rect x="62" y="186" width="55" height="24" rx="3" fill="#fff" stroke="#374151" stroke-width="2"/>
+    <text x="89" y="203" font-size="12" fill="#374151" text-anchor="middle" font-weight="600">R2</text>
+    <line x1="117" y1="198" x2="200" y2="198" stroke="#374151" stroke-width="2"/>
+    <!-- Junction at V+ -->
+    <circle cx="200" cy="198" r="5" fill="#374151"/>
+    <line x1="200" y1="198" x2="280" y2="198" stroke="#374151" stroke-width="2"/>
+    <!-- R3: V+ junction → down → GND -->
+    <line x1="200" y1="198" x2="200" y2="225" stroke="#374151" stroke-width="2"/>
+    <rect x="188" y="225" width="24" height="48" rx="3" fill="#fff" stroke="#374151" stroke-width="2"/>
+    <text x="218" y="254" font-size="12" fill="#374151" font-weight="600">R3</text>
+    <line x1="200" y1="273" x2="200" y2="282" stroke="#374151" stroke-width="2"/>
+    <!-- GND -->
+    <line x1="187" y1="282" x2="213" y2="282" stroke="#374151" stroke-width="2.5"/>
+    <line x1="191" y1="287" x2="209" y2="287" stroke="#374151" stroke-width="2"/>
+    <line x1="195" y1="292" x2="205" y2="292" stroke="#374151" stroke-width="1.5"/>
+  </svg>
+  <div class="fig-caption">图 6-4 差分放大器（减法器）</div>
+</div>
+
+<div class="formula"><code>V<sub>out</sub> = (R<sub>f</sub>/R<sub>1</sub>)·(V<sub>2</sub> − V<sub>1</sub>) &nbsp;(当 R<sub>f</sub>/R<sub>1</sub> = R<sub>3</sub>/R<sub>2</sub>)</code></div>
+
+<p>基本差分放大器要求四电阻精密匹配，CMRR 严重依赖电阻匹配度：</p>
+
+<table>
+  <tr><th>电阻匹配精度</th><th>等效 CMRR</th></tr>
+  <tr><td>1%</td><td>≈ 40 dB</td></tr>
+  <tr><td>0.1%</td><td>≈ 60 dB</td></tr>
+  <tr><td>0.01%</td><td>≈ 80 dB</td></tr>
+</table>
+
+<div class="card orange">
+  <div class="card-title">⚠️ 工程建议</div>
+  <p>高 CMRR 场景（如电桥传感器）应使用<strong>仪表放大器</strong>（如 AD620, INA128），内部激光修调电阻，CMRR 可达 100 dB+。普通差分电路中可用<strong>集成电阻网络</strong>（如 4 个 10 kΩ 同封装 0.01% 匹配）提升 CMRR。</p>
+</div>
+
+<h3 id="ch6-5">6.5 积分器与微分器</h3>
+
+<div class="compare-grid">
+  <div class="card">
+    <div class="card-title">积分器</div>
+    <p>R<sub>in</sub> 串联，C<sub>f</sub> 替代 R<sub>f</sub></p>
+    <div class="formula"><code>V<sub>out</sub> = −(1/R<sub>in</sub>C<sub>f</sub>)∫V<sub>in</sub>dt</code></div>
+    <p>⚠️ 纯积分器直流开环，必须并联大电阻 R<sub>f</sub> 限制低频增益</p>
+  </div>
+  <div class="card">
+    <div class="card-title">微分器</div>
+    <p>C<sub>in</sub> 串联，R<sub>f</sub> 不变</p>
+    <div class="formula"><code>V<sub>out</sub> = −R<sub>f</sub>C<sub>in</sub>·dV<sub>in</sub>/dt</code></div>
+    <p>⚠️ 高频增益无限大，必须串联小电阻 R<sub>in</sub> 限制高频增益</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="ch7">7 有源低通滤波器专题</h2>
+
+<p>这是本章的核心。有源滤波器利用运放的增益和缓冲能力，克服无源滤波器固有的<strong>负载效应</strong>和<strong>增益受限</strong>问题。</p>
+
+<h3 id="ch7-1">7.1 为什么需要"有源"滤波器？</h3>
+
+<table>
+  <tr><th>对比项</th><th>无源 RC/RLC 滤波器</th><th>有源 RC 滤波器</th></tr>
+  <tr><td>增益</td><td>≤ 1（纯衰减）</td><td>可有增益</td></tr>
+  <tr><td>负载效应</td><td>后级负载改变截止频率</td><td>运放输出低阻抗，隔离负载</td></tr>
+  <tr><td>级联</td><td>后级影响前级</td><td>各级独立设计</td></tr>
+  <tr><td>电感</td><td>低频需大电感（笨重）</td><td>无需电感</td></tr>
+  <tr><td>Q 值</td><td>受限于元件损耗</td><td>可实现高 Q（但有灵敏度代价）</td></tr>
+  <tr><td>供电</td><td>不需要</td><td>需要供电</td></tr>
+  <tr><td>噪声</td><td>仅电阻热噪声</td><td>加上运放噪声</td></tr>
+  <tr><td>频率上限</td><td>可到 GHz</td><td>受运放 GBW 限制（通常 &lt; 10 MHz）</td></tr>
+</table>
+
+<h3 id="ch7-2">7.2 滤波器逼近类型（关键分类）</h3>
+
+<p>有源低通滤波器按<strong>传递函数的数学逼近方式</strong>分类，每种逼近在通带平坦度、过渡带陡度和群延迟特性之间做不同权衡：</p>
+
+<div class="fig">
+  <svg width="600" height="300" viewBox="0 0 600 300">
+    <text x="300" y="18" font-size="14" fill="#6b7280" text-anchor="middle">四种逼近类型的幅频响应对比（归一化，4 阶）</text>
+    <!-- Axes -->
+    <line x1="60" y1="250" x2="560" y2="250" stroke="#374151" stroke-width="1.5"/>
+    <line x1="60" y1="40" x2="60" y2="250" stroke="#374151" stroke-width="1.5"/>
+    <text x="30" y="52" font-size="11" fill="#6b7280">0dB</text>
+    <text x="30" y="250" font-size="11" fill="#6b7280">−∞</text>
+    <text x="300" y="272" font-size="12" fill="#374151" text-anchor="middle">ω / ω<sub>c</sub></text>
+    <text x="300" y="286" font-size="11" fill="#6b7280" text-anchor="middle">（归一化频率）</text>
+    <!-- fc line -->
+    <line x1="200" y1="40" x2="200" y2="250" stroke="#d1d5db" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="200" y="266" font-size="11" fill="#6b7280" text-anchor="middle">1</text>
+    <text x="130" y="266" font-size="11" fill="#6b7280" text-anchor="middle">0.5</text>
+    <text x="330" y="266" font-size="11" fill="#6b7280" text-anchor="middle">2</text>
+    <text x="460" y="266" font-size="11" fill="#6b7280" text-anchor="middle">4</text>
+    <!-- Butterworth - flat in band -->
+    <path d="M60,48 C120,48 170,48 200,48 C230,50 260,70 290,120 C310,160 340,210 400,240 C440,248 500,250 560,250" fill="none" stroke="#1a56db" stroke-width="2.5"/>
+    <text x="440" y="208" font-size="12" fill="#1a56db" font-weight="bold">Butterworth</text>
+    <!-- Chebyshev - ripple in band, steeper roll-off -->
+    <path d="M60,48 C90,48 110,42 130,48 C150,54 170,42 190,48 C200,52 210,60 230,100 C260,160 300,220 360,242 C400,248 460,250 560,250" fill="none" stroke="#dc2626" stroke-width="2.5"/>
+    <text x="410" y="230" font-size="12" fill="#dc2626" font-weight="bold">Chebyshev</text>
+    <!-- Bessel - gentle roll-off -->
+    <path d="M60,48 C100,48 140,52 180,60 C200,68 230,100 260,145 C290,190 330,225 380,242 C420,248 480,250 560,250" fill="none" stroke="#16a34a" stroke-width="2.5"/>
+    <text x="400" y="255" font-size="12" fill="#16a34a" font-weight="bold">Bessel</text>
+    <!-- Elliptic - steepest, ripple both sides -->
+    <path d="M60,42 C90,48 110,38 130,48 C150,56 170,38 190,48 C200,50 210,55 225,90 C245,140 265,195 290,230 C310,238 330,232 340,238 C355,248 380,250 560,250" fill="none" stroke="#9333ea" stroke-width="2.5"/>
+    <text x="435" y="245" font-size="12" fill="#9333ea" font-weight="bold">Elliptic</text>
+  </svg>
+  <div class="fig-caption">图 7-1 四种逼近类型幅频特性对比</div>
+</div>
+
+<table>
+  <tr><th>逼近类型</th><th>通带特性</th><th>过渡带</th><th>阻带特性</th><th>群延迟</th><th>阶数需求</th><th>典型应用</th></tr>
+  <tr>
+    <td><strong>Butterworth</strong><br><span class="tag blue">最平坦</span></td>
+    <td>最大平坦幅频</td>
+    <td>中等 (−20n dB/dec)</td>
+    <td>单调下降</td>
+    <td>一般</td>
+    <td>中等</td>
+    <td>音频、通用信号处理</td>
+  </tr>
+  <tr>
+    <td><strong>Chebyshev (Type I)</strong><br><span class="tag red">等纹波</span></td>
+    <td>等幅纹波 (0.5~3 dB)</td>
+    <td>最陡（同级数）</td>
+    <td>单调下降</td>
+    <td>较差</td>
+    <td>最少</td>
+    <td>抗混叠、需陡截止</td>
+  </tr>
+  <tr>
+    <td><strong>Bessel (Thomson)</strong><br><span class="tag green">线性相位</span></td>
+    <td>幅频缓降</td>
+    <td>最缓</td>
+    <td>单调下降</td>
+    <td><strong>最平坦</strong></td>
+    <td>最多</td>
+    <td>脉冲保形、波形传输</td>
+  </tr>
+  <tr>
+    <td><strong>Elliptic (Cauer)</strong><br><span class="tag purple">双重纹波</span></td>
+    <td>等幅纹波</td>
+    <td><strong>最陡</strong></td>
+    <td>等幅纹波（有限零点）</td>
+    <td>很差</td>
+    <td>最少</td>
+    <td>通信信道、极窄过渡</td>
+  </tr>
+</table>
+
+<div class="card purple">
+  <div class="card-title">📌 如何选择逼近类型？</div>
+  <ul>
+    <li><strong>关心信号波形不失真</strong> → Bessel（群延迟最平坦，脉冲响应最好）</li>
+    <li><strong>关心通带内幅频最平坦</strong> → Butterworth（"最平坦"名副其实）</li>
+    <li><strong>关心截止最陡、通带纹波可接受</strong> → Chebyshev（同级数最窄过渡带）</li>
+    <li><strong>过渡带极窄、阻带纹波可接受</strong> → Elliptic（最极端的频率选择性）</li>
+  </ul>
+</div>
+
+<h3 id="ch7-3">7.3 一阶有源低通滤波器</h3>
+
+<p>最简单的有源低通，在反相放大器基础上将 R<sub>f</sub> 替换为 R<sub>f</sub> ∥ C<sub>f</sub>：</p>
+
+<div class="fig">
+  <svg viewBox="0 0 520 280" style="width:520px;max-width:100%">
+    <!-- Op-amp -->
+    <polygon points="265,65 405,145 265,225" fill="#f0f4ff" stroke="#1a56db" stroke-width="2.5" stroke-linejoin="round"/>
+    <text x="282" y="115" font-size="18" fill="#dc2626" font-weight="bold">−</text>
+    <text x="282" y="185" font-size="18" fill="#16a34a" font-weight="bold">+</text>
+    <!-- Supply -->
+    <line x1="335" y1="65" x2="335" y2="40" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="308" y="34" font-size="11" fill="#6b7280">+Vcc</text>
+    <line x1="335" y1="225" x2="335" y2="250" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="308" y="264" font-size="11" fill="#6b7280">−Vee</text>
+    <!-- Vin → Rin → V- -->
+    <text x="8" y="110" font-size="14" fill="#374151" font-weight="bold">Vin</text>
+    <line x1="42" y1="106" x2="68" y2="106" stroke="#374151" stroke-width="2"/>
+    <rect x="68" y="94" width="55" height="24" rx="3" fill="#fff" stroke="#374151" stroke-width="2"/>
+    <text x="95" y="111" font-size="12" fill="#374151" text-anchor="middle" font-weight="600">Rin</text>
+    <line x1="123" y1="106" x2="265" y2="106" stroke="#374151" stroke-width="2"/>
+    <!-- Junction at V- -->
+    <circle cx="205" cy="106" r="5" fill="#374151"/>
+    <!-- ===== Rf feedback path (top) ===== -->
+    <line x1="205" y1="106" x2="205" y2="36" stroke="#ea580c" stroke-width="2"/>
+    <line x1="205" y1="36" x2="230" y2="36" stroke="#ea580c" stroke-width="2"/>
+    <rect x="230" y="24" width="60" height="24" rx="3" fill="#fff" stroke="#ea580c" stroke-width="2"/>
+    <text x="260" y="41" font-size="12" fill="#ea580c" text-anchor="middle" font-weight="600">Rf</text>
+    <line x1="290" y1="36" x2="448" y2="36" stroke="#ea580c" stroke-width="2"/>
+    <line x1="448" y1="36" x2="448" y2="145" stroke="#ea580c" stroke-width="2"/>
+    <!-- ===== Cf feedback path (below Rf) ===== -->
+    <line x1="205" y1="106" x2="205" y2="72" stroke="#9333ea" stroke-width="2"/>
+    <line x1="205" y1="72" x2="330" y2="72" stroke="#9333ea" stroke-width="2"/>
+    <!-- Capacitor Cf: two vertical parallel plates -->
+    <line x1="330" y1="60" x2="330" y2="84" stroke="#9333ea" stroke-width="3"/>
+    <line x1="342" y1="60" x2="342" y2="84" stroke="#9333ea" stroke-width="3"/>
+    <text x="336" y="56" font-size="12" fill="#9333ea" text-anchor="middle" font-weight="600">Cf</text>
+    <line x1="342" y1="72" x2="462" y2="72" stroke="#9333ea" stroke-width="2"/>
+    <line x1="462" y1="72" x2="462" y2="145" stroke="#9333ea" stroke-width="2"/>
+    <!-- Output -->
+    <line x1="405" y1="145" x2="500" y2="145" stroke="#1a56db" stroke-width="2.5"/>
+    <circle cx="448" cy="145" r="4" fill="#ea580c"/>
+    <circle cx="462" cy="145" r="4" fill="#9333ea"/>
+    <text x="503" y="151" font-size="14" fill="#1a56db" font-weight="bold">Vout</text>
+    <!-- V+ to GND -->
+    <line x1="265" y1="180" x2="185" y2="180" stroke="#374151" stroke-width="2"/>
+    <line x1="185" y1="180" x2="185" y2="220" stroke="#374151" stroke-width="2"/>
+    <line x1="172" y1="220" x2="198" y2="220" stroke="#374151" stroke-width="2.5"/>
+    <line x1="176" y1="225" x2="194" y2="225" stroke="#374151" stroke-width="2"/>
+    <line x1="180" y1="230" x2="190" y2="230" stroke="#374151" stroke-width="1.5"/>
+  </svg>
+  <div class="fig-caption">图 7-2 一阶反相有源低通滤波器（Rf ∥ Cf 反馈）</div>
+</div>
+
+<div class="formula"><code>H(s) = −(R<sub>f</sub>/R<sub>in</sub>) / (1 + s·R<sub>f</sub>·C<sub>f</sub>)</code></div>
+<div class="formula"><code>f<sub>c</sub> = 1 / (2π·R<sub>f</sub>·C<sub>f</sub>)</code></div>
+<div class="formula"><code>低频增益 A<sub>v</sub> = −R<sub>f</sub>/R<sub>in</sub>，高频以 −20 dB/dec 衰减</code></div>
+
+<p><strong>一阶滤波器特性</strong>：过渡带 −20 dB/decade 衰减率，过于平缓，实际应用中常需二阶或更高阶。</p>
+
+<h3 id="ch7-4">7.4 二阶有源低通滤波器</h3>
+
+<p>二阶是实用滤波器的<strong>基本构建单元</strong>。关键参数：</p>
+
+<div class="formula"><code>H(s) = A<sub>v</sub>·ω<sub>c</sub><sup>2</sup> / (s<sup>2</sup> + (ω<sub>c</sub>/Q)·s + ω<sub>c</sub><sup>2</sup>)</code></div>
+
+<p>其中 <strong>Q</strong>（品质因数）决定了截止频率附近的响应形状：</p>
+
+<table>
+  <tr><th>Q 值</th><th>对应逼近</th><th>截止频率处特性</th></tr>
+  <tr><td>0.577 (1/√3)</td><td>Bessel</td><td>−4.7 dB，最平群延迟</td></tr>
+  <tr><td>0.707 (1/√2)</td><td>Butterworth</td><td>−3 dB，最平幅频</td></tr>
+  <tr><td>0.96 ~ 2</td><td>Chebyshev (0.5~3 dB 纹波)</td><td>有峰值，峰值 = Q·A<sub>v</sub></td></tr>
+</table>
+
+<div class="card red">
+  <div class="card-title">⚠️ Q 值过高的危险</div>
+  <p>Q > 0.707 时截止频率附近出现增益峰值；Q → ∞ 时极点落在虚轴上，电路自激振荡！<strong>实际设计中，Q 值一般不超过 2~3</strong>，且需考虑元件容差导致 Q 偏移的风险。</p>
+</div>
+
+<h4>7.4.1 Sallen-Key 拓扑</h4>
+
+<p>Sallen-Key 是最常用的二阶有源滤波器拓扑，运放接成同相放大或电压跟随器：</p>
+
+<div class="fig">
+  <svg viewBox="0 0 580 330" style="width:580px;max-width:100%">
+    <!-- Op-amp (follower) -->
+    <polygon points="370,80 490,170 370,260" fill="#f0f4ff" stroke="#1a56db" stroke-width="2.5" stroke-linejoin="round"/>
+    <text x="387" y="148" font-size="18" fill="#dc2626" font-weight="bold">−</text>
+    <text x="387" y="215" font-size="18" fill="#16a34a" font-weight="bold">+</text>
+    <!-- Supply -->
+    <line x1="430" y1="80" x2="430" y2="55" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="403" y="48" font-size="11" fill="#6b7280">+Vcc</text>
+    <line x1="430" y1="260" x2="430" y2="285" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="403" y="298" font-size="11" fill="#6b7280">−Vee</text>
+
+    <!-- ===== Signal path (left → right) ===== -->
+    <!-- Vin -->
+    <text x="8" y="130" font-size="14" fill="#374151" font-weight="bold">Vin</text>
+    <line x1="44" y1="125" x2="68" y2="125" stroke="#374151" stroke-width="2"/>
+    <!-- R1 -->
+    <rect x="68" y="113" width="60" height="24" rx="3" fill="#fff" stroke="#374151" stroke-width="2"/>
+    <text x="98" y="130" font-size="12" fill="#374151" text-anchor="middle" font-weight="600">R1</text>
+    <line x1="128" y1="125" x2="168" y2="125" stroke="#374151" stroke-width="2"/>
+    <!-- Node A -->
+    <circle cx="168" cy="125" r="5" fill="#374151"/>
+    <!-- R2 -->
+    <line x1="168" y1="125" x2="192" y2="125" stroke="#374151" stroke-width="2"/>
+    <rect x="192" y="113" width="60" height="24" rx="3" fill="#fff" stroke="#374151" stroke-width="2"/>
+    <text x="222" y="130" font-size="12" fill="#374151" text-anchor="middle" font-weight="600">R2</text>
+    <line x1="252" y1="125" x2="300" y2="125" stroke="#374151" stroke-width="2"/>
+    <!-- Node B -->
+    <circle cx="300" cy="125" r="5" fill="#16a34a"/>
+
+    <!-- Node B → V+ input -->
+    <line x1="300" y1="125" x2="300" y2="205" stroke="#16a34a" stroke-width="2"/>
+    <line x1="300" y1="205" x2="370" y2="205" stroke="#16a34a" stroke-width="2"/>
+
+    <!-- ===== C1: Node A → up → across → capacitor → across → down to output ===== -->
+    <line x1="168" y1="125" x2="168" y2="42" stroke="#9333ea" stroke-width="2"/>
+    <line x1="168" y1="42" x2="356" y2="42" stroke="#9333ea" stroke-width="2"/>
+    <!-- C1 plates (vertical = horizontal capacitor) -->
+    <line x1="356" y1="28" x2="356" y2="56" stroke="#9333ea" stroke-width="3"/>
+    <line x1="370" y1="28" x2="370" y2="56" stroke="#9333ea" stroke-width="3"/>
+    <text x="363" y="22" font-size="12" fill="#9333ea" text-anchor="middle" font-weight="600">C1</text>
+    <line x1="370" y1="42" x2="510" y2="42" stroke="#9333ea" stroke-width="2"/>
+    <line x1="510" y1="42" x2="510" y2="170" stroke="#9333ea" stroke-width="2"/>
+
+    <!-- ===== C2: Node B → down → capacitor (HORIZONTAL plates) → GND ===== -->
+    <line x1="300" y1="125" x2="300" y2="266" stroke="#9333ea" stroke-width="2"/>
+    <!-- C2 plates (horizontal = vertical capacitor) -->
+    <line x1="286" y1="266" x2="314" y2="266" stroke="#9333ea" stroke-width="3"/>
+    <line x1="286" y1="280" x2="314" y2="280" stroke="#9333ea" stroke-width="3"/>
+    <text x="324" y="278" font-size="12" fill="#9333ea" font-weight="600">C2</text>
+    <line x1="300" y1="280" x2="300" y2="300" stroke="#9333ea" stroke-width="2"/>
+    <!-- GND -->
+    <line x1="287" y1="300" x2="313" y2="300" stroke="#374151" stroke-width="2.5"/>
+    <line x1="291" y1="305" x2="309" y2="305" stroke="#374151" stroke-width="2"/>
+    <line x1="295" y1="310" x2="305" y2="310" stroke="#374151" stroke-width="1.5"/>
+
+    <!-- ===== Output & follower feedback ===== -->
+    <line x1="490" y1="170" x2="555" y2="170" stroke="#1a56db" stroke-width="2.5"/>
+    <circle cx="510" cy="170" r="5" fill="#9333ea"/>
+    <text x="558" y="176" font-size="14" fill="#1a56db" font-weight="bold">Vout</text>
+    <!-- Follower: Vout → down → left → up → V- -->
+    <line x1="510" y1="170" x2="510" y2="235" stroke="#1a56db" stroke-width="2"/>
+    <line x1="510" y1="235" x2="355" y2="235" stroke="#1a56db" stroke-width="2"/>
+    <line x1="355" y1="235" x2="355" y2="145" stroke="#1a56db" stroke-width="2"/>
+    <line x1="355" y1="145" x2="370" y2="145" stroke="#1a56db" stroke-width="2"/>
+  </svg>
+  <div class="fig-caption">图 7-3 Sallen-Key 二阶低通滤波器（单位增益配置）</div>
+</div>
+
+<p><strong>单位增益 Sallen-Key</strong>（最常用配置，运放为电压跟随器）：</p>
+<div class="formula"><code>f<sub>c</sub> = 1 / (2π·√(R<sub>1</sub>·R<sub>2</sub>·C<sub>1</sub>·C<sub>2</sub>))</code></div>
+<div class="formula"><code>Q = √(R<sub>1</sub>·R<sub>2</sub>·C<sub>1</sub>·C<sub>2</sub>) / (R<sub>1</sub>·C<sub>1</sub> + R<sub>2</sub>·C<sub>1</sub>)</code></div>
+
+<p>若取 <strong>R<sub>1</sub> = R<sub>2</sub> = R</strong>，则简化为：</p>
+<div class="formula"><code>f<sub>c</sub> = 1 / (2π·R·√(C<sub>1</sub>·C<sub>2</sub>)) &nbsp;&nbsp;;&nbsp;&nbsp; Q = √(C<sub>2</sub>/C<sub>1</sub>) / 2</code></div>
+
+<div class="card blue">
+  <div class="card-title">💡 等电阻设计的元件值关系</div>
+  <p>当 R<sub>1</sub> = R<sub>2</sub> = R 时：</p>
+  <ul>
+    <li>Butterworth (Q = 0.707)：C<sub>2</sub>/C<sub>1</sub> = 2 → 取 C<sub>1</sub> = C, C<sub>2</sub> = 2C</li>
+    <li>Bessel (Q = 0.577)：C<sub>2</sub>/C<sub>1</sub> ≈ 1.33 → 取 C<sub>1</sub> = 3C, C<sub>2</sub> = 4C (近似)</li>
+    <li>0.5 dB Chebyshev (Q ≈ 0.864)：C<sub>2</sub>/C<sub>1</sub> ≈ 2.99</li>
+  </ul>
+</div>
+
+<h4>7.4.2 多路反馈 (MFB) 拓扑</h4>
+
+<p>多路反馈 (Multiple Feedback) 拓扑，运放工作在反相模式，所有反馈路径汇聚到反相输入端：</p>
+
+<div class="card">
+  <div class="card-title">MFB 二阶低通滤波器传递函数</div>
+  <div class="formula"><code>H(s) = −(1/R<sub>1</sub>R<sub>3</sub>C<sub>1</sub>C<sub>2</sub>) / (s<sup>2</sup> + s/(R<sub>2</sub>C<sub>1</sub>) + 1/(R<sub>1</sub>R<sub>3</sub>C<sub>1</sub>C<sub>2</sub>))</code></div>
+  <p>特点：反相输出、元件灵敏度较低、更适合高 Q 应用。</p>
+</div>
+
+<h3 id="ch7-5">7.5 Sallen-Key vs MFB 对比</h3>
+
+<table>
+  <tr><th>特性</th><th>Sallen-Key</th><th>MFB</th></tr>
+  <tr><td>运放配置</td><td>同相/跟随器</td><td>反相</td></tr>
+  <tr><td>输出相位</td><td>同相</td><td>反相</td></tr>
+  <tr><td>增益调整</td><td>可通过反馈电阻调整（但影响 Q）</td><td>独立调整增益和 Q</td></tr>
+  <tr><td>元件灵敏度</td><td>较高（Q 对元件容差敏感）</td><td>较低</td></tr>
+  <tr><td>高 Q 适用性</td><td>Q > 10 不推荐</td><td>更适合高 Q</td></tr>
+  <tr><td>最小元件数</td><td>少（单位增益时无反馈电阻）</td><td>多（始终需 5 个元件）</td></tr>
+  <tr><td>直流通路</td><td>有（运放输入有偏置通路）</td><td>有（通过 R<sub>1</sub>、R<sub>3</sub>）</td></tr>
+  <tr><td>CMRR 影响</td><td>有（共模信号加到输入端）</td><td>无（虚地点）</td></tr>
+  <tr><td>推荐场景</td><td>低 Q、Butterworth、通用</td><td>高 Q、Chebyshev、精密</td></tr>
+</table>
+
+<h3 id="ch7-6">7.6 高阶滤波器：级联设计</h3>
+
+<p>实际滤波器通常需要 4 阶、6 阶甚至更高阶来获得足够的阻带衰减。<strong>级联法</strong>是将高阶传递函数分解为若干二阶节（和可选一个一阶节），每节用独立运放实现：</p>
+
+<div class="formula"><code>n 阶滤波器 = ⌊n/2⌋ 个二阶节 + (n 为奇数时) 1 个一阶节</code></div>
+
+<p>每节有独立的 f<sub>c</sub> 和 Q 值，由<strong>滤波器系数表</strong>决定。以下为 Butterworth 低通归一化系数（ω<sub>c</sub> = 1 rad/s）：</p>
+
+<table>
+  <tr><th>阶数 n</th><th>节序号</th><th>f<sub>n</sub> (归一化频率)</th><th>Q</th><th>−3 dB 处衰减率</th></tr>
+  <tr><td>2</td><td>1</td><td>1.000</td><td>0.707</td><td>−40 dB/dec</td></tr>
+  <tr><td rowspan="2">4</td><td>1</td><td>1.000</td><td>0.541</td><td rowspan="2">−80 dB/dec</td></tr>
+  <tr><td>2</td><td>1.000</td><td>1.306</td></tr>
+  <tr><td rowspan="3">6</td><td>1</td><td>1.000</td><td>0.518</td><td rowspan="3">−120 dB/dec</td></tr>
+  <tr><td>2</td><td>1.000</td><td>0.707</td></tr>
+  <tr><td>3</td><td>1.000</td><td>2.000</td></tr>
+</table>
+
+<div class="card orange">
+  <div class="card-title">⚠️ 级联顺序原则</div>
+  <p>低 Q 节放前面，高 Q 节放后面。原因：高 Q 节在截止频率附近有增益峰值，放在后面可以避免前级被峰值信号驱动到饱和。同时，高 Q 节对元件容差更敏感，放在后级有利于减小前级累积误差的影响。</p>
+</div>
+
+<h3 id="ch7-7">7.7 设计实战：从需求到电路</h3>
+
+<p>下面通过一个完整的设计实例，演示有源低通滤波器的系统设计流程。</p>
+
+<div class="card blue">
+  <div class="card-title">📋 设计需求</div>
+  <ul>
+    <li>信号频率范围：DC ~ 10 kHz</li>
+    <li>截止频率 f<sub>c</sub> = 10 kHz (−3 dB)</li>
+    <li>通带最大平坦（选用 Butterworth 逼近）</li>
+    <li>20 kHz 处衰减 ≥ 30 dB</li>
+    <li>通带增益 = 1（单位增益）</li>
+    <li>单电源 5V 或双电源 ±5V</li>
+  </ul>
+</div>
+
+<div class="steps">
+  <div class="step">
+    <strong>Step 1：确定所需阶数</strong>
+    <p>Butterworth 滤波器在 ω 处的衰减量：A = 20·n·log<sub>10</sub>(ω/ω<sub>c</sub>) dB</p>
+    <p>在 f = 20 kHz（即 ω/ω<sub>c</sub> = 2）处：</p>
+    <ul>
+      <li>2 阶：A = 20 × 2 × log<sub>10</sub>(2) = 12 dB（不够）</li>
+      <li>4 阶：A = 20 × 4 × log<sub>10</sub>(2) = 24 dB（不够）</li>
+      <li>5 阶：A = 20 × 5 × log<sub>10</sub>(2) = 30 dB ✓（刚好满足）</li>
+      <li>6 阶：A = 20 × 6 × log<sub>10</sub>(2) = 36 dB（有余量，推荐）</li>
+    </ul>
+    <p><strong>选择 5 阶 Butterworth</strong>（1 个一阶节 + 2 个二阶节），或 6 阶（3 个二阶节）留裕量。本例取 <strong>4 阶</strong>重新评估：24 dB 不够，但若实际要求放宽到 24 dB，4 阶也可接受。为了清晰演示，我们按 <strong>4 阶 Butterworth</strong> 设计。</p>
+  </div>
+
+  <div class="step">
+    <strong>Step 2：查表获取各节参数</strong>
+    <p>4 阶 Butterworth 分解为 2 个二阶节：</p>
+    <table>
+      <tr><th>节</th><th>f<sub>n</sub></th><th>Q</th></tr>
+      <tr><td>第 1 节</td><td>1.000 × f<sub>c</sub> = 10 kHz</td><td>0.541</td></tr>
+      <tr><td>第 2 节</td><td>1.000 × f<sub>c</sub> = 10 kHz</td><td>1.306</td></tr>
+    </table>
+  </div>
+
+  <div class="step">
+    <strong>Step 3：选择拓扑</strong>
+    <p>Butterworth、Q ≤ 1.306，Sallen-Key 完全胜任，且元件少、同相输出。</p>
+    <p>两个二阶节均采用 <strong>Sallen-Key 单位增益</strong>配置。</p>
+  </div>
+
+  <div class="step">
+    <strong>Step 4：计算元件值（第 1 节：Q = 0.541）</strong>
+    <p>取等电阻 R<sub>1</sub> = R<sub>2</sub> = R，先选 <strong>R = 10 kΩ</strong>（标准值，噪声和功耗平衡）：</p>
+    <div class="formula"><code>Q = √(C<sub>2</sub>/C<sub>1</sub>) / 2 &nbsp;→&nbsp; C<sub>2</sub>/C<sub>1</sub> = 4Q<sup>2</sup> = 4 × 0.541<sup>2</sup> = 1.171</code></div>
+    <div class="formula"><code>f<sub>c</sub> = 1 / (2π·R·√(C<sub>1</sub>·C<sub>2</sub>)) &nbsp;→&nbsp; √(C<sub>1</sub>·C<sub>2</sub>) = 1/(2π·R·f<sub>c</sub>) = 1/(2π×10k×10k) = 1.592 nF</code></div>
+    <p>由 C<sub>2</sub> = 1.171·C<sub>1</sub>，代入 √(C<sub>1</sub>·C<sub>2</sub>) = √(1.171·C<sub>1</sub><sup>2</sup>) = C<sub>1</sub>·√1.171：</p>
+    <div class="formula"><code>C<sub>1</sub> = 1.592 nF / √1.171 = 1.471 nF ≈ <strong>1.5 nF</strong> (标准值)</code></div>
+    <div class="formula"><code>C<sub>2</sub> = 1.171 × 1.471 nF = 1.723 nF ≈ <strong>1.8 nF</strong> (标准值)</code></div>
+    <p>验证：f<sub>c</sub> = 1/(2π×10k×√(1.5n×1.8n)) = 1/(2π×10k×1.643n) ≈ <strong>9.69 kHz</strong>（偏差 3%，可接受）</p>
+  </div>
+
+  <div class="step">
+    <strong>Step 5：计算元件值（第 2 节：Q = 1.306）</strong>
+    <p>同样取 R = 10 kΩ：</p>
+    <div class="formula"><code>C<sub>2</sub>/C<sub>1</sub> = 4Q<sup>2</sup> = 4 × 1.306<sup>2</sup> = 6.822</code></div>
+    <div class="formula"><code>√(C<sub>1</sub>·C<sub>2</sub>) = 1.592 nF (同上)</code></div>
+    <div class="formula"><code>C<sub>1</sub> = 1.592 nF / √6.822 = 0.609 nF ≈ <strong>620 pF</strong> (标准值)</code></div>
+    <div class="formula"><code>C<sub>2</sub> = 6.822 × 0.609 nF = 4.154 nF ≈ <strong>4.3 nF</strong> (或 3.9 nF + 并联小电容)</code></div>
+    <p>验证：f<sub>c</sub> = 1/(2π×10k×√(620p×4300p)) ≈ <strong>9.77 kHz</strong>（偏差 2.3%，可接受）</p>
+  </div>
+
+  <div class="step">
+    <strong>Step 6：运放选型</strong>
+    <p>滤波器对运放的要求：</p>
+    <ul>
+      <li><strong>GBW</strong>：≥ 10 × A<sub>CL</sub> × f<sub>c</sub> = 10 × 1 × 10k = 100 kHz（非常宽裕）</li>
+      <li><strong>SR</strong>：FPBW = SR/(2π·V<sub>pp</sub>)，若 V<sub>pp</sub> = 4V, FPBW ≥ 10 kHz → SR ≥ 2π×10k×4 = 0.25 V/μs</li>
+      <li><strong>输入偏置</strong>：双电源时 V+ 端有 R<sub>2</sub> 到地通路，OK</li>
+      <li><strong>推荐</strong>：TL072（GBW 3 MHz, SR 13 V/μs, 双运放正好两级级联）</li>
+    </ul>
+  </div>
+
+  <div class="step">
+    <strong>Step 7：仿真验证与调优</strong>
+    <p>在 SPICE 中仿真，重点检查：</p>
+    <ul>
+      <li>−3 dB 频率是否准确（标准值替代引入偏差）</li>
+      <li>通带是否有意外峰值（Q 偏高时可能）</li>
+      <li>阻带衰减是否达标</li>
+      <li>大信号输出时是否因 SR 限制失真</li>
+      <li>元件 ±5% 容差下，Monte Carlo 仿真确认 Q 偏移不导致振荡</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card green">
+  <div class="card-title">✅ 设计结果汇总</div>
+  <table>
+    <tr><th>参数</th><th>第 1 节</th><th>第 2 节</th></tr>
+    <tr><td>拓扑</td><td>Sallen-Key 单位增益</td><td>Sallen-Key 单位增益</td></tr>
+    <tr><td>R<sub>1</sub> = R<sub>2</sub></td><td>10 kΩ</td><td>10 kΩ</td></tr>
+    <tr><td>C<sub>1</sub></td><td>1.5 nF</td><td>620 pF</td></tr>
+    <tr><td>C<sub>2</sub></td><td>1.8 nF</td><td>4.3 nF</td></tr>
+    <tr><td>Q</td><td>0.541</td><td>1.306</td></tr>
+    <tr><td>f<sub>c</sub> (实际)</td><td>~9.69 kHz</td><td>~9.77 kHz</td></tr>
+    <tr><td>运放</td><td colspan="2">TL072（一片双运放）</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="ch8">8 常见运放选型速查</h2>
+
+<table>
+  <tr><th>型号</th><th>类型</th><th>GBW</th><th>SR</th><th>Vos</th><th>Ib</th><th>供电</th><th>特点</th></tr>
+  <tr><td>LM358</td><td>通用双</td><td>1 MHz</td><td>0.5 V/μs</td><td>2 mV</td><td>45 nA</td><td>3~32V</td><td>最便宜通用，单双电源</td></tr>
+  <tr><td>LM324</td><td>通用四</td><td>1 MHz</td><td>0.5 V/μs</td><td>3 mV</td><td>45 nA</td><td>3~32V</td><td>四运放，成本极低</td></tr>
+  <tr><td>TL072</td><td>JFET双</td><td>3 MHz</td><td>13 V/μs</td><td>3 mV</td><td>65 pA</td><td>±5~±18V</td><td>音频标配，噪声低</td></tr>
+  <tr><td>NE5532</td><td>低噪声双</td><td>10 MHz</td><td>9 V/μs</td><td>0.5 mV</td><td>200 nA</td><td>±3~±22V</td><td>音频经典，超低噪声</td></tr>
+  <tr><td>OP07</td><td>高精度</td><td>0.6 MHz</td><td>0.3 V/μs</td><td>75 μV</td><td>2 nA</td><td>±3~±18V</td><td>超低失调，仪器级</td></tr>
+  <tr><td>OPA2134</td><td>JFET双</td><td>8 MHz</td><td>20 V/μs</td><td>0.5 mV</td><td>5 pA</td><td>±2.5~±18V</td><td>高端音频，FET输入</td></tr>
+  <tr><td>MCP6001</td><td>低功耗</td><td>1 MHz</td><td>0.6 V/μs</td><td>1 mV</td><td>1 pA</td><td>1.8~6V</td><td>单电源，Iq=100μA</td></tr>
+  <tr><td>AD8628</td><td>斩波双</td><td>2.5 MHz</td><td>1 V/μs</td><td>1 μV</td><td>30 pA</td><td>2.7~6V</td><td>零漂移，超低Vos</td></tr>
+  <tr><td>AD811</td><td>电流反馈</td><td>140 MHz</td><td>2500 V/μs</td><td>0.5 mV</td><td>5 μA</td><td>±4.5~±18V</td><td>视频/高速，CFA</td></tr>
+  <tr><td>OPA454</td><td>高压</td><td>2.5 MHz</td><td>13 V/μs</td><td>1 mV</td><td>30 pA</td><td>±5~±50V</td><td>100V供电，高压驱动</td></tr>
+</table>
+
+<div class="card blue" style="margin-top: 40px;">
+  <div class="card-title">📚 参考资源</div>
+  <ul>
+    <li>TI Application Note: <em>Active Low-Pass Filter Design</em> (SLOA049B)</li>
+    <li>Analog Devices: <em>Op Amp Applications Handbook</em> (Walt Jung)</li>
+    <li>TI: <em>Op Amps for Everyone</em> (Ron Mancini, SLOD006B)</li>
+    <li>Arthur B. Williams, Fred J. Taylor: <em>Electronic Filter Design Handbook</em></li>
+    <li>在线工具：TI Filter Design Tool (webench.ti.com)、Analog Devices Filter Wizard</li>
+  </ul>
+</div>
+
+<div style="text-align:center; margin-top:48px; padding:24px; color:var(--gray-500); font-size:13px; border-top:1px solid var(--gray-200);">
+  运算放大器全面指南 · 2026 · 由 AI 辅助生成，仅供学习参考
+</div>
+
+</div><!-- .main -->
+
+<script>
+// Sidebar active state on scroll
+const sections = document.querySelectorAll('h2[id], h3[id]');
+const navLinks = document.querySelectorAll('.sidebar a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(a => a.classList.remove('active'));
+      const link = document.querySelector(`.sidebar a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

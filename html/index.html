@@ -48,7 +48,7 @@
   <h1>📚 AE 产品知识文档集</h1>
   <div class="subtitle">覆盖光通信 · 无线通信 · 工业&汽车 · ADC · 电源管理 五大产品线的完整技术培训资料</div>
   <div class="stat-row">
-    <div class="stat-item"><div class="num">17</div><div class="label">产品文档</div></div>
+    <div class="stat-item"><div class="num">22</div><div class="label">产品文档</div></div>
     <div class="stat-item"><div class="num">5</div><div class="label">产品线</div></div>
     <div class="stat-item"><div class="num">9+</div><div class="label">章节/文档</div></div>
     <div class="stat-item"><div class="num">SVG</div><div class="label">交互框图</div></div>
@@ -149,6 +149,40 @@
         <span class="tag tag-blue">112G/224G</span>
         <span class="tag tag-blue">PAM4</span>
         <span class="tag tag-blue">UCIe</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="01_光通信/06_光模块工作原理.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🔦</div>
+      <h3>光模块工作原理详解</h3>
+      <div class="eng">Optical Transceiver Module</div>
+    </div>
+    <div class="card-body">
+      <p>光电互转核心器件，6 大子模块（TOSA/ROSA/oDSP/Mux-Demux/MCU/PMIC）详解，电口+光口指标与测试方法全覆盖</p>
+      <div class="tags">
+        <span class="tag tag-blue">10G~800G</span>
+        <span class="tag tag-blue">NRZ/PAM4</span>
+        <span class="tag tag-blue">CMIS/SFF MSA</span>
+        <span class="tag tag-blue">电口+光口测试</span>
+      </div>
+    </div>
+  </a>
+  <a href="01_光通信/07_PAM4与NRZ调制技术.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">📈</div>
+      <h3>PAM4 与 NRZ 调制技术</h3>
+      <div class="eng">4-Level PAM vs Non-Return-to-Zero</div>
+    </div>
+    <div class="card-body">
+      <p>高速串行通信调制技术基石，NRZ 二电平 vs PAM4 四电平（Gray 编码），含 DAC/ADC/FFE/DFE/MLSD/KP4 FEC 全链路 DSP，TDECQ/BERT/眼图测试方法</p>
+      <div class="tags">
+        <span class="tag tag-blue">PAM4/NRZ</span>
+        <span class="tag tag-blue">Gray 编码</span>
+        <span class="tag tag-blue">KP4 FEC</span>
+        <span class="tag tag-blue">DSP 均衡</span>
+        <span class="tag tag-blue">TDECQ</span>
       </div>
     </div>
   </a>
@@ -361,6 +395,43 @@
         <span class="tag tag-green">升降压</span>
         <span class="tag tag-green">反相输出</span>
         <span class="tag tag-green">四开关</span>
+      </div>
+    </div>
+  </a>
+</div>
+
+<!-- ═══════════ 通信协议 ═══════════ -->
+<h2 class="section-title" style="color:#7c3aed;border-color:#7c3aed;">🔌 六、通信协议</h2>
+<div class="card-grid">
+
+  <a href="06_通信协议/01_MDIO通信协议.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🔌</div>
+      <h3>MDIO 通信协议</h3>
+      <div class="eng">Management Data Input/Output (IEEE 802.3 Clause 22/45)</div>
+    </div>
+    <div class="card-body">
+      <p>以太网 PHY 管理总线标准，两线串行（MDC+MDIO），主从架构 STA+MMD，Clause 22（32×32 寄存器）/ Clause 45（扩展至 65536 寄存器），支持 10M~400G 全速率 PHY 配置与状态管理</p>
+      <div class="tags">
+        <span class="tag tag-blue">IEEE 802.3</span>
+        <span class="tag tag-blue">Clause 22/45</span>
+        <span class="tag tag-blue">2.5 MHz</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="06_通信协议/02_I2C扩展PHY管理协议.html" class="product-card">
+    <div class="card-top">
+      <div class="icon">🌊</div>
+      <h3>I2C 扩展 PHY 管理协议</h3>
+      <div class="eng">I2C-based PHY Management (5-bit PHY_AD + 21-bit Addr + 16-bit Data)</div>
+    </div>
+    <div class="card-body">
+      <p>标准 I2C 物理层 + 自定义应用层，用于 PHY/SerDes/收发器寄存器管理。5-bit PHY 地址 + 21-bit 寄存器地址 + 16-bit 数据，支持 BURST 突发模式，可与 MDIO 互为替代方案</p>
+      <div class="tags">
+        <span class="tag tag-green">I2C 物理层</span>
+        <span class="tag tag-green">21-bit 地址</span>
+        <span class="tag tag-green">BURST</span>
       </div>
     </div>
   </a>

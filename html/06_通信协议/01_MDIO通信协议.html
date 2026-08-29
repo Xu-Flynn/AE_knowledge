@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MDIO 通信协议详解 — AE 知识文档</title>
+<style>
+  :root {
+    --primary: #7c3aed; --primary-dark: #5b21b6; --accent: #e74c3c;
+    --accent2: #0891b2; --bg: #f8f9fa; --card: #ffffff;
+    --border: #dee2e6; --text: #212529; --text-muted: #6c757d;
+    --code-bg: #f1f3f5; --highlight: #fff3cd;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .hero { background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #0891b2 100%); color: white; padding: 52px 40px 42px; text-align: center; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; }
+  .hero .subtitle { margin-top: 10px; font-size: 1.05rem; opacity: 0.85; }
+  .hero .badge-row { display: flex; justify-content: center; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+  .hero .badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); padding: 5px 16px; border-radius: 20px; font-size: 0.85rem; }
+  .nav { background: white; border-bottom: 2px solid var(--primary); padding: 0 40px; display: flex; gap: 0; overflow-x: auto; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .nav a { padding: 14px 18px; text-decoration: none; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .nav a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+  .card-header { background: linear-gradient(90deg, #7c3aed11, #7c3aed05); border-bottom: 2px solid var(--primary); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .card-header .icon { font-size: 1.4rem; }
+  .card-header h2 { font-size: 1.2rem; color: var(--primary-dark); font-weight: 700; }
+  .card-header .section-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 24px; }
+  .card-header.deep { background: linear-gradient(90deg, #fef3c7, #fffbeb); border-bottom: 2px solid #f59e0b; }
+  .card-header.deep h2 { color: #92400e; }
+  .card-header.deep .section-no { background: #f59e0b; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: linear-gradient(90deg, var(--primary), #6d28d9); color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fc; }
+  tr:hover td { background: #ede9fe; }
+  .diagram-container { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center; }
+  .diagram-title { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 8px; font-weight: 600; }
+  .info-box { border-left: 4px solid var(--primary); background: #f5f3ff; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .warn-box { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .danger-box { border-left: 4px solid var(--accent); background: #fff5f5; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .success-box { border-left: 4px solid var(--accent2); background: #ecfeff; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .metric-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+  .metric-header { background: linear-gradient(90deg, #5b21b6, #7c3aed); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-header h4 { font-size: 0.95rem; }
+  .metric-header .metric-abbr { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
+  .metric-body { padding: 16px; }
+  .metric-row { display: grid; grid-template-columns: 130px 1fr; gap: 8px; margin: 6px 0; font-size: 0.88rem; }
+  .metric-label { color: var(--text-muted); font-weight: 600; }
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin: 12px 0; padding: 12px; background: #f8f9fc; border-radius: 8px; align-items: flex-start; }
+  .step-no { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-content h5 { font-size: 0.9rem; color: var(--primary-dark); margin-bottom: 4px; }
+  .step-content p { font-size: 0.88rem; color: var(--text-muted); }
+  .caution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .caution-item { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; }
+  .caution-item .ci-title { font-weight: 700; color: #b45309; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .caution-item p { font-size: 0.85rem; color: #78350f; }
+  .formula { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 18px; font-family: 'Courier New', monospace; font-size: 0.95rem; margin: 10px 0; text-align: center; letter-spacing: 0.5px; }
+  .formula-inline { background: var(--code-bg); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.92em; }
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin: 2px; }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-red { background: #fee2e2; color: #991b1b; }
+  .chip-green { background: #dcfce7; color: #166534; }
+  .chip-yellow { background: #fef9c3; color: #92400e; }
+  .chip-purple { background: #ede9fe; color: #5b21b6; }
+  .chip-gray { background: #f1f5f9; color: #475569; }
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .compare-grid.tri { grid-template-columns: 1fr 1fr 1fr; }
+  .compare-col { border-radius: 8px; padding: 18px; }
+  .compare-col.blue { background: #eff6ff; border: 2px solid #2563eb; }
+  .compare-col.purple { background: #f5f3ff; border: 2px solid var(--primary); }
+  .compare-col.green { background: #f0fdf4; border: 2px solid #16a34a; }
+  .compare-col.red { background: #fff5f5; border: 2px solid var(--accent); }
+  .compare-col h3 { font-size: 1rem; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid currentColor; }
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.82rem; padding: 28px; border-top: 1px solid var(--border); margin-top: 20px; }
+  section { margin-bottom: 10px; }
+  p { margin: 8px 0; }
+  h4 { color: var(--primary-dark); margin: 14px 0 6px; font-size: 0.95rem; }
+  h5 { color: #6d28d9; margin: 10px 0 4px; font-size: 0.9rem; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 5px 0; }
+  li::marker { color: var(--primary); }
+  blockquote { background: #fefce8; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 0 6px 6px 0; margin: 8px 0; }
+  code { background: var(--code-bg); padding: 1px 6px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 0.9em; color: #be185d; }
+  .bit-frame { font-family: 'Courier New', monospace; font-size: 0.82rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin: 10px 0; overflow-x: auto; line-height: 1.5; }
+  @media (max-width: 700px) { .compare-grid, .compare-grid.tri, .caution-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 1.5rem; } .container { padding: 20px 14px 40px; } }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>🔌 MDIO 通信协议详解</h1>
+  <div class="subtitle">Management Data Input/Output (IEEE 802.3 Clause 22 / Clause 45) — 以太网 PHY 芯片管理总线标准</div>
+  <div class="badge-row">
+    <span class="badge">📡 两线串行总线</span>
+    <span class="badge">⚡ MDC ≤ 2.5 MHz</span>
+    <span class="badge">🏗️ 主从架构 STA+MMD</span>
+    <span class="badge">📖 Clause 22 / 45 双标准</span>
+    <span class="badge">🔢 32 PHY × 32/65536 寄存器</span>
+    <span class="badge">🌐 IEEE 802.3 标准</span>
+  </div>
+</div>
+
+<nav class="nav">
+  <a href="#sec1">一、背景与定位</a>
+  <a href="#sec2">二、工作原理</a>
+  <a href="#sec2b">🔬 深度解析</a>
+  <a href="#sec3">三、电路框图</a>
+  <a href="#sec4">四、核心对比</a>
+  <a href="#sec5">五、核心指标</a>
+  <a href="#sec6">六、影响因素</a>
+  <a href="#sec7">七、测试方法</a>
+  <a href="#sec8">八、注意事项</a>
+  <a href="#sec9">九、选型指南</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ 第一章 ═══════════ -->
+<section id="sec1">
+  <div class="card">
+    <div class="card-header"><div class="section-no">1</div><div class="icon">📖</div><h2>背景与应用定位</h2></div>
+    <div class="card-body">
+      <p><strong>MDIO（Management Data Input/Output，管理数据输入/输出）</strong>是一种两线串行总线协议，由 IEEE 802.3 标准定义，专门用于以太网中<strong>站管理实体（STA）对物理层芯片（PHY）的寄存器进行读写管理</strong>。它是以太网系统中 MAC 与 PHY 之间不可或缺的"管理通道"——数据通道（MII/GMII/RGMII/XGMII 等）负责以太网帧的收发，而 MDIO 负责配置、状态查询与控制。</p>
+
+      <div class="info-box">
+        <strong>一句话定位：</strong>MDIO 是以太网 PHY 芯片的"配置与诊断总线"——没有它，MAC 就无法知道 PHY 是否链路连通、无法协商速率、无法读取错误计数，也无法完成上电初始化。
+      </div>
+
+      <div class="compare-grid" style="margin-top:16px;">
+        <div class="compare-col purple">
+          <h3>📌 协议定位</h3>
+          <p><strong>标准来源：</strong>IEEE 802.3 标准。Clause 22（802.3u-1995）定义原始协议；Clause 45（802.3ae-2002）定义增强扩展协议。</p>
+          <p><strong>总线性质：</strong>两线串行、同步、主从（单主多从）、半双工。</p>
+          <p><strong>物理层：</strong>仅 2 根信号线——MDC（时钟）+ MDIO（双向数据）。</p>
+          <p><strong>别称：</strong>MIIM（MII Management Interface）、SMI（Serial Management Interface，STM32 等厂商叫法）、Clause 22/45 接口。</p>
+        </div>
+        <div class="compare-col blue">
+          <h3>🎯 典型应用场景</h3>
+          <ul>
+            <li><strong>以太网 PHY 管理</strong>：10M/100M/1G/2.5G/5G/10G/25G/40G/100G/400G 全速率 PHY 的寄存器配置与状态读取</li>
+            <li><strong>交换芯片（Switch）</strong>：SoC/CPU 通过 MDIO 总线管理片上/外挂多端口 PHY</li>
+            <li><strong>光模块管理</strong>：部分 SFP+/QSFP+ 内部 PHY 寄存器（注：模块 EEPROM 通常走 I2C，但 PHY 管理走 MDIO）</li>
+            <li><strong>车载以太网</strong>：100BASE-T1 / 1000BASE-T1 / MultiGBASE-T1 PHY 配置</li>
+            <li><strong>工业以太网</strong>：EtherCAT/IP PHY、TSN 节点 PHY 的实时状态监控</li>
+            <li><strong>背板以太网</strong>：1000BASE-KX / 10GBASE-KR 等背板 PHY 管理</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:20px;">MDIO 在以太网协议栈中的位置</h4>
+      <div class="diagram-title">图 1-1 | MDIO 与数据通道在 MAC-PHY 架构中的分工</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 820 280" width="820" height="280" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#333"/></marker>
+            <marker id="arr1r" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#e74c3c"/></marker>
+            <marker id="arr1p" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#7c3aed"/></marker>
+          </defs>
+          <!-- CPU/MAC block -->
+          <rect x="20" y="40" width="180" height="180" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="110" y="62" fill="#5b21b6" font-size="13" font-weight="700" text-anchor="middle">CPU / SoC</text>
+          <line x1="40" y1="72" x2="180" y2="72" stroke="#7c3aed" stroke-width="1" stroke-dasharray="3,2"/>
+          <rect x="45" y="82" width="130" height="48" rx="6" fill="#c4b5fd" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="110" y="102" fill="#4c1d95" font-size="11" font-weight="700" text-anchor="middle">MAC 控制器</text>
+          <text x="110" y="118" fill="#5b21b6" font-size="9" text-anchor="middle">(Media Access Control)</text>
+          <rect x="45" y="142" width="130" height="48" rx="6" fill="#a78bfa" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="110" y="162" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">STA</text>
+          <text x="110" y="178" fill="#f5f3ff" font-size="9" text-anchor="middle">Station Management Entity</text>
+          <text x="110" y="210" fill="#5b21b6" font-size="8" font-style="italic" text-anchor="middle">MDIO 主机</text>
+
+          <!-- Data path (MII/GMII/RGMII) -->
+          <rect x="300" y="60" width="200" height="50" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+          <text x="400" y="82" fill="#1e40af" font-size="12" font-weight="700" text-anchor="middle">数据通道</text>
+          <text x="400" y="98" fill="#1e40af" font-size="9" text-anchor="middle">MII / GMII / RGMII / XGMII</text>
+
+          <!-- MDIO path -->
+          <rect x="300" y="160" width="200" height="50" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <text x="400" y="182" fill="#92400e" font-size="12" font-weight="700" text-anchor="middle">管理通道</text>
+          <text x="400" y="198" fill="#92400e" font-size="9" text-anchor="middle">MDIO (MDC + MDIO)</text>
+
+          <!-- PHY block -->
+          <rect x="600" y="40" width="200" height="180" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+          <text x="700" y="62" fill="#166534" font-size="13" font-weight="700" text-anchor="middle">PHY 芯片</text>
+          <line x1="620" y1="72" x2="780" y2="72" stroke="#16a34a" stroke-width="1" stroke-dasharray="3,2"/>
+          <rect x="625" y="82" width="150" height="48" rx="6" fill="#86efac" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="700" y="102" fill="#14532d" font-size="11" font-weight="700" text-anchor="middle">PCS / PMA / PMD</text>
+          <text x="700" y="118" fill="#166534" font-size="9" text-anchor="middle">物理层编解码</text>
+          <rect x="625" y="142" width="150" height="48" rx="6" fill="#4ade80" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="700" y="162" fill="#14532d" font-size="11" font-weight="700" text-anchor="middle">MMD</text>
+          <text x="700" y="178" fill="#14532d" font-size="9" text-anchor="middle">管理接口 + 寄存器</text>
+          <text x="700" y="210" fill="#166534" font-size="8" font-style="italic" text-anchor="middle">MDIO 从机</text>
+
+          <!-- Arrows: data path -->
+          <line x1="175" y1="95" x2="295" y2="80" stroke="#2563eb" stroke-width="2" marker-end="url(#arr1)"/>
+          <line x1="295" y1="95" x2="175" y2="110" stroke="#2563eb" stroke-width="2" marker-end="url(#arr1)"/>
+          <text x="235" y="78" fill="#1e40af" font-size="9" font-weight="700">TX</text>
+          <text x="235" y="118" fill="#1e40af" font-size="9" font-weight="700">RX</text>
+          <line x1="505" y1="80" x2="620" y2="95" stroke="#2563eb" stroke-width="2" marker-end="url(#arr1)"/>
+          <line x1="620" y1="110" x2="505" y2="95" stroke="#2563eb" stroke-width="2" marker-end="url(#arr1)"/>
+
+          <!-- Arrows: MDIO path -->
+          <line x1="175" y1="170" x2="295" y2="180" stroke="#f59e0b" stroke-width="2" marker-end="url(#arr1)"/>
+          <line x1="295" y1="190" x2="175" y2="180" stroke="#f59e0b" stroke-width="2" marker-end="url(#arr1)"/>
+          <text x="235" y="168" fill="#92400e" font-size="9" font-weight="700">写</text>
+          <text x="235" y="205" fill="#92400e" font-size="9" font-weight="700">读</text>
+          <line x1="505" y1="180" x2="620" y2="170" stroke="#f59e0b" stroke-width="2" marker-end="url(#arr1)"/>
+          <line x1="620" y1="180" x2="505" y2="190" stroke="#f59e0b" stroke-width="2" marker-end="url(#arr1)"/>
+
+          <!-- Legend -->
+          <text x="410" y="255" fill="#666" font-size="9" text-anchor="middle">数据通道负责以太网帧收发 | 管理通道负责寄存器配置与状态查询</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:20px;">协议发展历史</h4>
+      <table>
+        <thead><tr><th>年代</th><th>标准</th><th>章节</th><th>关键变化</th></tr></thead>
+        <tbody>
+          <tr><td>1995</td><td>IEEE 802.3u</td><td>Clause 22</td><td>定义原始 MDIO 协议，支持 10/100M PHY，5 位 PHY 地址 + 5 位寄存器地址（32×32）</td></tr>
+          <tr><td>1998</td><td>IEEE 802.3z</td><td>Clause 22 扩展</td><td>千兆以太网（1000BASE-X）沿用 Clause 22，新增寄存器 9/10 用于 1000BASE-T</td></tr>
+          <tr><td>2002</td><td>IEEE 802.3ae</td><td>Clause 45</td><td><strong>重大扩展</strong>：支持 10GE PHY，引入 DEVAD（设备地址）+ 16 位寄存器地址（32×32×65536）</td></tr>
+          <tr><td>2006</td><td>IEEE 802.3an</td><td>Clause 45</td><td>10GBASE-T 沿用 Clause 45</td></tr>
+          <tr><td>2010+</td><td>802.3ba/bf/bs</td><td>Clause 45</td><td>40G/100G/25G 以太网 PHY 全部使用 Clause 45</td></tr>
+          <tr><td>2016</td><td>IEEE 802.3bp</td><td>Clause 22/45</td><td>车载以太网 1000BASE-T1，支持 Clause 22/45 双模式 PHY</td></tr>
+          <tr><td>2020+</td><td>IEEE 802.3cy/dj</td><td>Clause 45</td><td>多 G 车载以太网（10GBASE-T1 等），高速 PHY 强制 Clause 45</td></tr>
+        </tbody>
+      </table>
+
+      <blockquote>
+        <strong>命名提示：</strong>不同厂商对 MDIO 的叫法不同——ST 叫 SMI（Serial Management Interface），Microchip/SMSC 叫 MIIM，NXP 叫 SMI，TI/ADI 通常直称 MDIO。本质上都是 IEEE 802.3 Clause 22/45 接口。
+      </blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 第二章 ═══════════ -->
+<section id="sec2">
+  <div class="card">
+    <div class="card-header"><div class="section-no">2</div><div class="icon">⚙️</div><h2>核心工作原理</h2></div>
+    <div class="card-body">
+      <p>MDIO 采用<strong>两线串行、同步、主从架构</strong>。总线由<strong>一个主机（STA）和最多 32 个从机（MMD）</strong>组成。STA 通常是 MAC 控制器内部的管理实体，MMD 是 PHY 芯片内部的管理接口。所有通信由 STA 发起，MMD 被动响应。</p>
+
+      <h4>📡 总线拓扑</h4>
+      <div class="diagram-title">图 2-1 | MDIO 总线拓扑：1 个 STA 主机 + N 个 MMD 从机</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 860 280" width="860" height="280" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#333"/></marker>
+          </defs>
+          <!-- STA -->
+          <rect x="20" y="100" width="120" height="80" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="80" y="125" fill="#5b21b6" font-size="13" font-weight="700" text-anchor="middle">STA</text>
+          <text x="80" y="142" fill="#5b21b6" font-size="9" text-anchor="middle">Station Mgmt</text>
+          <text x="80" y="158" fill="#5b21b6" font-size="9" text-anchor="middle">Entity (主机)</text>
+          <text x="80" y="173" fill="#7c3aed" font-size="8" font-style="italic" text-anchor="middle">发起所有读写</text>
+
+          <!-- MDC bus line -->
+          <line x1="140" y1="120" x2="800" y2="120" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="470" y="112" fill="#92400e" font-size="11" font-weight="700" text-anchor="middle">MDC (Management Data Clock) — 由 STA 单向输出</text>
+          <!-- MDIO bus line -->
+          <line x1="140" y1="165" x2="800" y2="165" stroke="#e74c3c" stroke-width="2.5"/>
+          <text x="470" y="183" fill="#991b1b" font-size="11" font-weight="700" text-anchor="middle">MDIO (Management Data Input/Output) — 双向，需上拉电阻</text>
+
+          <!-- Pull-up resistor on MDIO -->
+          <line x1="780" y1="165" x2="780" y2="40" stroke="#333" stroke-width="1.5"/>
+          <rect x="762" y="40" width="36" height="30" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="780" y="58" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">1.5kΩ</text>
+          <line x1="762" y1="40" x2="798" y2="40" stroke="#333" stroke-width="1.5"/>
+          <text x="785" y="32" fill="#666" font-size="8" text-anchor="middle">VCC</text>
+
+          <!-- MMD0 PHY0 -->
+          <rect x="190" y="100" width="90" height="80" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+          <text x="235" y="122" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">PHY 0</text>
+          <text x="235" y="138" fill="#166534" font-size="9" text-anchor="middle">MMD</text>
+          <text x="235" y="153" fill="#166534" font-size="8" text-anchor="middle">PHYAD=0</text>
+          <text x="235" y="168" fill="#166534" font-size="8" text-anchor="middle">从机</text>
+          <circle cx="190" cy="120" r="3.5" fill="#f59e0b"/><circle cx="190" cy="165" r="3.5" fill="#e74c3c"/>
+
+          <!-- MMD1 PHY1 -->
+          <rect x="340" y="100" width="90" height="80" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+          <text x="385" y="122" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">PHY 1</text>
+          <text x="385" y="138" fill="#166534" font-size="9" text-anchor="middle">MMD</text>
+          <text x="385" y="153" fill="#166534" font-size="8" text-anchor="middle">PHYAD=1</text>
+          <text x="385" y="168" fill="#166534" font-size="8" text-anchor="middle">从机</text>
+          <circle cx="340" cy="120" r="3.5" fill="#f59e0b"/><circle cx="340" cy="165" r="3.5" fill="#e74c3c"/>
+
+          <!-- MMD2 PHY2 -->
+          <rect x="490" y="100" width="90" height="80" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+          <text x="535" y="122" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">PHY 2</text>
+          <text x="535" y="138" fill="#166534" font-size="9" text-anchor="middle">MMD</text>
+          <text x="535" y="153" fill="#166534" font-size="8" text-anchor="middle">PHYAD=2</text>
+          <text x="535" y="168" fill="#166534" font-size="8" text-anchor="middle">从机</text>
+          <circle cx="490" cy="120" r="3.5" fill="#f59e0b"/><circle cx="490" cy="165" r="3.5" fill="#e74c3c"/>
+
+          <!-- MMD3 PHY N -->
+          <rect x="640" y="100" width="90" height="80" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+          <text x="685" y="122" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">PHY N</text>
+          <text x="685" y="138" fill="#166534" font-size="9" text-anchor="middle">MMD</text>
+          <text x="685" y="153" fill="#166534" font-size="8" text-anchor="middle">PHYAD=N</text>
+          <text x="685" y="168" fill="#166534" font-size="8" text-anchor="middle">从机</text>
+          <circle cx="640" cy="120" r="3.5" fill="#f59e0b"/><circle cx="640" cy="165" r="3.5" fill="#e74c3c"/>
+
+          <!-- STA connection dots -->
+          <circle cx="140" cy="120" r="3.5" fill="#f59e0b"/><circle cx="140" cy="165" r="3.5" fill="#e74c3c"/>
+
+          <!-- Bottom note -->
+          <text x="430" y="240" fill="#666" font-size="9" text-anchor="middle">所有 MMD 共享 MDC（输入）与 MDIO（双向），通过 PHYAD 地址区分。最多 32 个 MMD（PHYAD 0-31）。</text>
+          <text x="430" y="255" fill="#666" font-size="9" text-anchor="middle">MDIO 为开漏/推挽混合，空闲时由上拉电阻拉高，传输时由 STA 或 MMD 驱动。</text>
+        </svg>
+      </div>
+
+      <h4>🔑 核心概念</h4>
+      <table>
+        <thead><tr><th>术语</th><th>全称</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>STA</strong></td><td>Station Management Entity</td><td>站管理实体，总线<strong>唯一主机</strong>，通常位于 MAC/SoC 内部，发起所有读/写操作</td></tr>
+          <tr><td><strong>MMD</strong></td><td>Management Data Interface-capable Device</td><td>管理数据接口设备，总线<strong>从机</strong>，位于 PHY 芯片内部，响应 STA 请求</td></tr>
+          <tr><td><strong>MDC</strong></td><td>Management Data Clock</td><td>管理数据时钟，由 STA 单向输出，<strong>所有数据在 MDC 上升沿采样</strong>。标准最大 2.5 MHz（周期 400 ns）</td></tr>
+          <tr><td><strong>MDIO</strong></td><td>Management Data Input/Output</td><td>管理数据线，<strong>双向</strong>。写操作时 STA 驱动，读操作时 MMD 驱动，空闲时上拉为高</td></tr>
+          <tr><td><strong>PHYAD</strong></td><td>Physical Address</td><td>PHY 物理地址，5 位（0-31），用于总线寻址。每个 MMD 有唯一 PHYAD</td></tr>
+          <tr><td><strong>REGAD</strong></td><td>Register Address</td><td>寄存器地址。Clause 22 为 5 位（0-31），Clause 45 通过 DEVAD+16 位地址扩展</td></tr>
+          <tr><td><strong>DEVAD</strong></td><td>Device Address</td><td>设备地址（仅 Clause 45），5 位（0-31），区分 PHY 内部不同功能模块（PMA/PMD/WIS/PCS/...）</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:20px;">🔄 通信流程：读操作 vs 写操作</h4>
+      <div class="compare-grid">
+        <div class="compare-col purple">
+          <h3>✏️ 写操作（Write）</h3>
+          <div class="steps">
+            <div class="step"><div class="step-no">1</div><div class="step-content"><h5>发送前导码</h5><p>STA 发送 32 bit 全 1 前导码（Preamble），唤醒总线上所有 MMD</p></div></div>
+            <div class="step"><div class="step-no">2</div><div class="step-content"><h5>发送帧头与地址</h5><p>STA 发送 START(01) + OP(写) + PHYAD + REGAD</p></div></div>
+            <div class="step"><div class="step-no">3</div><div class="step-content"><h5>转向位 TA = 10</h5><p>STA 驱动 MDIO 为 1，再驱动为 0，表示即将输出数据</p></div></div>
+            <div class="step"><div class="step-no">4</div><div class="step-content"><h5>发送 16 bit 数据</h5><p>STA 在 16 个 MDC 周期内输出待写入数据（MSB 先发）</p></div></div>
+            <div class="step"><div class="step-no">5</div><div class="step-content"><h5>释放总线</h5><p>帧结束后 STA 释放 MDIO，总线由上拉电阻拉高进入空闲态</p></div></div>
+          </div>
+        </div>
+        <div class="compare-col blue">
+          <h3>📖 读操作（Read）</h3>
+          <div class="steps">
+            <div class="step"><div class="step-no">1</div><div class="step-content"><h5>发送前导码</h5><p>STA 发送 32 bit 全 1 前导码</p></div></div>
+            <div class="step"><div class="step-no">2</div><div class="step-content"><h5>发送帧头与地址</h5><p>STA 发送 START(01) + OP(读) + PHYAD + REGAD</p></div></div>
+            <div class="step"><div class="step-no">3</div><div class="step-content"><h5>转向位 TA = Z0</h5><p>第 1 位 STA 释放 MDIO（高阻 Z），第 2 位目标 MMD 驱动 MDIO 为 0 表示响应</p></div></div>
+            <div class="step"><div class="step-no">4</div><div class="step-content"><h5>接收 16 bit 数据</h5><p>目标 MMD（PHYAD 匹配者）在 16 个 MDC 周期内输出寄存器数据（MSB 先发）</p></div></div>
+            <div class="step"><div class="step-no">5</div><div class="step-content"><h5>释放总线</h5><p>MMD 输出完数据后释放 MDIO，总线回到空闲态</p></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="warn-box">
+        <strong>关键点：转向位（TA, Turnaround）</strong>是 MDIO 协议的精髓。它用 2 个 bit 时间完成总线控制权从 STA 到 MMD 的切换，避免了总线冲突。写操作 TA=10（STA 全程驱动），读操作 TA=Z0（第 1 位高阻切换，第 2 位 MMD 驱动 0 应答）。若读操作时 MMD 不存在或未响应，第 2 位会被上拉电阻拉为 1，STA 据此判断"无应答"。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 第二章深度 ═══════════ -->
+<section id="sec2b">
+  <div class="card">
+    <div class="card-header deep"><div class="section-no">🔬</div><div class="icon">🧬</div><h2>核心模块深度解析 — 帧格式、寄存器与寻址</h2></div>
+    <div class="card-body">
+      <p>MDIO 协议的核心在于<strong>帧格式</strong>与<strong>寄存器映射</strong>。Clause 22 与 Clause 45 在帧格式上有关键差异，理解这些差异是正确使用 MDIO 的基础。</p>
+
+      <!-- ===== Clause 22 帧格式 ===== -->
+      <h4 style="margin-top:18px;">一、Clause 22 帧格式（IEEE 802.3u）</h4>
+      <p>Clause 22 是最基础的 MDIO 帧格式，帧长 64 bit（含前导码），支持 32 个 PHY × 32 个寄存器。10/100/1000M PHY 普遍支持。</p>
+
+      <div class="diagram-title">图 2b-1 | Clause 22 帧格式（写操作）</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 860 200" width="860" height="200" xmlns="http://www.w3.org/2000/svg">
+          <!-- Preamble -->
+          <rect x="10" y="50" width="120" height="50" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="70" y="72" fill="#3730a3" font-size="11" font-weight="700" text-anchor="middle">Preamble</text>
+          <text x="70" y="88" fill="#4338ca" font-size="9" text-anchor="middle">32 bit 全 1</text>
+          <text x="70" y="42" fill="#666" font-size="9" text-anchor="middle">32 bit</text>
+
+          <!-- START -->
+          <rect x="135" y="50" width="40" height="50" rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="155" y="72" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">ST</text>
+          <text x="155" y="88" fill="#92400e" font-size="8" text-anchor="middle">01</text>
+          <text x="155" y="42" fill="#666" font-size="9" text-anchor="middle">2 bit</text>
+
+          <!-- OP -->
+          <rect x="180" y="50" width="50" height="50" rx="3" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="205" y="72" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">OP</text>
+          <text x="205" y="88" fill="#991b1b" font-size="8" text-anchor="middle">01=写</text>
+          <text x="205" y="42" fill="#666" font-size="9" text-anchor="middle">2 bit</text>
+
+          <!-- PHYAD -->
+          <rect x="235" y="50" width="80" height="50" rx="3" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="275" y="72" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">PHYAD</text>
+          <text x="275" y="88" fill="#166534" font-size="8" text-anchor="middle">PHY 地址</text>
+          <text x="275" y="42" fill="#666" font-size="9" text-anchor="middle">5 bit</text>
+
+          <!-- REGAD -->
+          <rect x="320" y="50" width="80" height="50" rx="3" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="360" y="72" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">REGAD</text>
+          <text x="360" y="88" fill="#1e40af" font-size="8" text-anchor="middle">寄存器地址</text>
+          <text x="360" y="42" fill="#666" font-size="9" text-anchor="middle">5 bit</text>
+
+          <!-- TA -->
+          <rect x="405" y="50" width="50" height="50" rx="3" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="430" y="72" fill="#5b21b6" font-size="10" font-weight="700" text-anchor="middle">TA</text>
+          <text x="430" y="88" fill="#5b21b6" font-size="8" text-anchor="middle">10</text>
+          <text x="430" y="42" fill="#666" font-size="9" text-anchor="middle">2 bit</text>
+
+          <!-- DATA -->
+          <rect x="460" y="50" width="200" height="50" rx="3" fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+          <text x="560" y="72" fill="#9d174d" font-size="11" font-weight="700" text-anchor="middle">DATA (16 bit)</text>
+          <text x="560" y="88" fill="#9d174d" font-size="8" text-anchor="middle">STA 输出待写入数据</text>
+          <text x="560" y="42" fill="#666" font-size="9" text-anchor="middle">16 bit</text>
+
+          <!-- Idle -->
+          <rect x="665" y="50" width="60" height="50" rx="3" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+          <text x="695" y="72" fill="#475569" font-size="10" font-weight="700" text-anchor="middle">IDLE</text>
+          <text x="695" y="88" fill="#475569" font-size="8" text-anchor="middle">高阻</text>
+          <text x="695" y="42" fill="#666" font-size="9" text-anchor="middle">≥1 bit</text>
+
+          <!-- Direction -->
+          <text x="460" y="125" fill="#5b21b6" font-size="9" font-weight="700">← STA 驱动 MDIO ──────────────────────────────→</text>
+          <line x1="460" y1="130" x2="660" y2="130" stroke="#7c3aed" stroke-width="1.5"/>
+          <polygon points="660,127 668,130 660,133" fill="#7c3aed"/>
+
+          <!-- Direction2 -->
+          <text x="10" y="125" fill="#5b21b6" font-size="9" font-weight="700">← STA 驱动 MDIO ────────────────────────→</text>
+          <line x1="10" y1="130" x2="460" y2="130" stroke="#7c3aed" stroke-width="1.5"/>
+          <polygon points="460,127 468,130 460,133" fill="#7c3aed"/>
+
+          <!-- Bottom legend -->
+          <text x="430" y="160" fill="#666" font-size="9" text-anchor="middle">总帧长 = 32(preamble) + 2(ST) + 2(OP) + 5(PHYAD) + 5(REGAD) + 2(TA) + 16(DATA) = 64 bit</text>
+          <text x="430" y="178" fill="#666" font-size="9" text-anchor="middle">写操作：TA = 10（STA 驱动 1 再驱动 0），DATA 由 STA 输出</text>
+        </svg>
+      </div>
+
+      <div class="diagram-title">图 2b-2 | Clause 22 帧格式（读操作）</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 860 210" width="860" height="210" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="50" width="120" height="50" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="70" y="72" fill="#3730a3" font-size="11" font-weight="700" text-anchor="middle">Preamble</text>
+          <text x="70" y="88" fill="#4338ca" font-size="9" text-anchor="middle">32 bit 全 1</text>
+          <text x="70" y="42" fill="#666" font-size="9" text-anchor="middle">32 bit</text>
+
+          <rect x="135" y="50" width="40" height="50" rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="155" y="72" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">ST</text>
+          <text x="155" y="88" fill="#92400e" font-size="8" text-anchor="middle">01</text>
+          <text x="155" y="42" fill="#666" font-size="9" text-anchor="middle">2 bit</text>
+
+          <rect x="180" y="50" width="50" height="50" rx="3" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="205" y="72" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">OP</text>
+          <text x="205" y="88" fill="#991b1b" font-size="8" text-anchor="middle">10=读</text>
+          <text x="205" y="42" fill="#666" font-size="9" text-anchor="middle">2 bit</text>
+
+          <rect x="235" y="50" width="80" height="50" rx="3" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="275" y="72" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">PHYAD</text>
+          <text x="275" y="88" fill="#166534" font-size="8" text-anchor="middle">PHY 地址</text>
+          <text x="275" y="42" fill="#666" font-size="9" text-anchor="middle">5 bit</text>
+
+          <rect x="320" y="50" width="80" height="50" rx="3" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="360" y="72" fill="#1e40af" font-size="10" font-weight="700" text-anchor="middle">REGAD</text>
+          <text x="360" y="88" fill="#1e40af" font-size="8" text-anchor="middle">寄存器地址</text>
+          <text x="360" y="42" fill="#666" font-size="9" text-anchor="middle">5 bit</text>
+
+          <rect x="405" y="50" width="50" height="50" rx="3" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+          <text x="430" y="72" fill="#854d0e" font-size="10" font-weight="700" text-anchor="middle">TA</text>
+          <text x="430" y="88" fill="#854d0e" font-size="8" text-anchor="middle">Z0</text>
+          <text x="430" y="42" fill="#666" font-size="9" text-anchor="middle">2 bit</text>
+
+          <rect x="460" y="50" width="200" height="50" rx="3" fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+          <text x="560" y="72" fill="#9d174d" font-size="11" font-weight="700" text-anchor="middle">DATA (16 bit)</text>
+          <text x="560" y="88" fill="#9d174d" font-size="8" text-anchor="middle">MMD 输出寄存器数据</text>
+          <text x="560" y="42" fill="#666" font-size="9" text-anchor="middle">16 bit</text>
+
+          <rect x="665" y="50" width="60" height="50" rx="3" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+          <text x="695" y="72" fill="#475569" font-size="10" font-weight="700" text-anchor="middle">IDLE</text>
+          <text x="695" y="88" fill="#475569" font-size="8" text-anchor="middle">高阻</text>
+          <text x="695" y="42" fill="#666" font-size="9" text-anchor="middle">≥1 bit</text>
+
+          <!-- Direction: STA drives preamble..REGAD -->
+          <text x="10" y="125" fill="#5b21b6" font-size="9" font-weight="700">← STA 驱动 MDIO ─────────────────────────→</text>
+          <line x1="10" y1="130" x2="405" y2="130" stroke="#7c3aed" stroke-width="1.5"/>
+          <polygon points="405,127 413,130 405,133" fill="#7c3aed"/>
+
+          <!-- Direction: Z + MMD drives -->
+          <text x="405" y="125" fill="#9d174d" font-size="9" font-weight="700">Z</text>
+          <text x="430" y="125" fill="#16a34a" font-size="9" font-weight="700">← MMD 驱动 MDIO ──────────────→</text>
+          <line x1="430" y1="130" x2="660" y2="130" stroke="#16a34a" stroke-width="1.5"/>
+          <polygon points="660,127 668,130 660,133" fill="#16a34a"/>
+
+          <text x="430" y="160" fill="#666" font-size="9" text-anchor="middle">读操作：TA 第 1 位 = Z（STA 释放，高阻），第 2 位 = 0（MMD 驱动应答），DATA 由 MMD 输出</text>
+          <text x="430" y="178" fill="#666" font-size="9" text-anchor="middle">若 MMD 不存在/未响应，TA 第 2 位被上拉为 1，STA 据此判断读失败（读到 0xFFFF）</text>
+        </svg>
+      </div>
+
+      <table style="margin-top:14px;">
+        <thead><tr><th>字段</th><th>位宽</th><th>Clause 22 值</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>Preamble</td><td>32</td><td>111...1（32 个 1）</td><td>前导码，唤醒所有 MMD。部分实现可缩短至 16 bit</td></tr>
+          <tr><td>ST (Start)</td><td>2</td><td>01</td><td>帧起始标志，固定 01</td></tr>
+          <tr><td>OP (Operation)</td><td>2</td><td>00=写 / 01=读后递增 / 10=读 / 11=保留</td><td>操作码。注意 Clause 22 中 00 是写、10 是读</td></tr>
+          <tr><td>PHYAD</td><td>5</td><td>00000~11111 (0-31)</td><td>PHY 物理地址，寻址目标 MMD</td></tr>
+          <tr><td>REGAD</td><td>5</td><td>00000~11111 (0-31)</td><td>寄存器地址，仅 32 个寄存器可寻址</td></tr>
+          <tr><td>TA (Turnaround)</td><td>2</td><td>写=10 / 读=Z0</td><td>转向位，切换总线控制权</td></tr>
+          <tr><td>DATA</td><td>16</td><td>任意 16 bit</td><td>数据域，读写均为 16 bit</td></tr>
+          <tr><td>IDLE</td><td>≥1</td><td>高阻（上拉为 1）</td><td>帧间空闲，总线释放</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ===== Clause 45 帧格式 ===== -->
+      <h4 style="margin-top:24px;">二、Clause 45 帧格式（IEEE 802.3ae）</h4>
+      <p>Clause 45 为支持 10GE 及以上速率 PHY 而设计，引入<strong>两段式寻址</strong>：先用 Address 帧设置 16 位寄存器地址，再用 Read/Write 帧读写数据。这使寄存器空间从 32 扩展到 65536，并通过 DEVAD 区分 PHY 内部不同功能模块。</p>
+
+      <div class="info-box">
+        <strong>Clause 45 的核心改进：</strong>
+        <ul style="margin-top:6px;">
+          <li><strong>DEVAD（设备地址）</strong>：5 位，区分 PHY 内部 PCS/PMA/PMD/WIS/AN 等不同子层，每个子层有独立寄存器空间</li>
+          <li><strong>16 位寄存器地址</strong>：通过 Address 帧预先写入，支持 65536 个寄存器（Clause 22 仅 32 个）</li>
+          <li><strong>新的 OP 码</strong>：00=Address / 01=Write / 10=Post-Read-Increment / 11=Read（与 Clause 22 不同！）</li>
+          <li><strong>两步操作</strong>：先发 Address 帧（写 16 位地址），再发 Read/Write 帧（读写 16 位数据）</li>
+          <li><strong>增量读</strong>：Post-Read-Increment 可连续读取递增地址的寄存器，高效批量读取</li>
+        </ul>
+      </div>
+
+      <div class="diagram-title">图 2b-3 | Clause 45 Address 帧（设置寄存器地址）</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 860 170" width="860" height="170" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="45" width="120" height="50" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="70" y="67" fill="#3730a3" font-size="11" font-weight="700" text-anchor="middle">Preamble</text>
+          <text x="70" y="83" fill="#4338ca" font-size="9" text-anchor="middle">32 bit</text>
+          <text x="70" y="37" fill="#666" font-size="9" text-anchor="middle">32 bit</text>
+
+          <rect x="135" y="45" width="40" height="50" rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="155" y="67" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">ST</text>
+          <text x="155" y="83" fill="#92400e" font-size="8" text-anchor="middle">00</text>
+          <text x="155" y="37" fill="#666" font-size="9" text-anchor="middle">2 bit</text>
+
+          <rect x="180" y="45" width="55" height="50" rx="3" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="207" y="67" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">OP</text>
+          <text x="207" y="83" fill="#991b1b" font-size="8" text-anchor="middle">00=Addr</text>
+          <text x="207" y="37" fill="#666" font-size="9" text-anchor="middle">2 bit</text>
+
+          <rect x="240" y="45" width="75" height="50" rx="3" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="277" y="67" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">PORTAD</text>
+          <text x="277" y="83" fill="#166534" font-size="8" text-anchor="middle">PHYAD</text>
+          <text x="277" y="37" fill="#666" font-size="9" text-anchor="middle">5 bit</text>
+
+          <rect x="320" y="45" width="75" height="50" rx="3" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+          <text x="357" y="67" fill="#854d0e" font-size="10" font-weight="700" text-anchor="middle">DEVAD</text>
+          <text x="357" y="83" fill="#854d0e" font-size="8" text-anchor="middle">设备类型</text>
+          <text x="357" y="37" fill="#666" font-size="9" text-anchor="middle">5 bit</text>
+
+          <rect x="400" y="45" width="45" height="50" rx="3" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="422" y="67" fill="#5b21b6" font-size="10" font-weight="700" text-anchor="middle">TA</text>
+          <text x="422" y="83" fill="#5b21b6" font-size="8" text-anchor="middle">10</text>
+          <text x="422" y="37" fill="#666" font-size="9" text-anchor="middle">2 bit</text>
+
+          <rect x="450" y="45" width="220" height="50" rx="3" fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+          <text x="560" y="67" fill="#9d174d" font-size="11" font-weight="700" text-anchor="middle">ADDRESS (16 bit)</text>
+          <text x="560" y="83" fill="#9d174d" font-size="8" text-anchor="middle">寄存器地址（0-65535）</text>
+          <text x="560" y="37" fill="#666" font-size="9" text-anchor="middle">16 bit</text>
+
+          <rect x="675" y="45" width="55" height="50" rx="3" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+          <text x="702" y="67" fill="#475569" font-size="10" font-weight="700" text-anchor="middle">IDLE</text>
+          <text x="702" y="83" fill="#475569" font-size="8" text-anchor="middle">高阻</text>
+          <text x="702" y="37" fill="#666" font-size="9" text-anchor="middle">≥1 bit</text>
+
+          <text x="370" y="125" fill="#5b21b6" font-size="9" font-weight="700">← STA 全程驱动 ──────────────────────────────────────────────→</text>
+          <line x1="10" y1="130" x2="670" y2="130" stroke="#7c3aed" stroke-width="1.5"/>
+          <polygon points="670,127 678,130 670,133" fill="#7c3aed"/>
+          <text x="430" y="152" fill="#666" font-size="9" text-anchor="middle">注意 ST=00（Clause 22 是 01），OP=00 表示 Address 操作。此帧不读数据，仅设置后续 Read/Write 的寄存器地址。</text>
+        </svg>
+      </div>
+
+      <div class="diagram-title">图 2b-4 | Clause 45 Read/Write 帧（读写数据）</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 860 170" width="860" height="170" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="45" width="120" height="50" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="70" y="67" fill="#3730a3" font-size="11" font-weight="700" text-anchor="middle">Preamble</text>
+          <text x="70" y="83" fill="#4338ca" font-size="9" text-anchor="middle">32 bit</text>
+          <text x="70" y="37" fill="#666" font-size="9" text-anchor="middle">32 bit</text>
+
+          <rect x="135" y="45" width="40" height="50" rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="155" y="67" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">ST</text>
+          <text x="155" y="83" fill="#92400e" font-size="8" text-anchor="middle">00</text>
+          <text x="155" y="37" fill="#666" font-size="9" text-anchor="middle">2 bit</text>
+
+          <rect x="180" y="45" width="55" height="50" rx="3" fill="#fee2e2" stroke="#e74c3c" stroke-width="1.5"/>
+          <text x="207" y="67" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">OP</text>
+          <text x="207" y="83" fill="#991b1b" font-size="8" text-anchor="middle">01/11</text>
+          <text x="207" y="37" fill="#666" font-size="9" text-anchor="middle">2 bit</text>
+
+          <rect x="240" y="45" width="75" height="50" rx="3" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="277" y="67" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">PORTAD</text>
+          <text x="277" y="83" fill="#166534" font-size="8" text-anchor="middle">PHYAD</text>
+          <text x="277" y="37" fill="#666" font-size="9" text-anchor="middle">5 bit</text>
+
+          <rect x="320" y="45" width="75" height="50" rx="3" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+          <text x="357" y="67" fill="#854d0e" font-size="10" font-weight="700" text-anchor="middle">DEVAD</text>
+          <text x="357" y="83" fill="#854d0e" font-size="8" text-anchor="middle">设备类型</text>
+          <text x="357" y="37" fill="#666" font-size="9" text-anchor="middle">5 bit</text>
+
+          <rect x="400" y="45" width="45" height="50" rx="3" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="422" y="67" fill="#5b21b6" font-size="10" font-weight="700" text-anchor="middle">TA</text>
+          <text x="422" y="83" fill="#5b21b6" font-size="8" text-anchor="middle">10/Z0</text>
+          <text x="422" y="37" fill="#666" font-size="9" text-anchor="middle">2 bit</text>
+
+          <rect x="450" y="45" width="220" height="50" rx="3" fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
+          <text x="560" y="67" fill="#9d174d" font-size="11" font-weight="700" text-anchor="middle">DATA (16 bit)</text>
+          <text x="560" y="83" fill="#9d174d" font-size="8" text-anchor="middle">写:STA输出 / 读:MMD输出</text>
+          <text x="560" y="37" fill="#666" font-size="9" text-anchor="middle">16 bit</text>
+
+          <rect x="675" y="45" width="55" height="50" rx="3" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+          <text x="702" y="67" fill="#475569" font-size="10" font-weight="700" text-anchor="middle">IDLE</text>
+          <text x="702" y="83" fill="#475569" font-size="8" text-anchor="middle">高阻</text>
+          <text x="702" y="37" fill="#666" font-size="9" text-anchor="middle">≥1 bit</text>
+
+          <text x="430" y="125" fill="#666" font-size="9" text-anchor="middle">OP: 01=Write(TA=10, STA输出DATA) / 11=Read(TA=Z0, MMD输出DATA) / 10=Post-Read-Increment(读后地址自增)</text>
+          <text x="430" y="143" fill="#666" font-size="9" text-anchor="middle">Clause 45 完整读操作 = Address帧(写16位地址) + Read帧(读16位数据)，共两帧</text>
+          <text x="430" y="160" fill="#666" font-size="9" text-anchor="middle">Clause 45 完整写操作 = Address帧(写16位地址) + Write帧(写16位数据)，共两帧</text>
+        </svg>
+      </div>
+
+      <h5 style="margin-top:16px;">Clause 45 OP 码定义（与 Clause 22 不同！）</h5>
+      <table>
+        <thead><tr><th>OP 码</th><th>Clause 45 含义</th><th>Clause 22 含义</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>00</td><td><strong>Address</strong>（设置寄存器地址）</td><td>Write（写）</td><td>Clause 45 用此帧预先写入 16 位寄存器地址</td></tr>
+          <tr><td>01</td><td><strong>Write</strong>（写数据）</td><td>Read-Increment（读后递增）</td><td>Clause 45 写 16 位数据到已设置地址</td></tr>
+          <tr><td>10</td><td><strong>Post-Read-Increment</strong>（读后自增）</td><td>Read（读）</td><td>Clause 45 读数据并自动递增地址，便于连续读</td></tr>
+          <tr><td>11</td><td><strong>Read</strong>（读数据）</td><td>保留</td><td>Clause 45 从已设置地址读 16 位数据</td></tr>
+        </tbody>
+      </table>
+
+      <div class="danger-box">
+        <strong>易混淆点：</strong>Clause 22 和 Clause 45 的 OP 码定义<strong>完全不同</strong>！Clause 22 中 00=写、10=读；Clause 45 中 00=地址、01=写、10=读后自增、11=读。区分两套协议的关键是<strong>起始位 ST</strong>：Clause 22 ST=01，Clause 45 ST=00。MMD 通过 ST 判断当前帧是哪种协议。
+      </div>
+
+      <h5 style="margin-top:16px;">Clause 45 DEVAD 设备类型定义</h5>
+      <table>
+        <thead><tr><th>DEVAD</th><th>功能模块</th><th>典型寄存器</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>Reserved</td><td>保留</td></tr>
+          <tr><td>1</td><td>PMA (Physical Medium Attachment)</td><td>链路状态、误码计数、环回</td></tr>
+          <tr><td>2</td><td>PMD (Physical Medium Dependent)</td><td>发射功率、接收灵敏度、光模块参数</td></tr>
+          <tr><td>3</td><td>WIS (WAN Interface Sublayer)</td><td>10GE WAN 接口子层</td></tr>
+          <tr><td>4</td><td>PCS (Physical Coding Sublayer)</td><td>编解码、块同步、FEC</td></tr>
+          <tr><td>5</td><td>PHY XS (PHY Cross-Strap)</td><td>PHY XS 接口</td></tr>
+          <tr><td>6</td><td>DTE XS (DTE Cross-Strap)</td><td>DTE XS 接口</td></tr>
+          <tr><td>7</td><td>Auto-Negotiation (AN)</td><td>自协商能力、状态</td></tr>
+          <tr><td>8-31</td><td>Vendor specific / Reserved</td><td>厂商自定义</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ===== 标准寄存器 ===== -->
+      <h4 style="margin-top:24px;">三、Clause 22 标准寄存器映射</h4>
+      <p>IEEE 802.3 规定了 Clause 22 下寄存器 0-15 的标准定义，所有 PHY 都应支持。寄存器 16-31 为厂商自定义。</p>
+
+      <h5>寄存器 0 — 控制寄存器（Control Register）</h5>
+      <div class="diagram-title">图 2b-5 | 寄存器 0 (Control) 位定义</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 860 150" width="860" height="150" xmlns="http://www.w3.org/2000/svg">
+          <!-- 16 bit boxes: bit15 ... bit0 -->
+          <g font-size="9" font-family="monospace">
+            <rect x="10" y="40" width="48" height="40" fill="#fee2e2" stroke="#e74c3c"/><text x="34" y="56" fill="#991b1b" text-anchor="middle" font-weight="700">15</text><text x="34" y="72" fill="#991b1b" text-anchor="middle">Reset</text>
+            <rect x="58" y="40" width="48" height="40" fill="#fef3c7" stroke="#f59e0b"/><text x="82" y="56" fill="#92400e" text-anchor="middle" font-weight="700">14</text><text x="82" y="72" fill="#92400e" text-anchor="middle">Loop</text>
+            <rect x="106" y="40" width="48" height="40" fill="#dbeafe" stroke="#2563eb"/><text x="130" y="56" fill="#1e40af" text-anchor="middle" font-weight="700">13</text><text x="130" y="72" fill="#1e40af" text-anchor="middle">SpdLSB</text>
+            <rect x="154" y="40" width="48" height="40" fill="#dcfce7" stroke="#16a34a"/><text x="178" y="56" fill="#166534" text-anchor="middle" font-weight="700">12</text><text x="178" y="72" fill="#166534" text-anchor="middle">ANEG</text>
+            <rect x="202" y="40" width="48" height="40" fill="#fef3c7" stroke="#f59e0b"/><text x="226" y="56" fill="#92400e" text-anchor="middle" font-weight="700">11</text><text x="226" y="72" fill="#92400e" text-anchor="middle">PDown</text>
+            <rect x="250" y="40" width="48" height="40" fill="#dcfce7" stroke="#16a34a"/><text x="274" y="56" fill="#166534" text-anchor="middle" font-weight="700">10</text><text x="274" y="72" fill="#166534" text-anchor="middle">Iso</text>
+            <rect x="298" y="40" width="48" height="40" fill="#fee2e2" stroke="#e74c3c"/><text x="322" y="56" fill="#991b1b" text-anchor="middle" font-weight="700">9</text><text x="322" y="72" fill="#991b1b" text-anchor="middle">RANEG</text>
+            <rect x="346" y="40" width="48" height="40" fill="#dbeafe" stroke="#2563eb"/><text x="370" y="56" fill="#1e40af" text-anchor="middle" font-weight="700">8</text><text x="370" y="72" fill="#1e40af" text-anchor="middle">Duplex</text>
+            <rect x="394" y="40" width="48" height="40" fill="#f1f5f9" stroke="#94a3b8"/><text x="418" y="56" fill="#475569" text-anchor="middle" font-weight="700">7</text><text x="418" y="72" fill="#475569" text-anchor="middle">ColTest</text>
+            <rect x="442" y="40" width="240" height="40" fill="#ede9fe" stroke="#7c3aed"/><text x="562" y="56" fill="#5b21b6" text-anchor="middle" font-weight="700">6-0</text><text x="562" y="72" fill="#5b21b6" text-anchor="middle">Reserved (保留)</text>
+          </g>
+          <text x="430" y="105" fill="#666" font-size="9" text-anchor="middle">bit15=1 软复位 | bit14=1 环回 | bit13 速率低位(100M) | bit12=1 自协商 | bit11=1 掉电</text>
+          <text x="430" y="120" fill="#666" font-size="9" text-anchor="middle">bit10=1 隔离(MDIO隔离PHY) | bit9=1 重启自协商 | bit8=1 全双工 | bit7=1 冲突测试</text>
+          <text x="430" y="138" fill="#666" font-size="9" text-anchor="middle">速率选择: bit13(bit6 Clause 22 旧定义) — 100Mbps 时 bit13=1, 1000Mbps 需配合寄存器9</text>
+        </svg>
+      </div>
+
+      <h5>寄存器 1 — 状态寄存器（Status Register）</h5>
+      <div class="diagram-title">图 2b-6 | 寄存器 1 (Status) 位定义</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 860 150" width="860" height="150" xmlns="http://www.w3.org/2000/svg">
+          <g font-size="9" font-family="monospace">
+            <rect x="10" y="40" width="48" height="40" fill="#fee2e2" stroke="#e74c3c"/><text x="34" y="56" fill="#991b1b" text-anchor="middle" font-weight="700">15</text><text x="34" y="72" fill="#991b1b" text-anchor="middle">100T4</text>
+            <rect x="58" y="40" width="48" height="40" fill="#fee2e2" stroke="#e74c3c"/><text x="82" y="56" fill="#991b1b" text-anchor="middle" font-weight="700">14</text><text x="82" y="72" fill="#991b1b" text-anchor="middle">100X</text>
+            <rect x="106" y="40" width="48" height="40" fill="#fee2e2" stroke="#e74c3c"/><text x="130" y="56" fill="#991b1b" text-anchor="middle" font-weight="700">13</text><text x="130" y="72" fill="#991b1b" text-anchor="middle">100T2</text>
+            <rect x="154" y="40" width="48" height="40" fill="#dbeafe" stroke="#2563eb"/><text x="178" y="56" fill="#1e40af" text-anchor="middle" font-weight="700">12</text><text x="178" y="72" fill="#1e40af" text-anchor="middle">10T</text>
+            <rect x="202" y="40" width="48" height="40" fill="#dcfce7" stroke="#16a34a"/><text x="226" y="56" fill="#166534" text-anchor="middle" font-weight="700">11</text><text x="226" y="72" fill="#166534" text-anchor="middle">100T2</text>
+            <rect x="250" y="40" width="48" height="40" fill="#dcfce7" stroke="#16a34a"/><text x="274" y="56" fill="#166534" text-anchor="middle" font-weight="700">10</text><text x="274" y="72" fill="#166534" text-anchor="middle">100TX</text>
+            <rect x="298" y="40" width="48" height="40" fill="#fef3c7" stroke="#f59e0b"/><text x="322" y="56" fill="#92400e" text-anchor="middle" font-weight="700">9</text><text x="322" y="72" fill="#92400e" text-anchor="middle">ANEG</text>
+            <rect x="346" y="40" width="48" height="40" fill="#dcfce7" stroke="#16a34a"/><text x="370" y="56" fill="#166534" text-anchor="middle" font-weight="700">8</text><text x="370" y="72" fill="#166534" text-anchor="middle">ExtCap</text>
+            <rect x="394" y="40" width="48" height="40" fill="#f1f5f9" stroke="#94a3b8"/><text x="418" y="56" fill="#475569" text-anchor="middle" font-weight="700">7</text><text x="418" y="72" fill="#475569" text-anchor="middle">-(0)</text>
+            <rect x="442" y="40" width="48" height="40" fill="#f5f3ff" stroke="#7c3aed"/><text x="466" y="56" fill="#5b21b6" text-anchor="middle" font-weight="700">6</text><text x="466" y="72" fill="#5b21b6" text-anchor="middle">Preamble</text>
+            <rect x="490" y="40" width="48" height="40" fill="#f1f5f9" stroke="#94a3b8"/><text x="514" y="56" fill="#475569" text-anchor="middle" font-weight="700">5</text><text x="514" y="72" fill="#475569" text-anchor="middle">ANEGC</text>
+            <rect x="538" y="40" width="48" height="40" fill="#f1f5f9" stroke="#94a3b8"/><text x="562" y="56" fill="#475569" text-anchor="middle" font-weight="700">4</text><text x="562" y="72" fill="#475569" text-anchor="middle">RFault</text>
+            <rect x="586" y="40" width="48" height="40" fill="#dbeafe" stroke="#2563eb"/><text x="610" y="56" fill="#1e40af" text-anchor="middle" font-weight="700">3</text><text x="610" y="72" fill="#1e40af" text-anchor="middle">ANEGC</text>
+            <rect x="634" y="40" width="48" height="40" fill="#fee2e2" stroke="#e74c3c"/><text x="658" y="56" fill="#991b1b" text-anchor="middle" font-weight="700">2</text><text x="658" y="72" fill="#991b1b" text-anchor="middle">Link</text>
+            <rect x="682" y="40" width="48" height="40" fill="#fef3c7" stroke="#f59e0b"/><text x="706" y="56" fill="#92400e" text-anchor="middle" font-weight="700">1</text><text x="706" y="72" fill="#92400e" text-anchor="middle">Jabber</text>
+            <rect x="730" y="40" width="48" height="40" fill="#dcfce7" stroke="#16a34a"/><text x="754" y="56" fill="#166534" text-anchor="middle" font-weight="700">0</text><text x="754" y="72" fill="#166534" text-anchor="middle">ExtCap</text>
+          </g>
+          <text x="395" y="105" fill="#666" font-size="9" text-anchor="middle">bit15-12: 能力声明(100T4/100X/100T2/10T能力) | bit11-10: 自协商可用的速率能力</text>
+          <text x="395" y="120" fill="#666" font-size="9" text-anchor="middle">bit9=1 支持自协商 | bit5=1 自协商完成 | bit3=1 自协商完成 | bit2=1 链路连通(锁存,需读多次)</text>
+          <text x="395" y="138" fill="#666" font-size="9" text-anchor="middle">bit2 Link Status 是锁存型(latch-low)：读1次后清0,需读第2次才是实时值。这是常见调试坑。</text>
+        </svg>
+      </div>
+
+      <h5 style="margin-top:14px;">Clause 22 标准寄存器总览</h5>
+      <table>
+        <thead><tr><th>寄存器</th><th>名称</th><th>功能</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>Control</td><td>控制：复位/环回/速率/自协商/掉电/隔离/双工</td></tr>
+          <tr><td>1</td><td>Status</td><td>状态：能力/链路/自协商完成/Jabber</td></tr>
+          <tr><td>2</td><td>PHY Identifier 1</td><td>OUI 厂商标识符高位（bit 3:18 of OUI）</td></tr>
+          <tr><td>3</td><td>PHY Identifier 2</td><td>OUI 低位 + 型号 + 修订号</td></tr>
+          <tr><td>4</td><td>Auto-Neg Advertisement</td><td>自协商广播：本端能力宣告（速率/双工/流控）</td></tr>
+          <tr><td>5</td><td>Link Partner Ability</td><td>对端能力：自协商后对端宣告的能力</td></tr>
+          <tr><td>6</td><td>AN Expansion</td><td>自协商扩展状态</td></tr>
+          <tr><td>7</td><td>AN Next Page TX</td><td>自协商下一页发送</td></tr>
+          <tr><td>8</td><td>AN Link Partner Next Page</td><td>对端下一页接收</td></tr>
+          <tr><td>9</td><td>1000BASE-T Control</td><td>千兆控制：1000M 全/半双工能力宣告</td></tr>
+          <tr><td>10</td><td>1000BASE-T Status</td><td>千兆状态：1000M 协商结果</td></tr>
+          <tr><td>11-13</td><td>Reserved</td><td>保留</td></tr>
+          <tr><td>14-15</td><td>Reserved</td><td>保留</td></tr>
+          <tr><td>16-31</td><td>Vendor Specific</td><td>厂商自定义：通常含扩展状态、错误计数、温度、眼图等</td></tr>
+        </tbody>
+      </table>
+
+      <div class="success-box">
+        <strong>实战技巧：</strong>读取寄存器 2 和 3 可获取 PHY 的厂商标识（OUI）和型号，这是<strong>识别未知 PHY 型号</strong>的标准方法。例如 OUI 0x08083D 是 Marvell，0x0007F0 是 TI，0x001050 是 Realtek。Linux 内核 phy_device 驱动正是通过此机制匹配驱动。
+      </div>
+
+      <!-- ===== 时序 ===== -->
+      <h4 style="margin-top:24px;">四、MDIO 时序详解</h4>
+      <div class="diagram-title">图 2b-7 | MDIO 读操作时序（MDC 与 MDIO 的时序关系）</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 860 240" width="860" height="240" xmlns="http://www.w3.org/2000/svg">
+          <!-- MDC waveform -->
+          <text x="30" y="50" fill="#92400e" font-size="11" font-weight="700">MDC</text>
+          <path d="M 70 60 L 90 60 L 90 40 L 110 40 L 110 60 L 130 60 L 130 40 L 150 40 L 150 60 L 170 60 L 170 40 L 190 40 L 190 60 L 210 60 L 210 40 L 230 40 L 230 60 L 250 60 L 250 40 L 270 40 L 270 60 L 290 60 L 290 40 L 310 40 L 310 60 L 330 60 L 330 40 L 350 40 L 350 60 L 370 60 L 370 40 L 390 40 L 390 60 L 410 60 L 410 40 L 430 40 L 430 60 L 450 60 L 450 40 L 470 40 L 470 60 L 490 60 L 490 40 L 510 40 L 510 60 L 530 60 L 530 40 L 550 40 L 550 60 L 570 60 L 570 40 L 590 40 L 590 60 L 610 60" stroke="#f59e0b" stroke-width="2" fill="none"/>
+
+          <!-- MDIO write phase (OP/PHYAD/REGAD) then read phase (Z0 + DATA) -->
+          <text x="30" y="120" fill="#991b1b" font-size="11" font-weight="700">MDIO</text>
+          <!-- STA drives: ST=01, OP=10, PHYAD=00001, REGAD=00000 -->
+          <path d="M 70 130 L 90 130 L 90 110 L 110 110 L 110 130 L 130 130 L 130 110 L 150 110 L 150 130 L 170 130 L 170 110 L 190 110 L 190 130 L 210 130 L 210 110 L 230 110 L 230 130 L 250 130 L 250 110 L 270 110 L 270 130 L 290 130 L 290 110 L 310 110 L 310 130 L 330 130" stroke="#e74c3c" stroke-width="2" fill="none"/>
+          <!-- TA: Z (high-Z, pulled up) then 0 (MMD drives) -->
+          <path d="M 330 130 L 350 115 L 370 110" stroke="#e74c3c" stroke-width="2" fill="none" stroke-dasharray="2,2"/>
+          <path d="M 370 110 L 370 130 L 390 130 L 390 110" stroke="#16a34a" stroke-width="2" fill="none"/>
+          <!-- DATA from MMD (arbitrary) -->
+          <path d="M 390 110 L 410 110 L 410 130 L 430 130 L 430 110 L 450 110 L 450 130 L 470 130 L 470 110 L 490 110 L 490 130 L 510 130 L 510 110 L 530 110 L 530 130 L 550 130 L 550 110 L 570 110 L 570 130 L 590 130 L 590 110 L 610 110" stroke="#16a34a" stroke-width="2" fill="none"/>
+          <!-- Idle -->
+          <path d="M 610 110 L 610 120 L 630 120" stroke="#94a3b8" stroke-width="2" fill="none" stroke-dasharray="2,2"/>
+
+          <!-- Labels -->
+          <text x="100" y="170" fill="#5b21b6" font-size="9" font-weight="700" text-anchor="middle">ST=01</text>
+          <text x="180" y="170" fill="#991b1b" font-size="9" font-weight="700" text-anchor="middle">OP=10(读)</text>
+          <text x="250" y="170" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">PHYAD</text>
+          <text x="310" y="170" fill="#1e40af" font-size="9" font-weight="700" text-anchor="middle">REGAD</text>
+          <text x="350" y="170" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">Z</text>
+          <text x="380" y="170" fill="#16a34a" font-size="9" font-weight="700" text-anchor="middle">0</text>
+          <text x="490" y="170" fill="#16a34a" font-size="9" font-weight="700" text-anchor="middle">DATA (16 bit, MMD 驱动)</text>
+
+          <!-- Direction bars -->
+          <rect x="90" y="185" width="240" height="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+          <text x="210" y="196" fill="#5b21b6" font-size="9" font-weight="700" text-anchor="middle">STA 驱动 MDIO</text>
+          <rect x="350" y="185" width="260" height="14" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+          <text x="480" y="196" fill="#166534" font-size="9" font-weight="700" text-anchor="middle">MMD 驱动 MDIO</text>
+
+          <!-- Timing markers -->
+          <line x1="90" y1="35" x2="110" y2="35" stroke="#666" stroke-width="1"/>
+          <text x="100" y="28" fill="#666" font-size="8" text-anchor="middle">T (MDC周期 ≥400ns)</text>
+          <text x="430" y="222" fill="#666" font-size="9" text-anchor="middle">数据在 MDC 上升沿采样 | MDIO 建立(setup)≥10ns, 保持(hold)≥10ns</text>
+        </svg>
+      </div>
+
+      <table>
+        <thead><tr><th>时序参数</th><th>符号</th><th>最小值</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>MDC 周期</td><td>T<sub>MDC</sub></td><td>400 ns</td><td>MDC 时钟周期，对应最大 2.5 MHz</td></tr>
+          <tr><td>MDC 高电平时间</td><td>T<sub>HIGH</sub></td><td>160 ns</td><td>MDC 高电平最小脉宽</td></tr>
+          <tr><td>MDC 低电平时间</td><td>T<sub>LOW</sub></td><td>160 ns</td><td>MDC 低电平最小脉宽</td></tr>
+          <tr><td>MDIO 建立时间</td><td>T<sub>SU</sub></td><td>10 ns</td><td>MDIO 数据在 MDC 上升沿前需稳定 ≥10 ns</td></tr>
+          <tr><td>MDIO 保持时间</td><td>T<sub>HD</sub></td><td>10 ns</td><td>MDIO 数据在 MDC 上升沿后需保持 ≥10 ns</td></tr>
+          <tr><td>前导码长度</td><td>—</td><td>32 bit</td><td>标准 32 bit 全 1，部分 PHY 可配置为 16 bit</td></tr>
+          <tr><td>帧间空闲</td><td>T<sub>IDLE</sub></td><td>≥1 bit</td><td>帧结束后至少 1 个 bit 时间的高阻</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 第三章 ═══════════ -->
+<section id="sec3">
+  <div class="card">
+    <div class="card-header"><div class="section-no">3</div><div class="icon">🔲</div><h2>电路框图与物理连接</h2></div>
+    <div class="card-body">
+      <p>MDIO 的物理实现非常简洁——仅 2 根线，但电气细节决定了总线可靠性。</p>
+
+      <div class="diagram-title">图 3-1 | MDIO 典型硬件连接（含上拉、ESD、终端）</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 860 320" width="860" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#333"/></marker>
+          </defs>
+          <!-- SoC -->
+          <rect x="20" y="120" width="140" height="100" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="90" y="145" fill="#5b21b6" font-size="12" font-weight="700" text-anchor="middle">SoC / MAC</text>
+          <rect x="40" y="158" width="100" height="28" rx="4" fill="#a78bfa" stroke="#7c3aed"/>
+          <text x="90" y="176" fill="#fff" font-size="10" font-weight="700" text-anchor="middle">MDIO 控制器</text>
+          <text x="90" y="205" fill="#5b21b6" font-size="9" text-anchor="middle">MDC (push-pull)</text>
+          <text x="90" y="218" fill="#5b21b6" font-size="9" text-anchor="middle">MDIO (双向)</text>
+
+          <!-- MDC line -->
+          <line x1="160" y1="155" x2="780" y2="155" stroke="#f59e0b" stroke-width="2.5"/>
+          <text x="470" y="148" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">MDC — 推挽输出，单向，无上拉</text>
+
+          <!-- MDIO line -->
+          <line x1="160" y1="195" x2="780" y2="195" stroke="#e74c3c" stroke-width="2.5"/>
+          <text x="470" y="215" fill="#991b1b" font-size="10" font-weight="700" text-anchor="middle">MDIO — 双向，需外部上拉电阻</text>
+
+          <!-- Pull-up on MDIO -->
+          <line x1="760" y1="195" x2="760" y2="50" stroke="#333" stroke-width="1.5"/>
+          <rect x="745" y="50" width="30" height="36" rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="760" y="68" fill="#92400e" font-size="9" font-weight="700" text-anchor="middle">1.5k</text>
+          <text x="760" y="80" fill="#92400e" font-size="8" text-anchor="middle">Ω</text>
+          <line x1="745" y1="50" x2="775" y2="50" stroke="#333" stroke-width="1.5"/>
+          <text x="790" y="44" fill="#666" font-size="9">VCC (3.3V/2.5V)</text>
+
+          <!-- ESD protection -->
+          <rect x="280" y="240" width="60" height="30" rx="4" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5"/>
+          <text x="310" y="258" fill="#475569" font-size="9" font-weight="700" text-anchor="middle">ESD</text>
+          <text x="310" y="270" fill="#475569" font-size="8" text-anchor="middle">TVS 二极管</text>
+          <line x1="310" y1="195" x2="310" y2="240" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2"/>
+          <line x1="295" y1="155" x2="295" y2="240" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2"/>
+
+          <!-- PHY0 -->
+          <rect x="380" y="120" width="100" height="100" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+          <text x="430" y="145" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">PHY 0</text>
+          <text x="430" y="162" fill="#166534" font-size="9" text-anchor="middle">PHYAD=0</text>
+          <text x="430" y="178" fill="#166534" font-size="8" text-anchor="middle">MMD</text>
+          <text x="430" y="200" fill="#166534" font-size="8" text-anchor="middle">10/100/1000M</text>
+          <circle cx="380" cy="155" r="3" fill="#f59e0b"/>
+          <circle cx="380" cy="195" r="3" fill="#e74c3c"/>
+
+          <!-- PHY1 -->
+          <rect x="540" y="120" width="100" height="100" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+          <text x="590" y="145" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">PHY 1</text>
+          <text x="590" y="162" fill="#166534" font-size="9" text-anchor="middle">PHYAD=1</text>
+          <text x="590" y="178" fill="#166534" font-size="8" text-anchor="middle">MMD</text>
+          <text x="590" y="200" fill="#166534" font-size="8" text-anchor="middle">10GBASE-T</text>
+          <circle cx="540" cy="155" r="3" fill="#f59e0b"/>
+          <circle cx="540" cy="195" r="3" fill="#e74c3c"/>
+
+          <!-- Series resistor option -->
+          <text x="700" y="148" fill="#666" font-size="9">可选串阻 22-33Ω</text>
+          <text x="700" y="160" fill="#666" font-size="9">(抑制振铃)</text>
+
+          <!-- SoC pins -->
+          <circle cx="160" cy="155" r="3" fill="#f59e0b"/>
+          <circle cx="160" cy="195" r="3" fill="#e74c3c"/>
+
+          <text x="430" y="295" fill="#666" font-size="9" text-anchor="middle">MDC 为推挽输出，无需上拉 | MDIO 为开漏/推挽混合，必须外部上拉（1.5kΩ 推荐）</text>
+          <text x="430" y="310" fill="#666" font-size="9" text-anchor="middle">总线电容 ≤400pF | 最多 32 个 MMD | ESD 保护推荐靠近连接器/PHY 放置</text>
+        </svg>
+      </div>
+
+      <h4>电气特性要点</h4>
+      <table>
+        <thead><tr><th>参数</th><th>MDC</th><th>MDIO</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>驱动方式</td><td>推挽（Push-Pull）</td><td>推挽/开漏混合</td><td>MDC 仅 STA 驱动，单向；MDIO 双向</td></tr>
+          <tr><td>上拉电阻</td><td>不需要</td><td><strong>必须</strong>（1.5kΩ 推荐）</td><td>MDIO 空闲及转向位 Z 态需上拉拉高</td></tr>
+          <tr><td>电压电平</td><td colspan="2">通常 3.3V 或 2.5V LVCMOS</td><td>需 SoC 与 PHY 电平一致，否则加电平转换</td></tr>
+          <tr><td>总线电容</td><td colspan="2">≤ 400 pF（总线上所有节点之和）</td><td>含 PCB 走线 + 引脚 + ESD 电容</td></tr>
+          <tr><td>最大节点数</td><td colspan="2">32（PHYAD 0-31）</td><td>受 5 位 PHYAD 寻址限制</td></tr>
+          <tr><td>最大速率</td><td colspan="2">2.5 MHz（标准）/ 部分支持 10 MHz+</td><td>Clause 45 增强型 PHY 可支持更高时钟</td></tr>
+          <tr><td>线长</td><td colspan="2">通常 &lt;30 cm（板内）</td><td>非长距离总线，按多点总线布线</td></tr>
+        </tbody>
+      </table>
+
+      <div class="warn-box">
+        <strong>布线建议：</strong>MDIO 总线应作为<strong>多点总线</strong>布线（菊花链或星型均可，但走线要短）。MDC 与 MDIO 应等长并行走线，特性阻抗控制在 50Ω。若总线节点多、走线长，需在末端（非源端）加 22-33Ω 串联电阻抑制反射振铃。严禁将 MDIO 用于长距离板间通信。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 第四章 ═══════════ -->
+<section id="sec4">
+  <div class="card">
+    <div class="card-header"><div class="section-no">4</div><div class="icon">⚖️</div><h2>核心对比</h2></div>
+    <div class="card-body">
+      <h4>对比一：Clause 22 vs Clause 45</h4>
+      <table>
+        <thead><tr><th>维度</th><th>Clause 22</th><th>Clause 45</th></tr></thead>
+        <tbody>
+          <tr><td><strong>定义标准</strong></td><td>IEEE 802.3u (1995)</td><td>IEEE 802.3ae (2002)</td></tr>
+          <tr><td><strong>起始位 ST</strong></td><td>01</td><td>00（关键区分）</td></tr>
+          <tr><td><strong>OP 码</strong></td><td>00=写, 10=读</td><td>00=地址, 01=写, 10=读后增, 11=读</td></tr>
+          <tr><td><strong>寻址方式</strong></td><td>单帧：PHYAD(5) + REGAD(5)</td><td>双帧：Address帧写16位地址 + Read/Write帧读写</td></tr>
+          <tr><td><strong>PHY 地址</strong></td><td>5 位 (0-31)</td><td>5 位 (0-31)，称 PORTAD</td></tr>
+          <tr><td><strong>寄存器地址</strong></td><td>5 位 (0-31)，仅 32 个</td><td><strong>16 位 (0-65535)</strong>，65536 个</td></tr>
+          <tr><td><strong>设备类型</strong></td><td>无（PHY 内部统一空间）</td><td>DEVAD(5) 区分 PMA/PMD/PCS/AN 等子层</td></tr>
+          <tr><td><strong>单次访问</strong></td><td>1 帧（64 bit）</td><td>2 帧（Address + Data，共 128 bit）</td></tr>
+          <tr><td><strong>批量读</strong></td><td>Read-Increment (OP=01)</td><td>Post-Read-Increment (OP=10)，更高效</td></tr>
+          <tr><td><strong>适用速率</strong></td><td>10M/100M/1000M</td><td>10G/25G/40G/100G/400G（也兼容低速）</td></tr>
+          <tr><td><strong>兼容性</strong></td><td>Clause 45 PHY 通常兼容 Clause 22</td><td>Clause 22-only PHY 不支持 Clause 45</td></tr>
+          <tr><td><strong>典型 PHY</strong></td><td>RTL8201, DP83848, KSZ8081</td><td>Marvell 88X3310, TI DP83867 (双模)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="diagram-title">图 4-1 | Clause 22 与 Clause 45 寻址空间对比</div>
+      <div class="diagram-container">
+        <svg viewBox="0 0 700 220" width="700" height="220" xmlns="http://www.w3.org/2000/svg">
+          <!-- Clause 22 -->
+          <text x="175" y="25" fill="#5b21b6" font-size="12" font-weight="700" text-anchor="middle">Clause 22 寻址空间</text>
+          <rect x="60" y="40" width="230" height="50" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+          <text x="175" y="62" fill="#5b21b6" font-size="11" font-weight="700" text-anchor="middle">32 PHY × 32 寄存器</text>
+          <text x="175" y="78" fill="#5b21b6" font-size="9" text-anchor="middle">= 1024 个 16-bit 寄存器</text>
+          <text x="175" y="110" fill="#666" font-size="9" text-anchor="middle">PHYAD(5) + REGAD(5)</text>
+          <text x="175" y="128" fill="#666" font-size="9" text-anchor="middle">单帧完成读写</text>
+          <text x="175" y="155" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">✓ 简单高效</text>
+          <text x="175" y="172" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">✗ 寄存器少，无法区分子层</text>
+          <text x="175" y="189" fill="#92400e" font-size="10" font-weight="700" text-anchor="middle">✗ 不适合 10G+ PHY</text>
+
+          <!-- Clause 45 -->
+          <text x="525" y="25" fill="#5b21b6" font-size="12" font-weight="700" text-anchor="middle">Clause 45 寻址空间</text>
+          <rect x="410" y="40" width="230" height="50" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+          <text x="525" y="62" fill="#166534" font-size="11" font-weight="700" text-anchor="middle">32 PHY × 32 DEVAD × 65536</text>
+          <text x="525" y="78" fill="#166534" font-size="9" text-anchor="middle">≈ 67M 个 16-bit 寄存器</text>
+          <text x="525" y="110" fill="#666" font-size="9" text-anchor="middle">PORTAD(5) + DEVAD(5) + ADDR(16)</text>
+          <text x="525" y="128" fill="#666" font-size="9" text-anchor="middle">两帧完成读写</text>
+          <text x="525" y="155" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">✓ 寄存器空间巨大</text>
+          <text x="525" y="172" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">✓ 区分 PHY 内部子层</text>
+          <text x="525" y="189" fill="#166534" font-size="10" font-weight="700" text-anchor="middle">✓ 支持 10G~400G PHY</text>
+
+          <!-- Arrow -->
+          <line x1="290" y1="65" x2="410" y2="65" stroke="#e74c3c" stroke-width="2" marker-end="url(#arr3)"/>
+          <text x="350" y="58" fill="#e74c3c" font-size="9" font-weight="700" text-anchor="middle">扩展</text>
+        </svg>
+      </div>
+
+      <h4 style="margin-top:20px;">对比二：MDIO vs I2C vs SPI</h4>
+      <p>MDIO 常被拿来与 I2C、SPI 比较——三者都是嵌入式常用的串行总线，但定位不同。</p>
+      <table>
+        <thead><tr><th>维度</th><th>MDIO (Clause 22/45)</th><th>I2C</th><th>SPI</th></tr></thead>
+        <tbody>
+          <tr><td><strong>定义组织</strong></td><td>IEEE 802.3</td><td>NXP (原 Philips)</td><td>Motorola</td></tr>
+          <tr><td><strong>主要用途</strong></td><td><strong>以太网 PHY 管理</strong></td><td>传感器/EEPROM/通用外设</td><td>Flash/ADC/显示/通用高速外设</td></tr>
+          <tr><td><strong>信号线数</strong></td><td>2 (MDC + MDIO)</td><td>2 (SCL + SDA)</td><td>3~4 (SCLK + MOSI + MISO + CS)</td></tr>
+          <tr><td><strong>拓扑</strong></td><td>单主多从（共享总线）</td><td>多主多从（共享总线）</td><td>单主多从（每从需独立 CS）</td></tr>
+          <tr><td><strong>寻址方式</strong></td><td>帧内 PHYAD 寻址</td><td>7/10 位设备地址</td><td>硬件 CS 片选</td></tr>
+          <tr><td><strong>数据宽度</strong></td><td>固定 16 bit</td><td>8 bit（字节）</td><td>任意（通常 8/16/32 bit）</td></tr>
+          <tr><td><strong>最大速率</strong></td><td>2.5 MHz（标准）</td><td>100k/400k/1M/3.4M Hz</td><td>数十 MHz（可达 100+ MHz）</td></tr>
+          <tr><td><strong>应答机制</strong></td><td>转向位 TA 隐式应答</td><td>ACK/NACK 每 9 位</td><td>无（CS 控制起止）</td></tr>
+          <tr><td><strong>上拉电阻</strong></td><td>MDIO 需要 (1.5kΩ)</td><td>SCL/SDA 都需要 (4.7kΩ)</td><td>不需要（推挽驱动）</td></tr>
+          <tr><td><strong>多主支持</strong></td><td>否（仅单主）</td><td>是（仲裁+同步）</td><td>否（通常单主）</td></tr>
+          <tr><td><strong>协议复杂度</strong></td><td>低（帧格式固定）</td><td>中（地址+ACK+读写位）</td><td>低（无协议开销，纯数据流）</td></tr>
+          <tr><td><strong>适用场景</strong></td><td>以太网 PHY（专精）</td><td>低速通用外设、板级互联</td><td>高速外设、大数据量传输</td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <strong>选型建议：</strong>MDIO 是以太网 PHY 管理的<strong>事实标准</strong>——若你的 PHY 支持 MDIO，就用 MDIO（而非 I2C/SPI）。部分 PHY 同时提供 MDIO 和 I2C 接口，MDIO 通常更原生（PHY 内部寄存器默认走 MDIO）。SPI 因需多根 CS 线、不适合多 PHY 场景，极少用于 PHY 管理。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 第五章 ═══════════ -->
+<section id="sec5">
+  <div class="card">
+    <div class="card-header"><div class="section-no">5</div><div class="icon">📊</div><h2>核心指标</h2></div>
+    <div class="card-body">
+      <div class="metric-card">
+        <div class="metric-header"><h4>MDC 时钟频率</h4><span class="metric-abbr">f_MDC</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><div class="metric-label">标准最大值</div><div>2.5 MHz（周期 400 ns）</div></div>
+          <div class="metric-row"><div class="metric-label">典型值</div><div>1.0 ~ 2.5 MHz</div></div>
+          <div class="metric-row"><div class="metric-label">增强型</div><div>部分 PHY/SoC 支持 5 MHz / 10 MHz（非标准，需双方支持）</div></div>
+          <div class="metric-row"><div class="metric-label">最小值</div><div>无下限（DC 直流也行，但需保证时序）</div></div>
+          <div class="metric-row"><div class="metric-label">说明</div><div>标准规定 MDC 周期 ≥400 ns，对应 ≤2.5 MHz。实际速率取决于 SoC 控制器分频配置</div></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header"><h4>寻址容量</h4><span class="metric-abbr">ADDR</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><div class="metric-label">Clause 22</div><div>32 PHY × 32 寄存器 = 1024 个 16-bit 寄存器</div></div>
+          <div class="metric-row"><div class="metric-label">Clause 45</div><div>32 PHY × 32 DEVAD × 65536 寄存器 ≈ 67M 个 16-bit 寄存器</div></div>
+          <div class="metric-row"><div class="metric-label">PHYAD</div><div>5 位 (0-31)，最多 32 个 PHY 共总线</div></div>
+          <div class="metric-row"><div class="metric-label">单帧数据</div><div>固定 16 bit（一次读写 16 位）</div></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header"><h4>时序参数</h4><span class="metric-abbr">TIMING</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><div class="metric-label">MDC 周期 T_MDC</div><div>≥ 400 ns</div></div>
+          <div class="metric-row"><div class="metric-label">MDC 高电平</div><div>≥ 160 ns</div></div>
+          <div class="metric-row"><div class="metric-label">MDC 低电平</div><div>≥ 160 ns</div></div>
+          <div class="metric-row"><div class="metric-label">MDIO 建立时间</div><div>≥ 10 ns（MDC 上升沿前）</div></div>
+          <div class="metric-row"><div class="metric-label">MDIO 保持时间</div><div>≥ 10 ns（MDC 上升沿后）</div></div>
+          <div class="metric-row"><div class="metric-label">前导码</div><div>32 bit（可配 16 bit）</div></div>
+          <div class="metric-row"><div class="metric-label">帧间空闲</div><div>≥ 1 bit 时间</div></div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header"><h4>电气与总线参数</h4><span class="metric-abbr">ELEC</span></div>
+        <div class="metric-body">
+          <div class="metric-row"><div class="metric-label">电压电平</div><div>3.3V 或 2.5V LVCMOS</div></div>
+          <div class="metric-row"><div class="metric-label">上拉电阻</div><div>1.5 kΩ（推荐），范围 1.5k~10kΩ</div></div>
+          <div class="metric-row"><div class="metric-label">总线电容</div><div>≤ 400 pF</div></div>
+          <div class="metric-row"><div class="metric-label">最大节点</div><div>32 个 MMD</div></div>
+          <div class="metric-row"><div class="metric-label">典型走线长度</div><div>&lt; 30 cm（板内）</div></div>
+          <div class="metric-row"><div class="metric-label">单帧耗时</div><div>Clause 22: 64 bit × 400ns = 25.6 µs @2.5MHz</div></div>
+          <div class="metric-row"><div class="metric-label"></div><div>Clause 45: 2 × 64 bit × 400ns = 51.2 µs @2.5MHz</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 第六章 ═══════════ -->
+<section id="sec6">
+  <div class="card">
+    <div class="card-header"><div class="section-no">6</div><div class="icon">🔗</div><h2>影响因素</h2></div>
+    <div class="card-body">
+      <p>MDIO 总线的可靠性受多个因素影响，主要源于其<strong>开漏/推挽混合 + 多点总线</strong>的电气特性。</p>
+
+      <div class="caution-grid">
+        <div class="caution-item">
+          <div class="ci-title">🔌 上拉电阻取值</div>
+          <p>MDIO 必须有上拉。阻值过大（>10kΩ）会导致上升沿过缓、时序违例；过小（<1kΩ）会增加驱动器负载、降低低电平裕量。<strong>推荐 1.5kΩ</strong>。总线节点多/走线长时适当减小。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">📐 总线电容</div>
+          <p>标准限制 ≤400pF。包含所有 PHY 引脚电容 + PCB 走线 + ESD 二极管电容。电容过大会使 MDIO 上升时间 (RC) 超过建立时间，导致采样错误。<strong>每节点约 10-15pF</strong>，30cm 走线约 3pF/cm。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">⚡ MDC 时钟速率</div>
+          <p>速率越高，对建立/保持时间越敏感。标准 2.5MHz 下建立+保持仅需 20ns，裕量充足；若超频到 10MHz，周期仅 100ns，时序裕量骤减。<strong>需根据最慢 PHY 调整</strong>。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔢 节点数量</div>
+          <p>节点越多，总线电容越大，上升沿越缓。32 节点满载时需严格评估电容预算。Switch 芯片管理 24/48 口 PHY 时常需<strong>多组独立 MDIO 总线</strong>或中继。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔀 电平兼容性</div>
+          <p>SoC 与 PHY 电平不一致（如 SoC 1.8V、PHY 3.3V）需加电平转换器。普通双向电平转换芯片（如 TXS0102）适用于 MDIO，但需注意其内部上拉会影响总线 RC。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">📍 PHY 地址冲突</div>
+          <p>总线上两个 PHY 配置相同 PHYAD 会导致总线冲突（读操作时双方都驱动 MDIO）。PHYAD 通常由 PHY 的 strapped 引脚（上电采样）或 EEPROM 配置，<strong>需在原理图阶段分配唯一地址</strong>。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🌡️ 前导码长度</div>
+          <p>标准 32 bit 前导码用于 PHY 唤醒。部分 PHY 支持缩短至 16 bit 以提速，但<strong>需 STA 与所有 MMD 都支持</strong>。混用时按最长者配置，否则部分 PHY 无法识别帧。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔄 Clause 22/45 混用</div>
+          <p>Clause 45 PHY 通常兼容 Clause 22，但<strong>仅能访问 Clause 22 寄存器空间（前 32 个）</strong>。若需访问扩展寄存器，必须用 Clause 45。SoC 控制器需支持 Clause 45 才能完整配置 10G+ PHY。</p>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">总线电容与上升时间的关系</h4>
+      <div class="formula">
+        t<sub>r</sub> ≈ 2.2 × R<sub>pull</sub> × C<sub>bus</sub> &nbsp;&nbsp;（10%~90% 上升时间）
+      </div>
+      <p>例：R<sub>pull</sub>=1.5kΩ，C<sub>bus</sub>=200pF → t<sub>r</sub> ≈ 2.2 × 1.5k × 200p = 660 ns。而 MDC 半周期（2.5MHz）仅 200 ns——此时上升沿无法在一个 bit 内完成，<strong>必须减小上拉阻值或降低时钟</strong>。</p>
+
+      <div class="danger-box">
+        <strong>典型故障模式：</strong>读寄存器始终返回 0xFFFF。原因排查顺序：①MDIO 上拉电阻缺失/虚焊 → ②PHYAD 配置错误（PHY 未响应）→ ③PHY 未上电/复位未释放 → ④MDC 时钟未输出 → ⑤总线电容过大导致时序违例 → ⑥Clause 22/45 协议不匹配。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 第七章 ═══════════ -->
+<section id="sec7">
+  <div class="card">
+    <div class="card-header"><div class="section-no">7</div><div class="icon">🧪</div><h2>测试方法</h2></div>
+    <div class="card-body">
+      <h4>测试一：MDIO 总线功能性测试（逻辑分析仪）</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>连接探头</h5><p>逻辑分析仪 CH0 接 MDC，CH1 接 MDIO。同时接 SoC 的 MDIO 引脚和 PHY 侧引脚以对比信号完整性。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>配置协议解码</h5><p>在逻辑分析仪软件中选择 MDIO 协议解码（Clause 22 / Clause 45），设置采样率 ≥20 MHz（MDC 2.5MHz 的 8 倍以上）。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>触发读操作</h5><p>通过 SoC 驱动（如 Linux <code>mdio-tools</code> 或裸机寄存器操作）发起一次读操作，读取 PHY 寄存器 1（Status）。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>验证帧格式</h5><p>检查解码结果：Preamble(32×1) → ST(01/00) → OP → PHYAD → REGAD/DEVAD → TA → DATA → IDLE。确认 TA 转向位正确（读=Z0，写=10）。</p></div></div>
+        <div class="step"><div class="step-no">5</div><div class="step-content"><h5>验证数据正确性</h5><p>对比逻辑分析仪读到的 DATA 与 PHY datasheet 中寄存器 1 的默认值。若读到 0xFFFF，说明 PHY 未响应（地址错/未上电/上拉缺失）。</p></div></div>
+        <div class="step"><div class="step-no">6</div><div class="step-content"><h5>遍历所有 PHY 地址</h5><p>对 PHYAD 0-31 逐一发起读操作（扫描总线），记录哪些地址有响应。这是<strong>总线探测（bus scan）</strong>，可发现 PHY 实际地址与配置是否一致。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">测试二：信号完整性测试（示波器）</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>测量 MDC 与 MDIO 波形</h5><p>示波器（≥100 MHz 带宽）探头接 MDC 和 MDIO，触发连续读操作。观察波形上升/下降沿、振铃、过冲。</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>测量建立/保持时间</h5><p>在 MDC 上升沿处展开波形，测量 MDIO 数据从稳定到 MDC 上升沿的时间（建立）和 MDC 上升沿后 MDIO 保持的时间（保持），均应 ≥10 ns。</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>测量上升时间</h5><p>测量 MDIO 上升沿 10%~90% 时间。结合上拉电阻与总线电容，验证 t<sub>r</sub> = 2.2×R×C 是否在预算内。若 t<sub>r</sub> &gt; MDC 半周期，需减小上拉或降速。</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>检查高阻态</h5><p>读操作的 TA 第 1 位应为高阻（由上拉拉高）。若波形显示此位为低或中间电平，说明 STA 未正确释放总线或上拉失效。</p></div></div>
+      </div>
+
+      <h4 style="margin-top:18px;">测试三：软件层验证（Linux 环境）</h4>
+      <div class="bit-frame">
+# 1. 使用 mdio-tools（用户态工具）扫描总线
+mdio-tool list eth0                      # 列出总线上所有 PHY
+mdio-tool read eth0 0x01 0x1             # 读 PHYAD=1 的寄存器 1 (Status)
+mdio-tool write eth0 0x01 0x0 0x8000     # 写 PHYAD=1 寄存器 0, bit15=1 (软复位)
+
+# 2. Linux 内核 sysfs 接口
+cat /sys/bus/mdio_bus/*/phy_id           # 读取 PHY 标识 (OUI+型号)
+cat /sys/class/net/eth0/phydev/link      # 读取链路状态
+
+# 3. Clause 45 访问（需 phylib 支持）
+# 格式: phydev:mmd:register
+mdio-tool read eth0 0x01:0x1:0x0001      # Clause 45: PORTAD=1, DEVAD=1, REG=0x0001
+
+# 4. ethtool 间接访问
+ethtool -d eth0                          # dump PHY 寄存器
+ethtool --phy-statistics eth0            # PHY 错误统计
+      </div>
+
+      <div class="info-box">
+        <strong>推荐设备：</strong>
+        <ul style="margin-top:6px;">
+          <li><strong>逻辑分析仪</strong>：Saleae Logic Pro 16 / Siglent SDLA / Keysight 1680 系列（支持 MDIO 协议解码）</li>
+          <li><strong>示波器</strong>：≥4 通道、≥100 MHz 带宽（如 Siglent SDS1104X、Rigol DS1054Z）</li>
+          <li><strong>软件工具</strong>：Linux <code>mdio-tools</code>、<code>ethtool</code>、<code>phytool</code>；裸机环境可用厂商提供的 MDIO 调试命令</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 第八章 ═══════════ -->
+<section id="sec8">
+  <div class="card">
+    <div class="card-header"><div class="section-no">8</div><div class="icon">⚠️</div><h2>注意事项</h2></div>
+    <div class="card-body">
+      <div class="caution-grid">
+        <div class="caution-item">
+          <div class="ci-title">🔌 上拉电阻不可省</div>
+          <p>MDIO 必须有外部上拉（1.5kΩ）。漏加上拉会导致空闲态为低、转向位高阻失效、读操作返回错误数据。这是<strong>最常见的硬件设计错误</strong>。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">📋 PHY 地址必须唯一</div>
+          <p>总线上的 PHY 必须配置不同的 PHYAD（通过 strapped 引脚或 EEPROM）。地址冲突会导致读操作时两个 PHY 同时驱动 MDIO，数据损坏。建议在原理图阶段<strong>列出 PHYAD 分配表</strong>。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔄 Link Status 是锁存型</div>
+          <p>寄存器 1 的 bit2（Link Status）是 latch-low 型：一旦链路断开会锁存 0，即使重新连通也保持 0，直到被读取。读取后清锁存，需<strong>读第二次</strong>才得到实时值。这是 PHY 调试经典坑。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">⚡ 复位后需等待</div>
+          <p>写寄存器 0 的 bit15=1 执行软复位后，PHY 需要一定时间完成内部初始化（通常几十 µs~几 ms）。<strong>复位后立即读取可能返回错误值</strong>，应按 datasheet 等待稳定后再操作。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">📖 Clause 22/45 不可混用</div>
+          <p>同一总线上 Clause 22 和 Clause 45 帧通过 ST 位区分。Clause 22-only PHY 收到 ST=00（Clause 45 帧）会忽略，不影响。但若 SoC 控制器只支持 Clause 22，则<strong>无法访问 Clause 45 扩展寄存器</strong>，10G+ PHY 配置将受限。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">📐 总线长度受限</div>
+          <p>MDIO 是板内总线，走线应 &lt;30cm。若需跨板管理（如背板），需加 MDIO 中继/桥接芯片，或改用以太网管理帧（如 NC-SI）。严禁用 MDIO 做长距离通信。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🔍 0xFFFF 不一定是真值</div>
+          <p>读操作返回 0xFFFF 有两种可能：①PHY 寄存器真值确实是 0xFFFF（罕见）；②PHY 未响应，MDIO 被上拉拉高为全 1。<strong>需结合上下文判断</strong>——若所有寄存器都返回 0xFFFF，几乎可判定是通信失败。</p>
+        </div>
+        <div class="caution-item">
+          <div class="ci-title">🚗 车载 PHY 特殊性</div>
+          <p>100BASE-T1/1000BASE-T1 等车载以太网 PHY 通常<strong>强制使用 Clause 45</strong>（因寄存器空间大），且 Master/Slave 模式需通过 MDIO 配置。调试时需确认 SoC 控制器支持 Clause 45。</p>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">常见问题速查表</h4>
+      <table>
+        <thead><tr><th>现象</th><th>可能原因</th><th>排查方法</th></tr></thead>
+        <tbody>
+          <tr><td>所有寄存器读 0xFFFF</td><td>MDIO 上拉缺失 / PHY 未上电 / PHYAD 错误</td><td>示波器查 MDIO 空闲电平；万用表查 PHY 供电；逻辑分析仪查 TA 位是否为 0</td></tr>
+          <tr><td>部分寄存器读值错误</td><td>时序违例 / 总线电容过大</td><td>降低 MDC 速率重试；示波器查上升时间</td></tr>
+          <tr><td>写操作无效</td><td>OP 码错误 / Clause 协议不匹配</td><td>逻辑分析仪解码帧，确认 ST 和 OP 值</td></tr>
+          <tr><td>链路状态读取异常</td><td>Link Status 锁存机制</td><td>连续读两次寄存器 1，取第二次 bit2</td></tr>
+          <tr><td>总线偶发错误</td><td>信号完整性差 / EMI 干扰</td><td>示波器查振铃过冲；缩短走线；加 ESD/去耦</td></tr>
+          <tr><td>Clause 45 访问失败</td><td>SoC 控制器不支持 / PHY 未启用 Clause 45</td><td>查 SoC 手册 MDIO 控制器章节；确认 PHY 配置</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 第九章 ═══════════ -->
+<section id="sec9">
+  <div class="card">
+    <div class="card-header"><div class="section-no">9</div><div class="icon">🧭</div><h2>选型指南</h2></div>
+    <div class="card-body">
+      <h4>场景一：按以太网速率选择协议</h4>
+      <table>
+        <thead><tr><th>速率</th><th>推荐协议</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>10M / 100M</td><td>Clause 22</td><td>传统 PHY，Clause 22 足够。如 RTL8201、DP83848</td></tr>
+          <tr><td>1000M (1G)</td><td>Clause 22（兼容）</td><td>多数 1G PHY 双模支持，Clause 22 可访问基本寄存器</td></tr>
+          <tr><td>2.5G / 5G</td><td>Clause 45（推荐）</td><td>扩展寄存器多，建议 Clause 45。如 Marvell 88E2580</td></tr>
+          <tr><td>10G / 25G</td><td><strong>Clause 45（必须）</strong></td><td>10G+ PHY 寄存器空间大，Clause 22 无法完整配置</td></tr>
+          <tr><td>40G / 100G / 400G</td><td><strong>Clause 45（必须）</strong></td><td>多通道 PHY，强依赖 Clause 45 的 DEVAD 寻址</td></tr>
+          <tr><td>车载 100/1000BASE-T1</td><td>Clause 45（推荐）</td><td>车载 PHY 通常强制 Clause 45</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">场景二：SoC 控制器选型要点</h4>
+      <table>
+        <thead><tr><th>选型维度</th><th>建议</th></tr></thead>
+        <tbody>
+          <tr><td>Clause 45 支持</td><td>若涉及 10G+ PHY，SoC MDIO 控制器<strong>必须支持 Clause 45</strong>。仅支持 Clause 22 的控制器无法配置高速 PHY</td></tr>
+          <tr><td>MDC 时钟可调</td><td>控制器应支持 MDC 分频配置（如 1/2/4/8 分频），以适配不同 PHY 的最大时钟</td></tr>
+          <tr><td>前导码长度可配</td><td>支持 32/16 bit 前导码切换，兼容不同 PHY</td></tr>
+          <tr><td>DMA / 中断</td><td>频繁轮询 PHY 状态时，支持中断驱动的控制器可降低 CPU 占用</td></tr>
+          <tr><td>多总线实例</td><td>Switch 芯片管理多组 PHY 时，SoC 最好有多个独立 MDIO 控制器实例</td></tr>
+          <tr><td>Linux 驱动支持</td><td>确认 SoC 的 MDIO 控制器有主流内核驱动（libphy / mdio_bus）</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="margin-top:18px;">场景三：PHY 选型要点</h4>
+      <div class="compare-grid">
+        <div class="compare-col purple">
+          <h3>低速 PHY（10/100/1000M）</h3>
+          <ul>
+            <li><strong>协议</strong>：Clause 22（多数也兼容 Clause 45）</li>
+            <li><strong>PHYAD 配置</strong>：strapped 引脚（2-3 位，地址 0-4 或 0-7）</li>
+            <li><strong>典型型号</strong>：RTL8201F、DP83848I、KSZ8081、LAN8720</li>
+            <li><strong>关注</strong>：寄存器 0-10 标准寄存器完整、支持中断输出</li>
+            <li><strong>价格</strong>：低（&lt;$0.5）</li>
+          </ul>
+        </div>
+        <div class="compare-col blue">
+          <h3>高速 PHY（10G+）</h3>
+          <ul>
+            <li><strong>协议</strong>：<strong>Clause 45（必须）</strong></li>
+            <li><strong>DEVAD 支持</strong>：PMA/PMD/PCS/AN 全子层寄存器可访问</li>
+            <li><strong>典型型号</strong>：Marvell 88X3310、TI DP83867/DP83869、Aquantia AQR107</li>
+            <li><strong>关注</strong>：LED 配置、SerDes 环回、PRBS 测试、眼图寄存器</li>
+            <li><strong>价格</strong>：高（$3-$20+）</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 style="margin-top:18px;">决策流程</h4>
+      <div class="steps">
+        <div class="step"><div class="step-no">1</div><div class="step-content"><h5>确定 PHY 速率等级</h5><p>10/100M → Clause 22；1G → Clause 22/45 双模；10G+ → 强制 Clause 45</p></div></div>
+        <div class="step"><div class="step-no">2</div><div class="step-content"><h5>确认 SoC 控制器能力</h5><p>查 SoC datasheet 的 MDIO 章节，确认支持 Clause 22/45 及 MDC 时钟范围</p></div></div>
+        <div class="step"><div class="step-no">3</div><div class="step-content"><h5>分配 PHY 地址</h5><p>列出总线上所有 PHY，分配唯一 PHYAD（0-31），在原理图标注 strapped 配置</p></div></div>
+        <div class="step"><div class="step-no">4</div><div class="step-content"><h5>设计硬件电路</h5><p>MDIO 加 1.5kΩ 上拉；MDC/MDIO 等长并行走线；ESD 保护；评估总线电容</p></div></div>
+        <div class="step"><div class="step-no">5</div><div class="step-content"><h5>软件驱动适配</h5><p>配置 SoC MDIO 控制器（时钟、前导码、协议模式）；移植 libphy 驱动；验证读写</p></div></div>
+      </div>
+
+      <div class="success-box">
+        <strong>选型总结：</strong>对于新设计，<strong>强烈推荐选择同时支持 Clause 22 和 Clause 45 的 PHY 与 SoC 控制器</strong>。这样既能用 Clause 22 快速访问标准寄存器，又能用 Clause 45 配置扩展功能。Linux 内核 libphy 框架原生支持双协议自动协商，软件层无需额外适配。
+      </div>
+
+      <blockquote>
+        <strong>学习资源推荐：</strong>
+        <ul style="margin:6px 0;">
+          <li>IEEE 802.3 标准 Clause 22（第 22 章）与 Clause 45（第 45 章）——最权威的协议定义</li>
+          <li>Linux 内核源码 <code>drivers/net/phy/phy_device.c</code> 与 <code>drivers/net/mdio.c</code>——工业级实现参考</li>
+          <li>各 PHY 厂商 datasheet 的 "MDIO Interface" 章节——具体寄存器定义与时序</li>
+          <li><code>mdio-tools</code> 项目（GitHub）——用户态调试工具源码</li>
+        </ul>
+      </blockquote>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  <p>📚 AE 知识文档 · MDIO 通信协议详解 · v1.0 · 2026-07-18</p>
+  <p>覆盖 IEEE 802.3 Clause 22 / Clause 45 | 适用于以太网 PHY 芯片管理总线学习与调试</p>
+</div>
+
+</div><!-- /container -->
+
+</body>
+</html>

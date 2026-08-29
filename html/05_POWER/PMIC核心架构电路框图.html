@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>芯迈半导体 PMIC 全产品线核心架构电路框图</title>
+<style>
+:root{--bg:#f0f2f8;--card:#ffffff;--border:#c0c6d4;--pri:#4f8ef7;--pri-l:#6da3ff;--acc:#00d4aa;--red:#ff6b6b;--txt:#1a1d27;--dim:#5a6070;--bri:#0f1117;--warn:#ffb347}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);line-height:1.7}
+.nav{position:fixed;top:0;left:0;width:250px;height:100vh;background:#f4f6fb;border-right:1px solid var(--border);padding:16px 0;overflow-y:auto;z-index:100}
+.nav .logo{padding:14px 18px 18px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.nav .logo h1{color:var(--bri);font-size:15px}
+.nav .logo p{color:var(--dim);font-size:11px;margin-top:2px}
+.nav h2{color:var(--pri);font-size:12px;padding:6px 18px;text-transform:uppercase;letter-spacing:1px}
+.nav a{display:block;padding:7px 18px 7px 26px;color:var(--dim);text-decoration:none;font-size:12px;border-left:3px solid transparent;transition:.2s}
+.nav a:hover{color:var(--pri-l);background:rgba(79,142,247,.06);border-left-color:var(--pri)}
+.main{margin-left:250px;padding:28px 36px 80px;max-width:1080px}
+.page-hdr{text-align:center;padding:40px 0 32px;border-bottom:1px solid var(--border);margin-bottom:40px}
+.page-hdr h1{font-size:26px;color:var(--bri);margin-bottom:6px}
+.page-hdr p{color:var(--dim);font-size:13px}
+.sec{margin-bottom:44px}
+.sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--pri)}
+.sec-num{background:var(--pri);color:#fff;font-size:13px;font-weight:700;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sec-ttl{font-size:20px;color:var(--bri)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px;margin-bottom:20px;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.card h3{color:var(--pri-l);font-size:15px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card h3 .tag{background:rgba(0,212,170,.12);color:var(--acc);font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600}
+.diag{background:#eef1f8;border:1px solid #c8ceda;border-radius:6px;padding:20px;margin-bottom:16px;overflow-x:auto}
+.diag svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.prin{margin-top:16px}
+.prin h4{color:var(--acc);font-size:13px;margin:14px 0 8px}
+.prin p,.prin li{font-size:13px;line-height:1.8}
+.prin ul{padding-left:18px}
+.prin li{margin-bottom:3px}
+.kp{background:rgba(255,179,71,.1);border-left:3px solid var(--warn);padding:8px 12px;margin:10px 0;border-radius:0 6px 6px 0;font-size:12px}
+.fm{background:rgba(79,142,247,.06);border:1px solid rgba(79,142,247,.2);padding:8px 14px;border-radius:6px;font-family:Consolas,monospace;font-size:12px;margin:6px 0;color:var(--pri-l)}
+.ptbl{width:100%;border-collapse:collapse;margin-top:12px;font-size:11px}
+.ptbl th{background:#e2e7f2;color:var(--pri-l);padding:6px 8px;text-align:left;border-bottom:2px solid var(--pri);font-size:10px;white-space:nowrap}
+.ptbl td{padding:5px 8px;border-bottom:1px solid #c8ceda}
+.ptbl tr:hover td{background:rgba(79,142,247,.06)}
+.ptbl .m{color:var(--acc);font-weight:600;font-family:Consolas,monospace}
+@media(max-width:900px){.nav{display:none}.main{margin-left:0;padding:16px}}
+</style>
+</head>
+<body>
+<nav class="nav">
+<div class="logo"><h1>芯迈 PMIC 架构</h1><p>9子线电路框图</p></div>
+<h2>产品线导航</h2>
+<a href="#s1">3.1 电池管理</a>
+<a href="#s2">3.2 无线供电</a>
+<a href="#s3">3.3 开关稳压器</a>
+<a href="#s4">3.4 接口 &amp; 保护</a>
+<a href="#s5">3.5 LED 显示背光</a>
+<a href="#s6">3.6 LCD 电源管理</a>
+<a href="#s7">3.7 SoC 电源管理</a>
+<a href="#s8">3.8 Sub PMIC</a>
+<a href="#s9">3.9 OLED 电源管理</a>
+</nav>
+<div class="main">
+<div class="page-hdr">
+<h1>芯迈半导体 PMIC 全产品线核心架构电路框图</h1>
+<p>Silicon Magic · 9 大产品线 · 电路框图 + 工作原理详解 · AE工程师技术参考</p>
+</div>
+
+<!-- ===== 3.1 电池管理 ===== -->
+<div class="sec" id="s1">
+<div class="sec-hdr"><div class="sec-num">1</div><div class="sec-ttl">电池管理（Battery Management）</div></div>
+
+<div class="card">
+<h3>3.1.1 开关充电器 <span class="tag">Buck / Buck-Boost</span></h3>
+<div class="diag">
+<svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="a1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#4f8ef7"/></marker>
+<marker id="a1g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#00d4aa"/></marker>
+<linearGradient id="gB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f8ef7" stop-opacity=".12"/><stop offset="1" stop-color="#4f8ef7" stop-opacity=".02"/></linearGradient>
+<linearGradient id="gBB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00d4aa" stop-opacity=".12"/><stop offset="1" stop-color="#00d4aa" stop-opacity=".02"/></linearGradient>
+</defs>
+<text x="480" y="24" fill="#1a1d27" font-size="15" font-weight="700" text-anchor="middle">开关充电器拓扑对比</text>
+
+<!-- Buck -->
+<rect x="20" y="44" width="440" height="460" rx="10" fill="url(#gB)" stroke="#4f8ef7" stroke-width="1.5" stroke-opacity=".4"/>
+<text x="240" y="72" fill="#4f8ef7" font-size="13" font-weight="700" text-anchor="middle">Buck 充电器 (SM5424/SM5414)</text>
+
+<rect x="50" y="108" width="80" height="32" rx="6" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1.2"/>
+<text x="90" y="129" fill="#4f8ef7" font-size="11" font-weight="600" text-anchor="middle">VBUS</text>
+<text x="90" y="96" fill="#5a6070" font-size="9" text-anchor="middle">4~13.5V</text>
+
+<rect x="175" y="100" width="65" height="48" rx="5" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="207" y="122" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">HS-FET</text>
+<text x="207" y="136" fill="#5a6070" font-size="8" text-anchor="middle">(上管)</text>
+<line x1="130" y1="124" x2="175" y2="124" stroke="#4f8ef7" stroke-width="1.5"/>
+
+<line x1="240" y1="124" x2="270" y2="124" stroke="#ffb347" stroke-width="2"/>
+<text x="255" y="114" fill="#ffb347" font-size="9" font-weight="600">SW</text>
+
+<path d="M270,124 C275,124 278,108 283,108 C288,108 291,124 296,124 C301,124 304,108 309,108 C314,108 317,124 322,124 C327,124 330,108 335,108 C340,108 343,124 348,124" fill="none" stroke="#ffb347" stroke-width="2"/>
+<text x="309" y="102" fill="#ffb347" font-size="9" text-anchor="middle">L</text>
+
+<rect x="375" y="100" width="65" height="48" rx="5" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="407" y="122" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">CS-FET</text>
+<text x="407" y="136" fill="#5a6070" font-size="8" text-anchor="middle">(充电路径)</text>
+<line x1="348" y1="124" x2="375" y2="124" stroke="#ffb347" stroke-width="1.5"/>
+
+<rect x="380" y="178" width="70" height="32" rx="6" fill="#d0f2d8" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="415" y="199" fill="#00d4aa" font-size="11" font-weight="600" text-anchor="middle">VBAT</text>
+<line x1="407" y1="148" x2="407" y2="178" stroke="#00d4aa" stroke-width="1.5"/>
+
+<rect x="50" y="230" width="80" height="32" rx="6" fill="#dce3f0" stroke="#6da3ff" stroke-width="1"/>
+<text x="90" y="251" fill="#6da3ff" font-size="11" font-weight="600" text-anchor="middle">VSYS</text>
+<line x1="130" y1="246" x2="415" y2="246" stroke="#6da3ff" stroke-width="1" stroke-dasharray="4,3"/>
+
+<rect x="110" y="300" width="240" height="100" rx="8" fill="#d0d8ea" stroke="#4f8ef7" stroke-width="1"/>
+<text x="230" y="324" fill="#4f8ef7" font-size="11" font-weight="700" text-anchor="middle">充电控制器</text>
+<text x="230" y="342" fill="#5a6070" font-size="9" text-anchor="middle">PWM 发生器 + CC/CV 算法</text>
+<text x="230" y="358" fill="#5a6070" font-size="9" text-anchor="middle">电流采样 → 恒流(CC)控制</text>
+<text x="230" y="374" fill="#5a6070" font-size="9" text-anchor="middle">电压采样 → 恒压(CV)控制</text>
+<line x1="207" y1="300" x2="207" y2="148" stroke="#4f8ef7" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="407" y1="300" x2="407" y2="210" stroke="#4f8ef7" stroke-width="1" stroke-dasharray="3,3"/>
+
+<rect x="50" y="420" width="150" height="60" rx="6" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1"/>
+<text x="125" y="440" fill="#5a6070" font-size="9" text-anchor="middle">CC/CV 充电曲线</text>
+<line x1="70" y1="466" x2="110" y2="466" stroke="#ff6b6b" stroke-width="1.5"/>
+<line x1="110" y1="466" x2="130" y2="456" stroke="#ff6b6b" stroke-width="1.5"/>
+<line x1="130" y1="456" x2="180" y2="456" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="185" y="459" fill="#ff6b6b" font-size="8">I</text>
+<line x1="70" y1="472" x2="110" y2="462" stroke="#00d4aa" stroke-width="1.5"/>
+<line x1="110" y1="462" x2="150" y2="456" stroke="#00d4aa" stroke-width="1.5"/>
+<line x1="150" y1="456" x2="180" y2="456" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="185" y="459" fill="#00d4aa" font-size="8"> </text>
+<text x="185" y="470" fill="#00d4aa" font-size="8">V</text>
+
+<text x="240" y="490" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">⚠ 仅支持 VBUS &gt; VBAT</text>
+
+<!-- Buck-Boost -->
+<rect x="490" y="44" width="450" height="460" rx="10" fill="url(#gBB)" stroke="#00d4aa" stroke-width="1.5" stroke-opacity=".4"/>
+<text x="715" y="72" fill="#00d4aa" font-size="13" font-weight="700" text-anchor="middle">Buck-Boost 充电器 (SM5803A)</text>
+
+<rect x="520" y="88" width="70" height="32" rx="6" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1.2"/>
+<text x="555" y="109" fill="#4f8ef7" font-size="11" font-weight="600" text-anchor="middle">VBUS</text>
+<text x="555" y="80" fill="#5a6070" font-size="9" text-anchor="middle">4~21.5V</text>
+
+<rect x="620" y="80" width="50" height="48" rx="5" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="645" y="106" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">HS1</text>
+<line x1="590" y1="104" x2="620" y2="104" stroke="#4f8ef7" stroke-width="1.5"/>
+
+<text x="690" y="76" fill="#ffb347" font-size="9" font-weight="600">SW1</text>
+
+<rect x="620" y="148" width="50" height="48" rx="5" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="645" y="174" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">LS1</text>
+<line x1="645" y1="128" x2="645" y2="148" stroke="#ffb347" stroke-width="1.5"/>
+<line x1="670" y1="104" x2="690" y2="104" stroke="#ffb347" stroke-width="1.5"/>
+<line x1="690" y1="104" x2="690" y2="172" stroke="#ffb347" stroke-width="1.5"/>
+<line x1="690" y1="172" x2="670" y2="172" stroke="#ffb347" stroke-width="1.5"/>
+
+<line x1="645" y1="196" x2="645" y2="216" stroke="#8a90a0" stroke-width="1"/>
+<text x="645" y="228" fill="#5a6070" font-size="9" text-anchor="middle">GND</text>
+
+<path d="M690,138 C696,138 700,122 706,122 C712,122 716,138 722,138 C728,138 732,122 738,122 C744,122 748,138 754,138" fill="none" stroke="#ffb347" stroke-width="2"/>
+<text x="722" y="114" fill="#ffb347" font-size="9" text-anchor="middle">L</text>
+
+<text x="768" y="132" fill="#ffb347" font-size="9" font-weight="600">SW2</text>
+<line x1="754" y1="138" x2="790" y2="138" stroke="#ffb347" stroke-width="1.5"/>
+
+<rect x="790" y="80" width="50" height="48" rx="5" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="815" y="106" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">HS2</text>
+
+<rect x="790" y="148" width="50" height="48" rx="5" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="815" y="174" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">LS2</text>
+<line x1="790" y1="138" x2="790" y2="172" stroke="#ffb347" stroke-width="1.5"/>
+
+<line x1="840" y1="104" x2="870" y2="104" stroke="#00d4aa" stroke-width="1.5"/>
+<rect x="850" y="88" width="60" height="32" rx="6" fill="#d0f2d8" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="880" y="109" fill="#00d4aa" font-size="11" font-weight="600" text-anchor="middle">VBAT</text>
+<line x1="815" y1="196" x2="815" y2="216" stroke="#8a90a0" stroke-width="1"/>
+<text x="815" y="228" fill="#5a6070" font-size="9" text-anchor="middle">GND</text>
+
+<rect x="520" y="256" width="70" height="32" rx="6" fill="#dce3f0" stroke="#6da3ff" stroke-width="1"/>
+<text x="555" y="277" fill="#6da3ff" font-size="11" font-weight="600" text-anchor="middle">VSYS</text>
+<line x1="590" y1="272" x2="880" y2="272" stroke="#6da3ff" stroke-width="1" stroke-dasharray="4,3"/>
+<line x1="880" y1="120" x2="880" y2="272" stroke="#6da3ff" stroke-width="1" stroke-dasharray="4,3"/>
+
+<rect x="560" y="300" width="300" height="100" rx="8" fill="#d0d8ea" stroke="#00d4aa" stroke-width="1"/>
+<text x="710" y="324" fill="#00d4aa" font-size="11" font-weight="700" text-anchor="middle">Buck-Boost 四开关控制器</text>
+<text x="710" y="342" fill="#5a6070" font-size="9" text-anchor="middle">Buck 模式: VBUS &gt; VBAT → HS1/LS1 工作</text>
+<text x="710" y="358" fill="#5a6070" font-size="9" text-anchor="middle">Boost 模式: VBUS &lt; VBAT → LS2/HS2 工作</text>
+<text x="710" y="374" fill="#5a6070" font-size="9" text-anchor="middle">OTG 模式: VBAT → VBUS 反向输出</text>
+<text x="710" y="390" fill="#5a6070" font-size="9" text-anchor="middle">四管均开关时实现平滑模式过渡</text>
+
+<rect x="560" y="420" width="90" height="22" rx="4" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1"/>
+<text x="605" y="436" fill="#4f8ef7" font-size="9" text-anchor="middle">Buck</text>
+<rect x="665" y="420" width="90" height="22" rx="4" fill="#dce3f0" stroke="#00d4aa" stroke-width="1"/>
+<text x="710" y="436" fill="#00d4aa" font-size="9" text-anchor="middle">Boost</text>
+<rect x="770" y="420" width="90" height="22" rx="4" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1"/>
+<text x="815" y="436" fill="#ff6b6b" font-size="9" text-anchor="middle">OTG</text>
+
+<text x="715" y="486" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">✓ 支持 VBUS &lt; / &gt; / = VBAT 全范围</text>
+</svg>
+</div>
+<div class="prin">
+<h4>⚙️ Buck 充电器工作原理</h4>
+<ul>
+<li><b>HS-FET 导通(ton)</b>：VBUS → L → VBAT，电感储能，电流线性上升</li>
+<li><b>HS-FET 关断(toff)</b>：电感续流 → CS-FET 导通，释放能量给电池</li>
+<li><b>输出电压</b>：V_BAT = D × V_BUS，D 为占空比 (D&lt;1 → 仅降压)</li>
+</ul>
+<div class="fm">V_BAT = D × V_BUS (D &lt; 1，仅降压)</div>
+<h4>⚙️ Buck-Boost 充电器工作原理</h4>
+<ul>
+<li><b>Buck 模式 (VBUS &gt; VBAT)</b>：HS1/LS1 交替开关，HS2常通，LS2常断</li>
+<li><b>Boost 模式 (VBUS &lt; VBAT)</b>：LS2/HS2 交替开关，HS1常通，LS1常断</li>
+<li><b>Buck-Boost 模式 (VBUS ≈ VBAT)</b>：四管均参与开关，平滑过渡</li>
+<li><b>OTG 模式</b>：电池反向 Boost 输出 5V/9V/12V (PD 协议)</li>
+</ul>
+<div class="kp">🔑 <b>电源路径管理 (Power Path)</b>：系统优先从 VBUS 取电，不足时由电池补充。即使电池深度放电，插上适配器后系统也能立即启动。</div>
+</div>
+<table class="ptbl"><tr><th>型号</th><th>拓扑</th><th>输入电压</th><th>最大充电电流</th><th>电源路径</th><th>串联电芯</th><th>OTG</th><th>封装</th></tr>
+<tr><td class="m">SM5803A</td><td>Buck-Boost</td><td>4.0~21.5V</td><td>6A</td><td>✓</td><td>2/3/4S</td><td>✓</td><td>75 WLCSP</td></tr>
+<tr><td class="m">SM5424</td><td>Buck</td><td>4.2~13.5V</td><td>3.5A</td><td>✓</td><td>1S</td><td>✗</td><td>42 WLCSP</td></tr>
+<tr><td class="m">SM5414</td><td>Buck</td><td>4.0~6.2V</td><td>2.5A</td><td>✓</td><td>1S</td><td>✗</td><td>25 WLCSP</td></tr></table>
+</div>
+
+<!-- 3.1.2 电容分压器 -->
+<div class="card">
+<h3>3.1.2 电容分压器（电荷泵） <span class="tag">Switched Capacitor</span></h3>
+<div class="diag">
+<svg viewBox="0 0 960 460" xmlns="http://www.w3.org/2000/svg">
+<text x="480" y="24" fill="#1a1d27" font-size="15" font-weight="700" text-anchor="middle">2:1 电荷泵工作原理 — 两相切换</text>
+
+<!-- Phase 1 -->
+<rect x="20" y="44" width="440" height="400" rx="10" fill="rgba(79,142,247,.05)" stroke="#4f8ef7" stroke-width="1" stroke-opacity=".4"/>
+<text x="240" y="72" fill="#4f8ef7" font-size="13" font-weight="700" text-anchor="middle">Phase 1：Cfly 充电</text>
+
+<rect x="50" y="96" width="70" height="32" rx="6" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1.2"/>
+<text x="85" y="117" fill="#4f8ef7" font-size="11" font-weight="600" text-anchor="middle">VBUS</text>
+<text x="85" y="84" fill="#5a6070" font-size="9" text-anchor="middle">6~10.5V</text>
+
+<rect x="155" y="102" width="56" height="22" rx="4" fill="#d0f2d8" stroke="#00d4aa" stroke-width="2"/>
+<text x="183" y="118" fill="#00d4aa" font-size="9" font-weight="700" text-anchor="middle">S1 ON</text>
+<line x1="120" y1="112" x2="155" y2="112" stroke="#4f8ef7" stroke-width="2"/>
+
+<rect x="240" y="92" width="90" height="44" rx="6" fill="#dce3f0" stroke="#ffb347" stroke-width="2"/>
+<text x="285" y="112" fill="#ffb347" font-size="12" font-weight="700" text-anchor="middle">Cfly</text>
+<text x="285" y="128" fill="#5a6070" font-size="8" text-anchor="middle">飞跨电容</text>
+<line x1="211" y1="112" x2="240" y2="112" stroke="#00d4aa" stroke-width="2"/>
+
+<rect x="365" y="102" width="56" height="22" rx="4" fill="#d0f2d8" stroke="#00d4aa" stroke-width="2"/>
+<text x="393" y="118" fill="#00d4aa" font-size="9" font-weight="700" text-anchor="middle">S3 ON</text>
+<line x1="330" y1="112" x2="365" y2="112" stroke="#ffb347" stroke-width="2"/>
+<line x1="393" y1="124" x2="393" y2="150" stroke="#8a90a0" stroke-width="1"/>
+<text x="393" y="164" fill="#5a6070" font-size="9" text-anchor="middle">GND</text>
+
+<rect x="50" y="190" width="380" height="80" rx="6" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1"/>
+<text x="240" y="212" fill="#5a6070" font-size="10" font-weight="600" text-anchor="middle">Phase 1 等效电路</text>
+<text x="240" y="232" fill="#2a3040" font-size="11" text-anchor="middle">VBUS → S1 → Cfly(+) → Cfly(-) → S3 → GND</text>
+<text x="240" y="252" fill="#ffb347" font-size="11" font-weight="600" text-anchor="middle">V_Cfly = VBUS / 2 (2:1 分压)</text>
+
+<rect x="50" y="290" width="380" height="120" rx="6" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1"/>
+<text x="240" y="312" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">Phase 1 关键特征</text>
+<text x="70" y="334" fill="#2a3040" font-size="10">• Cfly 串联充电 → 充至 VBUS/2</text>
+<text x="70" y="352" fill="#2a3040" font-size="10">• 输入电流 = 输出电流的 2 倍</text>
+<text x="70" y="370" fill="#2a3040" font-size="10">• 理论效率 = 2×Vout/Vin</text>
+<text x="70" y="388" fill="#ffb347" font-size="10" font-weight="600">• 当 Vout = Vin/2 时效率 ≈ 100%</text>
+
+<!-- Phase 2 -->
+<rect x="490" y="44" width="450" height="400" rx="10" fill="rgba(0,212,170,.08)" stroke="#00d4aa" stroke-width="1" stroke-opacity=".4"/>
+<text x="715" y="72" fill="#00d4aa" font-size="13" font-weight="700" text-anchor="middle">Phase 2：Cfly 向电池放电</text>
+
+<rect x="520" y="96" width="70" height="32" rx="6" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1" stroke-opacity=".4"/>
+<text x="555" y="117" fill="#4f8ef7" font-size="11" font-weight="600" text-anchor="middle" opacity=".5">VBUS</text>
+
+<rect x="620" y="102" width="56" height="22" rx="4" fill="#d0f2d8" stroke="#00d4aa" stroke-width="2"/>
+<text x="648" y="118" fill="#00d4aa" font-size="9" font-weight="700" text-anchor="middle">S2 ON</text>
+<line x1="590" y1="112" x2="620" y2="112" stroke="#4f8ef7" stroke-width="1.5" stroke-opacity=".4"/>
+
+<rect x="710" y="92" width="90" height="44" rx="6" fill="#dce3f0" stroke="#ffb347" stroke-width="2"/>
+<text x="755" y="112" fill="#ffb347" font-size="12" font-weight="700" text-anchor="middle">Cfly</text>
+<text x="755" y="128" fill="#5a6070" font-size="8" text-anchor="middle">释放能量</text>
+<line x1="676" y1="112" x2="710" y2="112" stroke="#00d4aa" stroke-width="2"/>
+
+<rect x="835" y="102" width="56" height="22" rx="4" fill="#d0f2d8" stroke="#00d4aa" stroke-width="2"/>
+<text x="863" y="118" fill="#00d4aa" font-size="9" font-weight="700" text-anchor="middle">S4 ON</text>
+<line x1="800" y1="112" x2="835" y2="112" stroke="#ffb347" stroke-width="2"/>
+
+<rect x="838" y="148" width="60" height="32" rx="6" fill="#d0f2d8" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="868" y="169" fill="#00d4aa" font-size="11" font-weight="600" text-anchor="middle">VBAT</text>
+<line x1="863" y1="124" x2="863" y2="148" stroke="#00d4aa" stroke-width="1.5"/>
+
+<rect x="520" y="190" width="380" height="80" rx="6" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1"/>
+<text x="710" y="212" fill="#5a6070" font-size="10" font-weight="600" text-anchor="middle">Phase 2 等效电路</text>
+<text x="710" y="232" fill="#2a3040" font-size="11" text-anchor="middle">VBUS → S2 → Cfly(+) → Cfly(-) → S4 → VBAT</text>
+<text x="710" y="252" fill="#ffb347" font-size="11" font-weight="600" text-anchor="middle">V_BAT = VBUS - V_Cfly = VBUS/2</text>
+
+<rect x="520" y="290" width="380" height="120" rx="6" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1"/>
+<text x="710" y="312" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">Phase 2 关键特征</text>
+<text x="540" y="334" fill="#2a3040" font-size="10">• Cfly 反向串联 → 向电池传递能量</text>
+<text x="540" y="352" fill="#2a3040" font-size="10">• 输出电压 ≈ VBUS/2 (2:1 模式)</text>
+<text x="540" y="370" fill="#2a3040" font-size="10">• 无需电感 → 体积小、EMI低</text>
+<text x="540" y="388" fill="#ffb347" font-size="10" font-weight="600">• 实际效率 96~98%，远优于线性充电</text>
+</svg>
+</div>
+<div class="prin">
+<h4>⚙️ 电荷泵工作原理</h4>
+<ul>
+<li><b>Phase 1（充电）</b>：S1/S3 导通，Cfly 接在 VBUS-GND 间，充至 VBUS/2</li>
+<li><b>Phase 2（转移）</b>：S2/S4 导通，Cfly 从 GND 断开改接 VBAT，电荷转移给电池</li>
+<li><b>2:1 转换比</b>：输出电压 = 输入/2，天然适配 9V→4.5V 单电芯快充</li>
+</ul>
+<div class="fm">理论效率 η = 2×V_out/V_in × 100% (当 Vout=Vin/2 时 η→100%)</div>
+<div class="kp">🔑 <b>电荷泵 vs 电感式</b>：电荷泵用 Cfly 替代 L → 体积更小（手机空间受限）、EMI 更低（无磁场辐射），但只能做整数比分压（2:1/3:1），不适合宽范围调压。</div>
+<h4>📋 工作模式</h4>
+<ul>
+<li><b>Forward Bypass</b>：VBUS 直通 VBAT（输入电压匹配时）</li>
+<li><b>Forward Boost</b>：2:1 电荷泵降压充电</li>
+<li><b>Reverse Bypass</b>：VBAT 直通 VBUS（OTG 5V输出）</li>
+<li><b>Reverse Boost</b>：VBAT 升压到 VBUS（OTG 9V/12V输出）</li>
+</ul>
+</div>
+<table class="ptbl"><tr><th>型号</th><th>输入电压</th><th>最大充电电流</th><th>输出功率</th><th>工作模式</th><th>电芯</th><th>封装</th></tr>
+<tr><td class="m">SM5440</td><td>6~10.5V</td><td>9A</td><td>60W</td><td>Charge/Rev-Bypass/Rev-Boost</td><td>1S</td><td>89 WLCSP</td></tr>
+<tr><td class="m">SM5470</td><td>3.3~10.5V</td><td>5A</td><td>25W</td><td>Fwd-Bypass/Fwd-Boost/Rev全模式</td><td>1S</td><td>36 WLCSP</td></tr>
+<tr><td class="m">SM5451</td><td>3.3~10.5V</td><td>6A</td><td>30W</td><td>Fwd-Bypass/Fwd-Boost/Rev全模式</td><td>1S</td><td>42 WLCSP</td></tr>
+<tr><td class="m">SM5441</td><td>6~10.5V</td><td>7A</td><td>60W</td><td>Direct/Rev-Bypass/Cell Balance</td><td>2S</td><td>72 WLCSP</td></tr></table>
+</div>
+
+<!-- 3.1.3 电量计 -->
+<div class="card">
+<h3>3.1.3 电量计（Fuel Gauge） <span class="tag">Pack / System Side</span></h3>
+<div class="diag">
+<svg viewBox="0 0 960 400" xmlns="http://www.w3.org/2000/svg">
+<text x="480" y="24" fill="#1a1d27" font-size="15" font-weight="700" text-anchor="middle">电量计架构对比：Pack Side vs System Side</text>
+
+<rect x="20" y="44" width="440" height="340" rx="10" fill="rgba(79,142,247,.05)" stroke="#4f8ef7" stroke-width="1" stroke-opacity=".4"/>
+<text x="240" y="72" fill="#4f8ef7" font-size="13" font-weight="700" text-anchor="middle">Pack Side (SM5603) — 含MCU</text>
+
+<rect x="50" y="86" width="70" height="40" rx="6" fill="#dce3f0" stroke="#ffb347" stroke-width="1.2"/>
+<text x="85" y="110" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">电池</text>
+
+<rect x="145" y="92" width="50" height="28" rx="4" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="170" y="111" fill="#ff6b6b" font-size="9" font-weight="600" text-anchor="middle">Rsense</text>
+<line x1="120" y1="106" x2="145" y2="106" stroke="#ffb347" stroke-width="1.2"/>
+
+<rect x="220" y="80" width="70" height="40" rx="6" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1.2"/>
+<text x="255" y="104" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">ADC</text>
+<line x1="195" y1="106" x2="220" y2="106" stroke="#ff6b6b" stroke-width="1.2"/>
+
+<rect x="220" y="135" width="160" height="36" rx="6" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="300" y="157" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">库仑计数器 ∫I(t)dt</text>
+<line x1="255" y1="120" x2="255" y2="135" stroke="#4f8ef7" stroke-width="1"/>
+
+<rect x="220" y="190" width="160" height="70" rx="8" fill="#d0d8ea" stroke="#6da3ff" stroke-width="1.5"/>
+<text x="300" y="214" fill="#6da3ff" font-size="11" font-weight="700" text-anchor="middle">内置 MCU</text>
+<text x="300" y="232" fill="#5a6070" font-size="9" text-anchor="middle">SOC 算法 + OCV 校准</text>
+<text x="300" y="248" fill="#5a6070" font-size="9" text-anchor="middle">温度补偿 + 老化追踪</text>
+<line x1="300" y1="171" x2="300" y2="190" stroke="#00d4aa" stroke-width="1.5"/>
+
+<rect x="220" y="280" width="160" height="30" rx="6" fill="#dce3f0" stroke="#ffb347" stroke-width="1"/>
+<text x="300" y="300" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">I²C / HDQ 通信</text>
+<line x1="300" y1="260" x2="300" y2="280" stroke="#6da3ff" stroke-width="1"/>
+
+<rect x="50" y="190" width="120" height="60" rx="6" fill="#f2d8d8" stroke="#ff6b6b" stroke-width="1"/>
+<text x="110" y="212" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">电池保护</text>
+<text x="110" y="228" fill="#5a6070" font-size="8" text-anchor="middle">OVP/UVP/OCP/OTP</text>
+<line x1="170" y1="220" x2="220" y2="220" stroke="#ff6b6b" stroke-width="1" stroke-dasharray="3,2"/>
+
+<text x="240" y="350" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">✓ 可独立运行，不依赖主SoC</text>
+
+<!-- System Side -->
+<rect x="490" y="44" width="450" height="340" rx="10" fill="rgba(0,212,170,.08)" stroke="#00d4aa" stroke-width="1" stroke-opacity=".4"/>
+<text x="715" y="72" fill="#00d4aa" font-size="13" font-weight="700" text-anchor="middle">System Side (SM5602) — 无MCU</text>
+
+<rect x="520" y="86" width="70" height="40" rx="6" fill="#dce3f0" stroke="#ffb347" stroke-width="1" stroke-dasharray="3,2"/>
+<text x="555" y="110" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">电池</text>
+<text x="555" y="134" fill="#5a6070" font-size="8" text-anchor="middle">(无直接连接)</text>
+
+<rect x="625" y="92" width="50" height="28" rx="4" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="650" y="111" fill="#ff6b6b" font-size="9" font-weight="600" text-anchor="middle">Rsense</text>
+
+<rect x="710" y="80" width="70" height="40" rx="6" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="745" y="104" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">ADC</text>
+
+<rect x="710" y="135" width="160" height="36" rx="6" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="790" y="157" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">库仑计数器 ∫I(t)dt</text>
+
+<rect x="710" y="190" width="160" height="30" rx="6" fill="#dce3f0" stroke="#ffb347" stroke-width="1"/>
+<text x="790" y="210" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">I²C → 主 SoC</text>
+<line x1="790" y1="171" x2="790" y2="190" stroke="#00d4aa" stroke-width="1.5"/>
+
+<rect x="710" y="240" width="160" height="70" rx="8" fill="#d0d8ea" stroke="#6da3ff" stroke-width="1.5"/>
+<text x="790" y="264" fill="#6da3ff" font-size="11" font-weight="700" text-anchor="middle">主 SoC</text>
+<text x="790" y="282" fill="#5a6070" font-size="9" text-anchor="middle">SOC 算法在此运行</text>
+<text x="790" y="298" fill="#5a6070" font-size="9" text-anchor="middle">依赖主机软件计算</text>
+<line x1="790" y1="220" x2="790" y2="240" stroke="#ffb347" stroke-width="1.5"/>
+
+<text x="715" y="350" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">⚠ 依赖主SoC运行算法，BOM成本更低</text>
+</svg>
+</div>
+<div class="prin">
+<h4>⚙️ 电量计工作原理</h4>
+<ul>
+<li><b>库仑计数法</b>：Rsense 采样电流 → ADC → 对时间积分 ΔQ = ∫I·dt</li>
+<li><b>SOC 计算</b>：SOC = Q_remaining / Q_full × 100%，需 OCV 校准消漂移</li>
+<li><b>Pack Side (SM5603)</b>：内置 MCU，独立运行算法，适合可拆卸电池包</li>
+<li><b>System Side (SM5602)</b>：仅 ADC+通信，算法在主 SoC 运行，成本更低</li>
+</ul>
+<div class="fm">SOC = Q_remaining / Q_full × 100% | ΔQ = ∫I(t)dt | 需 OCV 校准消除漂移</div>
+<div class="kp">🔑 <b>High-side vs Low-side Rsense</b>：高侧采样不受地噪声干扰但需差分ADC；低侧简单但受地回路影响。芯迈电量计支持 High &amp; Low 两种配置。</div>
+</div>
+<table class="ptbl"><tr><th>型号</th><th>内置MCU</th><th>位置</th><th>ADC范围</th><th>感测电阻</th><th>电芯</th><th>封装</th></tr>
+<tr><td class="m">SM5603</td><td>✓</td><td>Pack Side</td><td>13A</td><td>High &amp; Low</td><td>1S</td><td>12 WLCSP</td></tr>
+<tr><td class="m">SM5602</td><td>✗</td><td>System Side</td><td>13A</td><td>High &amp; Low</td><td>1S</td><td>9 WLCSP</td></tr></table>
+</div>
+</div>
+
+<!-- ===== 3.2 无线供电 ===== -->
+<div class="sec" id="s2">
+<div class="sec-hdr"><div class="sec-num">2</div><div class="sec-ttl">无线供电（Wireless Power）</div></div>
+<div class="card">
+<h3>Qi 无线供电系统架构 <span class="tag">TX → RX</span></h3>
+<div class="diag">
+<svg viewBox="0 0 960 380" xmlns="http://www.w3.org/2000/svg">
+<text x="480" y="24" fill="#1a1d27" font-size="15" font-weight="700" text-anchor="middle">Qi 无线供电系统完整链路</text>
+
+<rect x="20" y="44" width="430" height="320" rx="10" fill="rgba(79,142,247,.05)" stroke="#4f8ef7" stroke-width="1.5" stroke-opacity=".4"/>
+<text x="235" y="72" fill="#4f8ef7" font-size="13" font-weight="700" text-anchor="middle">发送端 TX（SM5940）</text>
+
+<rect x="50" y="90" width="70" height="32" rx="6" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1.2"/>
+<text x="85" y="111" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">DC输入</text>
+
+<rect x="155" y="82" width="110" height="48" rx="6" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="210" y="104" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">全桥逆变器</text>
+<text x="210" y="118" fill="#5a6070" font-size="8" text-anchor="middle">DC→AC 100~205kHz</text>
+<line x1="120" y1="106" x2="155" y2="106" stroke="#4f8ef7" stroke-width="1.5"/>
+
+<rect x="155" y="150" width="110" height="48" rx="6" fill="#dce3f0" stroke="#ffb347" stroke-width="1.5"/>
+<text x="210" y="172" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">谐振补偿网络</text>
+<text x="210" y="186" fill="#5a6070" font-size="8" text-anchor="middle">Ls+Cs 串联谐振</text>
+<line x1="210" y1="130" x2="210" y2="150" stroke="#ff6b6b" stroke-width="1.5"/>
+
+<ellipse cx="210" cy="240" rx="55" ry="25" fill="none" stroke="#4f8ef7" stroke-width="2"/>
+<text x="210" y="236" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">TX 线圈</text>
+<text x="210" y="250" fill="#5a6070" font-size="8" text-anchor="middle">磁场合</text>
+<line x1="210" y1="198" x2="210" y2="215" stroke="#ffb347" stroke-width="1.5"/>
+
+<rect x="50" y="180" width="70" height="48" rx="6" fill="#f2d8d8" stroke="#ff6b6b" stroke-width="1"/>
+<text x="85" y="200" fill="#ff6b6b" font-size="9" font-weight="600" text-anchor="middle">FOD</text>
+<text x="85" y="214" fill="#5a6070" font-size="7" text-anchor="middle">异物检测</text>
+
+<rect x="50" y="260" width="120" height="60" rx="6" fill="#d0d8ea" stroke="#4f8ef7" stroke-width="1"/>
+<text x="110" y="282" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">TX 控制器</text>
+<text x="110" y="296" fill="#5a6070" font-size="8" text-anchor="middle">Qi协议 + PID调功</text>
+
+<text x="478" y="236" fill="#ffb347" font-size="18" text-anchor="middle">⇌</text>
+<text x="478" y="258" fill="#ffb347" font-size="9" text-anchor="middle">磁场耦合</text>
+
+<rect x="510" y="44" width="430" height="320" rx="10" fill="rgba(0,212,170,.08)" stroke="#00d4aa" stroke-width="1.5" stroke-opacity=".4"/>
+<text x="725" y="72" fill="#00d4aa" font-size="13" font-weight="700" text-anchor="middle">接收端 RX（SM5903 / SM5922）</text>
+
+<ellipse cx="700" cy="240" rx="55" ry="25" fill="none" stroke="#00d4aa" stroke-width="2"/>
+<text x="700" y="236" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">RX 线圈</text>
+<text x="700" y="250" fill="#5a6070" font-size="8" text-anchor="middle">感应接收</text>
+
+<rect x="645" y="150" width="110" height="48" rx="6" fill="#dce3f0" stroke="#ffb347" stroke-width="1.5"/>
+<text x="700" y="172" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">谐振补偿网络</text>
+<text x="700" y="186" fill="#5a6070" font-size="8" text-anchor="middle">Ld+Cd 并联谐振</text>
+<line x1="700" y1="215" x2="700" y2="198" stroke="#00d4aa" stroke-width="1.5"/>
+
+<rect x="645" y="82" width="110" height="48" rx="6" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="700" y="104" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">同步整流</text>
+<text x="700" y="118" fill="#5a6070" font-size="8" text-anchor="middle">AC→DC (效率~95%)</text>
+<line x1="700" y1="130" x2="700" y2="150" stroke="#ffb347" stroke-width="1.5"/>
+
+<rect x="790" y="82" width="90" height="48" rx="6" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="835" y="104" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">LDO/DC-DC</text>
+<text x="835" y="118" fill="#5a6070" font-size="8" text-anchor="middle">稳压输出</text>
+<line x1="755" y1="106" x2="790" y2="106" stroke="#ff6b6b" stroke-width="1.5"/>
+
+<rect x="810" y="150" width="70" height="32" rx="6" fill="#d0f2d8" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="845" y="171" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">VOUT</text>
+<line x1="835" y1="130" x2="835" y2="150" stroke="#00d4aa" stroke-width="1.5"/>
+
+<rect x="645" y="260" width="120" height="60" rx="6" fill="#d0d8ea" stroke="#00d4aa" stroke-width="1"/>
+<text x="705" y="282" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">通信调制</text>
+<text x="705" y="296" fill="#5a6070" font-size="8" text-anchor="middle">ASK 负载调制</text>
+<text x="705" y="310" fill="#5a6070" font-size="8" text-anchor="middle">RX→TX 反向通信</text>
+
+<line x1="645" y1="290" x2="170" y2="290" stroke="#ffb347" stroke-width="1" stroke-dasharray="5,3"/>
+<text x="408" y="284" fill="#ffb347" font-size="8" text-anchor="middle">ASK 负载调制信号</text>
+</svg>
+</div>
+<div class="prin">
+<h4>⚙️ 无线供电工作原理</h4>
+<ul>
+<li><b>TX 全桥逆变器</b>：DC → AC (100~205kHz)，驱动 TX 线圈产生交变磁场</li>
+<li><b>谐振补偿</b>：TX 串联 + RX 并联谐振 → 提高功率传输效率，补偿漏感</li>
+<li><b>电磁感应</b>：TX 线圈交变磁场 → RX 线圈感应 AC 电压（法拉第定律）</li>
+<li><b>同步整流</b>：MOSFET 替代二极管 → 压降从 0.7V 降至 0.3V，效率提升 5~10%</li>
+<li><b>ASK 负载调制</b>：RX 改变自身负载 → TX 检测电流变化 → 实现 RX→TX 通信</li>
+</ul>
+<div class="kp">🔑 <b>FOD（异物检测）</b>：TX 通过监测输入功率与理论传输功率的差值，损耗过大说明线圈间有金属异物，立即停供电防止过热。WPC Qi 标准强制要求。</div>
+</div>
+<table class="ptbl"><tr><th>型号</th><th>角色</th><th>输入电压</th><th>输出电压</th><th>功率</th><th>封装</th></tr>
+<tr><td class="m">SM5903</td><td>RX</td><td>5.15~15V</td><td>4~12V</td><td>20W</td><td>52 WLCSP</td></tr>
+<tr><td class="m">SM5922</td><td>RX</td><td>5~12V</td><td>4~6V</td><td>5W</td><td>40 WLCSP</td></tr>
+<tr><td class="m">SM5940</td><td>TX</td><td>TBD</td><td>TBD</td><td>TBD</td><td>TBD</td></tr></table>
+</div>
+</div>
+
+<!-- ===== 3.3 开关稳压器 ===== -->
+<div class="sec" id="s3">
+<div class="sec-hdr"><div class="sec-num">3</div><div class="sec-ttl">开关稳压器（Switching Regulator）</div></div>
+<div class="card">
+<h3>Buck / Boost / Buck-Boost 三种拓扑 <span class="tag">DC-DC</span></h3>
+<div class="diag">
+<svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg">
+<text x="480" y="24" fill="#1a1d27" font-size="15" font-weight="700" text-anchor="middle">开关稳压器三种基本拓扑</text>
+
+<!-- Buck -->
+<rect x="20" y="44" width="290" height="460" rx="10" fill="rgba(79,142,247,.05)" stroke="#4f8ef7" stroke-width="1" stroke-opacity=".4"/>
+<text x="165" y="72" fill="#4f8ef7" font-size="13" font-weight="700" text-anchor="middle">Buck 降压</text>
+<text x="165" y="88" fill="#5a6070" font-size="9" text-anchor="middle">SM5820 / SM6003 / SM6001</text>
+
+<rect x="40" y="110" width="55" height="28" rx="4" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1"/>
+<text x="67" y="129" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">Vin</text>
+
+<rect x="115" y="102" width="45" height="44" rx="4" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="137" y="128" fill="#ff6b6b" font-size="9" font-weight="600" text-anchor="middle">HS</text>
+<line x1="95" y1="124" x2="115" y2="124" stroke="#4f8ef7" stroke-width="1.5"/>
+
+<line x1="160" y1="124" x2="178" y2="124" stroke="#ffb347" stroke-width="2"/>
+<text x="169" y="116" fill="#ffb347" font-size="8">SW</text>
+
+<path d="M178,124 C183,124 186,110 191,110 C196,110 199,124 204,124 C209,124 212,110 217,110 C222,110 225,124 230,124" fill="none" stroke="#ffb347" stroke-width="2"/>
+<text x="204" y="106" fill="#ffb347" font-size="8" text-anchor="middle">L</text>
+
+<line x1="230" y1="124" x2="255" y2="124" stroke="#00d4aa" stroke-width="1.5"/>
+<rect x="245" y="110" width="24" height="28" rx="4" fill="#dce3f0" stroke="#00d4aa" stroke-width="1"/>
+<text x="257" y="128" fill="#00d4aa" font-size="8" text-anchor="middle">C</text>
+<rect x="240" y="150" width="50" height="28" rx="4" fill="#d0f2d8" stroke="#00d4aa" stroke-width="1"/>
+<text x="265" y="169" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">Vout</text>
+<text x="265" y="184" fill="#5a6070" font-size="7" text-anchor="middle">&lt; Vin</text>
+
+<rect x="115" y="164" width="45" height="44" rx="4" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="137" y="190" fill="#00d4aa" font-size="9" font-weight="600" text-anchor="middle">LS</text>
+<line x1="137" y1="146" x2="137" y2="164" stroke="#ffb347" stroke-width="1.5"/>
+<line x1="178" y1="124" x2="178" y2="155" stroke="#ffb347" stroke-width="1"/>
+<line x1="137" y1="155" x2="178" y2="155" stroke="#ffb347" stroke-width="1"/>
+<line x1="137" y1="208" x2="137" y2="224" stroke="#8a90a0" stroke-width="1"/>
+<text x="200" y="234" fill="#5a6070" font-size="9" text-anchor="middle">GND</text>
+
+<rect x="40" y="256" width="250" height="50" rx="6" fill="#d0d8ea" stroke="#4f8ef7" stroke-width="1"/>
+<text x="165" y="276" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">PWM 控制器 + 反馈环路</text>
+<text x="165" y="292" fill="#5a6070" font-size="8" text-anchor="middle">Vout采样→误差放大→PWM调制</text>
+
+<rect x="40" y="324" width="250" height="60" rx="6" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1"/>
+<text x="165" y="344" fill="#5a6070" font-size="8" text-anchor="middle">SW 节点波形</text>
+<line x1="55" y1="368" x2="275" y2="368" stroke="#b0b8c8" stroke-width=".5"/>
+<rect x="65" y="352" width="30" height="16" rx="1" fill="none" stroke="#ff6b6b" stroke-width="1.5"/>
+<rect x="105" y="352" width="10" height="16" rx="1" fill="none" stroke="#00d4aa" stroke-width="1.5"/>
+<rect x="125" y="352" width="30" height="16" rx="1" fill="none" stroke="#ff6b6b" stroke-width="1.5"/>
+<rect x="165" y="352" width="10" height="16" rx="1" fill="none" stroke="#00d4aa" stroke-width="1.5"/>
+<rect x="185" y="352" width="30" height="16" rx="1" fill="none" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="80" y="380" fill="#ff6b6b" font-size="6">ton</text>
+<text x="110" y="380" fill="#00d4aa" font-size="6">toff</text>
+
+<text x="165" y="416" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">Vout = D × Vin</text>
+<text x="165" y="432" fill="#5a6070" font-size="8" text-anchor="middle">D = ton/(ton+toff) &lt; 1</text>
+<text x="165" y="454" fill="#ff6b6b" font-size="9" font-weight="600" text-anchor="middle">⚠ 仅 Vout &lt; Vin</text>
+
+<!-- Boost -->
+<rect x="335" y="44" width="290" height="460" rx="10" fill="rgba(0,212,170,.08)" stroke="#00d4aa" stroke-width="1" stroke-opacity=".4"/>
+<text x="480" y="72" fill="#00d4aa" font-size="13" font-weight="700" text-anchor="middle">Boost 升压</text>
+<text x="480" y="88" fill="#5a6070" font-size="9" text-anchor="middle">SM5830</text>
+
+<rect x="355" y="110" width="55" height="28" rx="4" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1"/>
+<text x="382" y="129" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">Vin</text>
+
+<path d="M410,124 C415,124 418,110 423,110 C428,110 431,124 436,124 C441,124 444,110 449,110 C454,110 457,124 462,124" fill="none" stroke="#ffb347" stroke-width="2"/>
+<text x="436" y="106" fill="#ffb347" font-size="8" text-anchor="middle">L</text>
+<line x1="410" y1="124" x2="410" y2="124" stroke="#4f8ef7" stroke-width="1.5"/>
+
+<line x1="462" y1="124" x2="480" y2="124" stroke="#ffb347" stroke-width="2"/>
+<text x="471" y="116" fill="#ffb347" font-size="8">SW</text>
+
+<rect x="470" y="148" width="45" height="44" rx="4" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="492" y="174" fill="#00d4aa" font-size="9" font-weight="600" text-anchor="middle">LS</text>
+<line x1="492" y1="124" x2="492" y2="148" stroke="#ffb347" stroke-width="1.5"/>
+
+<rect x="470" y="102" width="45" height="44" rx="4" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="492" y="128" fill="#ff6b6b" font-size="9" font-weight="600" text-anchor="middle">HS</text>
+
+<line x1="515" y1="124" x2="545" y2="124" stroke="#00d4aa" stroke-width="1.5"/>
+<rect x="535" y="110" width="24" height="28" rx="4" fill="#dce3f0" stroke="#00d4aa" stroke-width="1"/>
+<text x="547" y="128" fill="#00d4aa" font-size="8" text-anchor="middle">C</text>
+<rect x="530" y="150" width="50" height="28" rx="4" fill="#d0f2d8" stroke="#00d4aa" stroke-width="1"/>
+<text x="555" y="169" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">Vout</text>
+<text x="555" y="184" fill="#5a6070" font-size="7" text-anchor="middle">&gt; Vin</text>
+
+<line x1="492" y1="192" x2="492" y2="224" stroke="#8a90a0" stroke-width="1"/>
+<text x="492" y="234" fill="#5a6070" font-size="9" text-anchor="middle">GND</text>
+
+<rect x="355" y="256" width="250" height="50" rx="6" fill="#d0d8ea" stroke="#00d4aa" stroke-width="1"/>
+<text x="480" y="276" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">PWM 控制器 + 反馈环路</text>
+<text x="480" y="292" fill="#5a6070" font-size="8" text-anchor="middle">LS导通→L储能 / LS关断→L释放→升压</text>
+
+<text x="480" y="416" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">Vout = Vin / (1-D)</text>
+<text x="480" y="432" fill="#5a6070" font-size="8" text-anchor="middle">D = ton/(ton+toff)</text>
+<text x="480" y="454" fill="#00d4aa" font-size="9" font-weight="600" text-anchor="middle">✓ Vout &gt; Vin</text>
+
+<!-- Buck-Boost -->
+<rect x="650" y="44" width="290" height="460" rx="10" fill="rgba(255,179,71,.08)" stroke="#ffb347" stroke-width="1" stroke-opacity=".4"/>
+<text x="795" y="72" fill="#ffb347" font-size="13" font-weight="700" text-anchor="middle">Buck-Boost 升降压</text>
+<text x="795" y="88" fill="#5a6070" font-size="9" text-anchor="middle">SM5811</text>
+
+<rect x="670" y="110" width="55" height="28" rx="4" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1"/>
+<text x="697" y="129" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">Vin</text>
+
+<rect x="745" y="96" width="40" height="36" rx="4" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="765" y="118" fill="#ff6b6b" font-size="8" font-weight="600" text-anchor="middle">HS1</text>
+<line x1="725" y1="114" x2="745" y2="114" stroke="#4f8ef7" stroke-width="1.5"/>
+
+<text x="795" y="90" fill="#ffb347" font-size="8">SW1</text>
+
+<rect x="745" y="148" width="40" height="36" rx="4" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="765" y="170" fill="#00d4aa" font-size="8" font-weight="600" text-anchor="middle">LS1</text>
+<line x1="765" y1="132" x2="765" y2="148" stroke="#ffb347" stroke-width="1.5"/>
+<line x1="785" y1="114" x2="795" y2="114" stroke="#ffb347" stroke-width="1"/>
+<line x1="795" y1="114" x2="795" y2="166" stroke="#ffb347" stroke-width="1"/>
+<line x1="795" y1="166" x2="785" y2="166" stroke="#ffb347" stroke-width="1"/>
+
+<line x1="765" y1="184" x2="765" y2="200" stroke="#8a90a0" stroke-width="1"/>
+<text x="765" y="212" fill="#5a6070" font-size="8" text-anchor="middle">GND</text>
+
+<path d="M795,130 C800,130 803,118 808,118 C813,118 816,130 821,130 C826,130 829,118 834,118 C839,118 842,130 847,130" fill="none" stroke="#ffb347" stroke-width="2"/>
+<text x="821" y="112" fill="#ffb347" font-size="8" text-anchor="middle">L</text>
+
+<rect x="858" y="96" width="40" height="36" rx="4" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="878" y="118" fill="#ff6b6b" font-size="8" font-weight="600" text-anchor="middle">HS2</text>
+
+<rect x="858" y="148" width="40" height="36" rx="4" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="878" y="170" fill="#00d4aa" font-size="8" font-weight="600" text-anchor="middle">LS2</text>
+<line x1="858" y1="130" x2="858" y2="166" stroke="#ffb347" stroke-width="1"/>
+
+<line x1="898" y1="114" x2="920" y2="114" stroke="#00d4aa" stroke-width="1.5"/>
+<rect x="898" y="200" width="50" height="28" rx="4" fill="#d0f2d8" stroke="#00d4aa" stroke-width="1"/>
+<text x="923" y="219" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">Vout</text>
+<line x1="920" y1="114" x2="920" y2="200" stroke="#00d4aa" stroke-width="1.5"/>
+
+<line x1="878" y1="184" x2="878" y2="200" stroke="#8a90a0" stroke-width="1"/>
+
+<rect x="670" y="250" width="250" height="70" rx="6" fill="#d0d8ea" stroke="#ffb347" stroke-width="1"/>
+<text x="795" y="272" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">四开关 PWM 控制器</text>
+<text x="795" y="290" fill="#5a6070" font-size="8" text-anchor="middle">Buck: HS1/LS1 | Boost: HS2/LS2</text>
+<text x="795" y="304" fill="#5a6070" font-size="8" text-anchor="middle">四管均开关→平滑过渡无跳变</text>
+
+<text x="795" y="416" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">Vout 可 &gt; / &lt; / = Vin</text>
+<text x="795" y="454" fill="#ffb347" font-size="9" font-weight="600" text-anchor="middle">✓ 全范围输出</text>
+</svg>
+</div>
+<div class="prin">
+<h4>⚙️ 三种拓扑原理对比</h4>
+<ul>
+<li><b>Buck</b>：HS 导通→L 储能，LS 续流→L 释能。Vout = D×Vin，D&lt;1 故 Vout&lt;Vin</li>
+<li><b>Boost</b>：LS 导通→L 从 Vin 储能，LS 断开→L 释放叠加 Vin。Vout = Vin/(1-D)</li>
+<li><b>Buck-Boost</b>：四开关结构，自动切换 Buck/Boost/Buck-Boost 模式</li>
+</ul>
+<div class="kp">🔑 <b>高开关频率（2~2.4MHz）</b>：频率越高→电感值越小→体积越小→适合手机/平板。代价是开关损耗增大，需低 Qg 集成 FET。AEC-Q100 Grade-1 车规版本支持 -40°C~+150°C。</div>
+</div>
+<table class="ptbl"><tr><th>型号</th><th>拓扑</th><th>输入电压</th><th>输出电压</th><th>电流</th><th>Iq</th><th>AEC-Q100</th><th>封装</th></tr>
+<tr><td class="m">SM5811</td><td>Buck-Boost</td><td>2.5~5.5V</td><td>1.8~5.5V</td><td>3A</td><td>15μA</td><td>✗</td><td>15 WLCSP</td></tr>
+<tr><td class="m">SM6003</td><td>Buck</td><td>4~36V</td><td>28V</td><td>600mA</td><td>75μA</td><td>Gr-1</td><td>DFN-8</td></tr>
+<tr><td class="m">SM6001</td><td>Buck</td><td>4~36V</td><td>28V</td><td>1A</td><td>75μA</td><td>Gr-1</td><td>DFN-8</td></tr>
+<tr><td class="m">SM5820</td><td>Buck</td><td>2.5~5.5V</td><td>0.35~1.39V</td><td>3A</td><td>40μA</td><td>✗</td><td>15 WLCSP</td></tr>
+<tr><td class="m">SM5830</td><td>Boost</td><td>TBD</td><td>TBD</td><td>TBD</td><td>TBD</td><td>✗</td><td>TBD</td></tr></table>
+</div>
+</div>
+
+<!-- ===== 3.4 接口 & 保护 ===== -->
+<div class="sec" id="s4">
+<div class="sec-hdr"><div class="sec-num">4</div><div class="sec-ttl">接口 &amp; 保护（Interface &amp; Protection）</div></div>
+<div class="card">
+<h3>OVP / 负载开关 / USB Type-C / 电平转换器 <span class="tag">保护 + 接口</span></h3>
+<div class="diag">
+<svg viewBox="0 0 960 540" xmlns="http://www.w3.org/2000/svg">
+<text x="480" y="24" fill="#1a1d27" font-size="15" font-weight="700" text-anchor="middle">接口保护系统架构（智能手机典型方案）</text>
+
+<!-- OVP -->
+<rect x="20" y="44" width="920" height="210" rx="10" fill="rgba(255,107,107,.05)" stroke="#ff6b6b" stroke-width="1" stroke-opacity=".4"/>
+<text x="480" y="72" fill="#ff6b6b" font-size="13" font-weight="700" text-anchor="middle">过压保护（OVP）— 响应时间 30~70ns</text>
+
+<rect x="40" y="100" width="70" height="32" rx="6" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1.2"/>
+<text x="75" y="121" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">VBUS</text>
+
+<rect x="140" y="92" width="120" height="48" rx="6" fill="#f2d8d8" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="200" y="114" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">OVP 比较器</text>
+<text x="200" y="128" fill="#5a6070" font-size="8" text-anchor="middle">Vref + 滤波/去抖</text>
+<line x1="110" y1="116" x2="140" y2="116" stroke="#4f8ef7" stroke-width="1.5"/>
+
+<rect x="300" y="92" width="110" height="48" rx="6" fill="#dce3f0" stroke="#ffb347" stroke-width="1.5"/>
+<text x="355" y="114" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">栅极驱动 + FET</text>
+<text x="355" y="128" fill="#5a6070" font-size="8" text-anchor="middle">Rds(on) 8~29mΩ</text>
+<line x1="260" y1="116" x2="300" y2="116" stroke="#ff6b6b" stroke-width="1.5"/>
+
+<rect x="450" y="100" width="70" height="32" rx="6" fill="#d0f2d8" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="485" y="121" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">VOUT</text>
+<line x1="410" y1="116" x2="450" y2="116" stroke="#ffb347" stroke-width="1.5"/>
+
+<rect x="560" y="100" width="80" height="32" rx="6" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1"/>
+<text x="600" y="121" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">→ 充电器</text>
+<line x1="520" y1="116" x2="560" y2="116" stroke="#00d4aa" stroke-width="1.5"/>
+
+<rect x="680" y="92" width="140" height="48" rx="6" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1"/>
+<text x="750" y="114" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">响应时间: 30~70ns</text>
+<text x="750" y="128" fill="#5a6070" font-size="8" text-anchor="middle">浪涌到达前切断后端</text>
+
+<text x="200" y="164" fill="#5a6070" font-size="8" text-anchor="middle">OVP阈值: 4~23V 可编程</text>
+
+<rect x="40" y="178" width="230" height="56" rx="4" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1"/>
+<text x="155" y="196" fill="#5a6070" font-size="8" text-anchor="middle">OVP 响应时序</text>
+<line x1="55" y1="220" x2="255" y2="220" stroke="#b0b8c8" stroke-width=".5"/>
+<line x1="55" y1="210" x2="100" y2="210" stroke="#4f8ef7" stroke-width="1.5"/>
+<line x1="100" y1="210" x2="100" y2="205" stroke="#ff6b6b" stroke-width="2"/>
+<line x1="100" y1="205" x2="130" y2="205" stroke="#ff6b6b" stroke-width="2"/>
+<line x1="130" y1="205" x2="130" y2="220" stroke="#00d4aa" stroke-width="2"/>
+<text x="77" y="230" fill="#4f8ef7" font-size="7">正常</text>
+<text x="115" y="230" fill="#ff6b6b" font-size="7">过压</text>
+<text x="150" y="230" fill="#00d4aa" font-size="7">关断</text>
+
+<!-- USB-C -->
+<rect x="20" y="270" width="920" height="190" rx="10" fill="rgba(79,142,247,.05)" stroke="#4f8ef7" stroke-width="1" stroke-opacity=".4"/>
+<text x="480" y="298" fill="#4f8ef7" font-size="13" font-weight="700" text-anchor="middle">USB Type-C 接口保护（SM5517）</text>
+
+<rect x="40" y="318" width="80" height="70" rx="6" fill="#dce3f0" stroke="#ffb347" stroke-width="1.5"/>
+<text x="80" y="342" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">USB-C</text>
+<text x="80" y="356" fill="#5a6070" font-size="8" text-anchor="middle">连接器</text>
+<text x="80" y="368" fill="#5a6070" font-size="7" text-anchor="middle">VBUS/CC</text>
+<text x="80" y="380" fill="#5a6070" font-size="7" text-anchor="middle">D+/D-</text>
+
+<rect x="155" y="318" width="80" height="32" rx="6" fill="#f2d8d8" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="195" y="339" fill="#ff6b6b" font-size="9" font-weight="600" text-anchor="middle">VBUS OVP</text>
+<line x1="120" y1="334" x2="155" y2="334" stroke="#ffb347" stroke-width="1.5"/>
+
+<rect x="155" y="364" width="80" height="32" rx="6" fill="#f2d8d8" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="195" y="385" fill="#ff6b6b" font-size="9" font-weight="600" text-anchor="middle">CC OVP</text>
+<line x1="120" y1="380" x2="155" y2="380" stroke="#ffb347" stroke-width="1.5"/>
+<text x="195" y="404" fill="#5a6070" font-size="7" text-anchor="middle">防20V PD误接</text>
+
+<rect x="270" y="318" width="110" height="78" rx="6" fill="#d0d8ea" stroke="#4f8ef7" stroke-width="1.2"/>
+<text x="325" y="342" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">Type-C 控制器</text>
+<text x="325" y="358" fill="#5a6070" font-size="8" text-anchor="middle">CC检测 + PD解码</text>
+<text x="325" y="372" fill="#5a6070" font-size="8" text-anchor="middle">VCONN 供电</text>
+<text x="325" y="386" fill="#5a6070" font-size="8" text-anchor="middle">DRP 角色</text>
+<line x1="235" y1="334" x2="270" y2="334" stroke="#ff6b6b" stroke-width="1.5"/>
+<line x1="235" y1="380" x2="270" y2="358" stroke="#ff6b6b" stroke-width="1"/>
+
+<rect x="420" y="328" width="90" height="48" rx="6" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="465" y="350" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">2:1 Mux</text>
+<text x="465" y="364" fill="#5a6070" font-size="8" text-anchor="middle">USB 数据切换</text>
+<line x1="380" y1="352" x2="420" y2="352" stroke="#4f8ef7" stroke-width="1.5"/>
+
+<rect x="550" y="318" width="110" height="78" rx="6" fill="#d0d8ea" stroke="#6da3ff" stroke-width="1.2"/>
+<text x="605" y="342" fill="#6da3ff" font-size="11" font-weight="600" text-anchor="middle">SoC</text>
+<text x="605" y="358" fill="#5a6070" font-size="8" text-anchor="middle">USB 数据收发</text>
+<text x="605" y="372" fill="#5a6070" font-size="8" text-anchor="middle">PD 协议管理</text>
+<line x1="510" y1="352" x2="550" y2="352" stroke="#00d4aa" stroke-width="1.5"/>
+
+<rect x="270" y="410" width="70" height="24" rx="4" fill="#dce3f0" stroke="#ffb347" stroke-width="1"/>
+<text x="305" y="426" fill="#ffb347" font-size="8" font-weight="600" text-anchor="middle">VCONN</text>
+<text x="305" y="438" fill="#5a6070" font-size="6" text-anchor="middle">5V→Cable eMarker</text>
+
+<!-- Level Shifter -->
+<rect x="20" y="470" width="920" height="60" rx="10" fill="rgba(0,212,170,.08)" stroke="#00d4aa" stroke-width="1" stroke-opacity=".4"/>
+<text x="480" y="496" fill="#00d4aa" font-size="13" font-weight="700" text-anchor="middle">电压电平转换器（SM5520）— 双向 2-bit，1.2~5.0V，3.4Mbps</text>
+
+<rect x="260" y="506" width="60" height="18" rx="3" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1"/>
+<text x="290" y="519" fill="#4f8ef7" font-size="8" text-anchor="middle">1.2V域</text>
+<rect x="420" y="506" width="120" height="18" rx="4" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="480" y="519" fill="#00d4aa" font-size="8" font-weight="600" text-anchor="middle">双向电平转换 3.4Mbps</text>
+<rect x="640" y="506" width="60" height="18" rx="3" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1"/>
+<text x="670" y="519" fill="#ff6b6b" font-size="8" text-anchor="middle">5.0V域</text>
+<line x1="320" y1="515" x2="420" y2="515" stroke="#4f8ef7" stroke-width="1.5"/>
+<line x1="540" y1="515" x2="640" y2="515" stroke="#ff6b6b" stroke-width="1.5"/>
+</svg>
+</div>
+<div class="prin">
+<h4>⚙️ OVP 工作原理</h4>
+<ul>
+<li><b>正常</b>：VBUS &lt; OVP 阈值 → FET 导通 → VBUS 直通 VOUT</li>
+<li><b>过压</b>：VBUS 超阈值 → 比较器翻转(30~70ns) → FET 关断 → 后端受保护</li>
+</ul>
+<div class="kp">🔑 <b>为什么需要 30~70ns 响应？</b>USB PD 中 20V 浪涌前沿达 ns 级，OVP 必须在浪涌到达后端 IC 前关断，否则 SoC/PMIC 被高压击穿。</div>
+<h4>⚙️ USB Type-C 保护要点</h4>
+<ul>
+<li><b>CC OVP</b>：CC 线正常仅 5V，PD 协商时 VBUS 可达 20V → CC OVP 防误接</li>
+<li><b>VCONN</b>：5V LDO 为 Cable 中 eMarker 供电（5A/100W Cable 必须有 eMarker）</li>
+<li><b>2:1 Mux</b>：USB-C 正反插需切换 D+/D- 信号到 SoC 正确引脚</li>
+</ul>
+</div>
+<table class="ptbl"><tr><th>类别</th><th>型号</th><th>关键参数</th><th>封装</th></tr>
+<tr><td>OVP</td><td class="m">SM5334</td><td>8mΩ/9A, OVP 4~23V, 70ns</td><td>20 WLCSP</td></tr>
+<tr><td>OVP</td><td class="m">SM5335/536</td><td>29mΩ/4.5A, OVP 4~23V, 70ns</td><td>9 WLCSP</td></tr>
+<tr><td>负载开关</td><td class="m">SM5360A</td><td>22mΩ/5A, OVP 6~23V, 30ns</td><td>42 WLCSP</td></tr>
+<tr><td>USB-C</td><td class="m">SM5517</td><td>CC OVP+Type-C控制器+USB OVP</td><td>36 WLCSP</td></tr>
+<tr><td>eMarker</td><td class="m">SM5516W</td><td>VCONN 2.7~5.5V</td><td>6 WLCSP</td></tr>
+<tr><td>电平转换</td><td class="m">SM5520</td><td>2-bit双向, 1.2~5.0V, 3.4Mbps</td><td>8 DFN</td></tr></table>
+</div>
+</div>
+
+<!-- ===== 3.5 LED 显示背光 ===== -->
+<div class="sec" id="s5">
+<div class="sec-hdr"><div class="sec-num">5</div><div class="sec-ttl">LED 显示背光（LED Backlight）</div></div>
+<div class="card">
+<h3>LED 背光驱动架构 <span class="tag">Boost / Buck</span></h3>
+<div class="diag">
+<svg viewBox="0 0 960 440" xmlns="http://www.w3.org/2000/svg">
+<text x="480" y="24" fill="#1a1d27" font-size="15" font-weight="700" text-anchor="middle">LED 背光驱动架构（Boost 型 6 通道）</text>
+
+<rect x="40" y="64" width="70" height="30" rx="4" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1.2"/>
+<text x="75" y="84" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">Vin</text>
+<text x="75" y="56" fill="#5a6070" font-size="8" text-anchor="middle">2.7~24V</text>
+
+<rect x="140" y="50" width="170" height="60" rx="6" fill="#dce3f0" stroke="#ffb347" stroke-width="1.5"/>
+<text x="225" y="72" fill="#ffb347" font-size="11" font-weight="700" text-anchor="middle">Boost 升压变换器</text>
+<text x="225" y="88" fill="#5a6070" font-size="8" text-anchor="middle">内置 HS/LS FET, 1~2MHz</text>
+<text x="225" y="100" fill="#5a6070" font-size="8" text-anchor="middle">Vout = 35~55V</text>
+<line x1="110" y1="80" x2="140" y2="80" stroke="#4f8ef7" stroke-width="1.5"/>
+
+<line x1="310" y1="80" x2="340" y2="80" stroke="#ffb347" stroke-width="2"/>
+<text x="325" y="70" fill="#ffb347" font-size="9" font-weight="600">VLED</text>
+
+<rect x="340" y="120" width="580" height="280" rx="8" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1"/>
+<text x="630" y="142" fill="#ffb347" font-size="11" font-weight="600" text-anchor="middle">LED 串阵列（6 通道）</text>
+
+<g transform="translate(360,156)">
+<rect width="540" height="30" rx="3" fill="#dce3f0" stroke="#ffb347" stroke-width="1"/>
+<circle cx="28" cy="15" r="9" fill="#ffb347" fill-opacity=".3" stroke="#ffb347" stroke-width="1"/><text x="28" y="19" fill="#ffb347" font-size="7" text-anchor="middle">LED</text>
+<line x1="37" y1="15" x2="50" y2="15" stroke="#ffb347" stroke-width="1"/>
+<circle cx="59" cy="15" r="9" fill="#ffb347" fill-opacity=".3" stroke="#ffb347" stroke-width="1"/><text x="59" y="19" fill="#ffb347" font-size="7" text-anchor="middle">LED</text>
+<line x1="68" y1="15" x2="81" y2="15" stroke="#ffb347" stroke-width="1"/>
+<circle cx="90" cy="15" r="9" fill="#ffb347" fill-opacity=".3" stroke="#ffb347" stroke-width="1"/><text x="90" y="19" fill="#ffb347" font-size="7" text-anchor="middle">LED</text>
+<text x="140" y="19" fill="#ffb347" font-size="8">···N颗</text>
+<rect x="350" y="2" width="70" height="26" rx="3" fill="#f2d8d8" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="385" y="19" fill="#00d4aa" font-size="8" font-weight="600" text-anchor="middle">电流镜</text>
+<line x1="200" y1="15" x2="350" y2="15" stroke="#ffb347" stroke-width="1"/>
+<text x="440" y="19" fill="#5a6070" font-size="8">CH1 (20mA)</text>
+</g>
+
+<g transform="translate(360,196)">
+<rect width="540" height="30" rx="3" fill="#dce3f0" stroke="#ffb347" stroke-width="1" stroke-opacity=".6"/>
+<circle cx="28" cy="15" r="9" fill="#ffb347" fill-opacity=".2" stroke="#ffb347" stroke-width="1"/>
+<circle cx="59" cy="15" r="9" fill="#ffb347" fill-opacity=".2" stroke="#ffb347" stroke-width="1"/>
+<circle cx="90" cy="15" r="9" fill="#ffb347" fill-opacity=".2" stroke="#ffb347" stroke-width="1"/>
+<text x="140" y="19" fill="#ffb347" font-size="8">···N颗</text>
+<rect x="350" y="2" width="70" height="26" rx="3" fill="#f2d8d8" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="385" y="19" fill="#00d4aa" font-size="8" font-weight="600" text-anchor="middle">电流镜</text>
+<text x="440" y="19" fill="#5a6070" font-size="8">CH2 (20mA)</text>
+</g>
+
+<text x="630" y="254" fill="#5a6070" font-size="10" text-anchor="middle">··· CH3~5 类似结构 ···</text>
+
+<g transform="translate(360,268)">
+<rect width="540" height="30" rx="3" fill="#dce3f0" stroke="#ffb347" stroke-width="1" stroke-opacity=".6"/>
+<circle cx="28" cy="15" r="9" fill="#ffb347" fill-opacity=".2" stroke="#ffb347" stroke-width="1"/>
+<circle cx="59" cy="15" r="9" fill="#ffb347" fill-opacity=".2" stroke="#ffb347" stroke-width="1"/>
+<text x="140" y="19" fill="#ffb347" font-size="8">···N颗</text>
+<rect x="350" y="2" width="70" height="26" rx="3" fill="#f2d8d8" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="385" y="19" fill="#00d4aa" font-size="8" font-weight="600" text-anchor="middle">电流镜</text>
+<text x="440" y="19" fill="#5a6070" font-size="8">CH6 (20mA)</text>
+</g>
+
+<line x1="340" y1="80" x2="340" y2="156" stroke="#ffb347" stroke-width="2"/>
+
+<rect x="40" y="140" width="180" height="100" rx="6" fill="#d0d8ea" stroke="#4f8ef7" stroke-width="1"/>
+<text x="130" y="162" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">背光控制器</text>
+<text x="130" y="178" fill="#5a6070" font-size="8" text-anchor="middle">• Boost PWM 控制</text>
+<text x="130" y="192" fill="#5a6070" font-size="8" text-anchor="middle">• 6路独立电流调节</text>
+<text x="130" y="206" fill="#5a6070" font-size="8" text-anchor="middle">• PWM/模拟调光</text>
+<text x="130" y="220" fill="#5a6070" font-size="8" text-anchor="middle">• LED 开路/短路检测</text>
+<text x="130" y="234" fill="#5a6070" font-size="8" text-anchor="middle">• I²C 接口</text>
+
+<rect x="40" y="260" width="180" height="70" rx="6" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1"/>
+<text x="130" y="280" fill="#5a6070" font-size="8" text-anchor="middle">调光方式对比</text>
+<text x="60" y="298" fill="#4f8ef7" font-size="7">PWM:</text>
+<rect x="82" y="290" width="20" height="10" rx="1" fill="#4f8ef7" fill-opacity=".6"/>
+<rect x="108" y="290" width="20" height="10" rx="1" fill="#4f8ef7" fill-opacity=".6"/>
+<rect x="134" y="290" width="20" height="10" rx="1" fill="#4f8ef7" fill-opacity=".6"/>
+<text x="60" y="318" fill="#00d4aa" font-size="7">模拟:</text>
+<rect x="82" y="310" width="80" height="10" rx="1" fill="#00d4aa" fill-opacity=".4"/>
+</svg>
+</div>
+<div class="prin">
+<h4>⚙️ LED 背光驱动工作原理</h4>
+<ul>
+<li><b>Boost 升压</b>：Vin (2.7~24V) 升压到 VLED (35~55V)，驱动多颗串联 LED</li>
+<li><b>恒流控制</b>：每通道内置电流镜，精确设定 LED 串电流(20~40mA)，亮度一致</li>
+<li><b>PWM 调光</b>：200Hz~20kHz 开关 LED 电流，占空比决定亮度 → 无色偏</li>
+<li><b>模拟调光</b>：连续改变 LED 电流大小 → 无频闪，但低电流色温偏移</li>
+<li><b>内置/外置 FET</b>：手机/笔记本用内置(小功率)，电视用外置(大功率)</li>
+</ul>
+<div class="kp">🔑 <b>多通道电流匹配</b>：6 通道间电流匹配精度通常 &lt;1%，直接影响背光均匀度。电流镜架构确保各通道独立设定电流且不受其他通道影响。</div>
+</div>
+<table class="ptbl"><tr><th>型号</th><th>拓扑</th><th>输入</th><th>通道</th><th>每串电流</th><th>内置FET</th><th>调光</th><th>应用</th></tr>
+<tr><td class="m">SM5350</td><td>Boost</td><td>2.7~5.5V</td><td>3</td><td>20mA</td><td>✓</td><td>PWM/模拟</td><td>手机</td></tr>
+<tr><td class="m">SM4500</td><td>Boost</td><td>5~27V</td><td>6</td><td>30mA</td><td>✓</td><td>PWM</td><td>笔记本</td></tr>
+<tr><td class="m">SM2006</td><td>Boost</td><td>2.7~24V</td><td>6</td><td>40mA</td><td>✓</td><td>PWM</td><td>笔记本</td></tr>
+<tr><td class="m">SM2101</td><td>Buck</td><td>4.5~26V</td><td>2</td><td>500mA</td><td>✓</td><td>PWM</td><td>笔记本</td></tr>
+<tr><td class="m">SM1251</td><td>Buck</td><td>Ext.</td><td>1</td><td>Ext.</td><td>✗</td><td>PWM/模拟</td><td>电视</td></tr>
+<tr><td class="m">SM1202</td><td>Boost</td><td>11~27V</td><td>2</td><td>Ext.</td><td>✗</td><td>PWM</td><td>电视</td></tr></table>
+</div>
+</div>
+
+<!-- ===== 3.6 LCD 电源管理 ===== -->
+<div class="sec" id="s6">
+<div class="sec-hdr"><div class="sec-num">6</div><div class="sec-ttl">LCD 电源管理</div></div>
+<div class="card">
+<h3>LCD 面板多路电源架构 <span class="tag">AVDD/VGH/VGL/DVDD/VCOM</span></h3>
+<div class="diag">
+<svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg">
+<text x="480" y="24" fill="#1a1d27" font-size="15" font-weight="700" text-anchor="middle">LCD 面板电源系统架构（电视/笔记本/手机/汽车）</text>
+
+<!-- Input -->
+<rect x="30" y="60" width="70" height="32" rx="6" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1.2"/>
+<text x="65" y="81" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">VDD</text>
+<text x="65" y="50" fill="#5a6070" font-size="8" text-anchor="middle">2.5~14.7V</text>
+
+<!-- PMIC Block -->
+<rect x="130" y="46" width="340" height="420" rx="10" fill="rgba(79,142,247,.08)" stroke="#4f8ef7" stroke-width="1.5" stroke-opacity=".4"/>
+<text x="300" y="72" fill="#4f8ef7" font-size="12" font-weight="700" text-anchor="middle">LCD PMIC（SM4xxx/SM5xxx/SM6xxx）</text>
+<line x1="100" y1="76" x2="130" y2="76" stroke="#4f8ef7" stroke-width="1.5"/>
+
+<!-- AVDD Boost -->
+<rect x="150" y="90" width="130" height="44" rx="5" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="215" y="110" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">AVDD Boost</text>
+<text x="215" y="124" fill="#5a6070" font-size="8" text-anchor="middle">10~16V 模拟电源</text>
+
+<!-- VGH Charge Pump -->
+<rect x="150" y="148" width="130" height="44" rx="5" fill="#dce3f0" stroke="#ffb347" stroke-width="1.2"/>
+<text x="215" y="168" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">VGH 电荷泵</text>
+<text x="215" y="182" fill="#5a6070" font-size="8" text-anchor="middle">15~30V 栅极高压</text>
+
+<!-- VGL Inverting Charge Pump -->
+<rect x="150" y="206" width="130" height="44" rx="5" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="215" y="226" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">VGL 反相电荷泵</text>
+<text x="215" y="240" fill="#5a6070" font-size="8" text-anchor="middle">-5~-10V 栅极低压</text>
+
+<!-- DVDD LDO -->
+<rect x="150" y="264" width="130" height="44" rx="5" fill="#dce3f0" stroke="#6da3ff" stroke-width="1.2"/>
+<text x="215" y="284" fill="#6da3ff" font-size="10" font-weight="600" text-anchor="middle">DVDD LDO</text>
+<text x="215" y="298" fill="#5a6070" font-size="8" text-anchor="middle">1.8~3.3V 数字电源</text>
+
+<!-- VCOM DAC -->
+<rect x="150" y="322" width="130" height="44" rx="5" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="215" y="342" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">VCOM DAC</text>
+<text x="215" y="356" fill="#5a6070" font-size="8" text-anchor="middle">精密公共电极电压</text>
+
+<!-- Gamma Buffer -->
+<rect x="150" y="380" width="130" height="44" rx="5" fill="#dce3f0" stroke="#ffb347" stroke-width="1.2"/>
+<text x="215" y="400" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">Gamma Buffer</text>
+<text x="215" y="414" fill="#5a6070" font-size="8" text-anchor="middle">10bit+ 灰度校正</text>
+
+<!-- Level Shifter (separate block) -->
+<rect x="310" y="90" width="130" height="60" rx="5" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="375" y="110" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">Level Shifter</text>
+<text x="375" y="124" fill="#5a6070" font-size="8" text-anchor="middle">TCON低压 → 栅极高压</text>
+<text x="375" y="138" fill="#5a6070" font-size="8" text-anchor="middle">电平转换驱动</text>
+
+<!-- GPM -->
+<rect x="310" y="166" width="130" height="44" rx="5" fill="#dce3f0" stroke="#6da3ff" stroke-width="1.2"/>
+<text x="375" y="186" fill="#6da3ff" font-size="10" font-weight="600" text-anchor="middle">GPM</text>
+<text x="375" y="200" fill="#5a6070" font-size="8" text-anchor="middle">Gate Pulse Modulation</text>
+
+<!-- I2C -->
+<rect x="310" y="226" width="130" height="30" rx="4" fill="#dce3f0" stroke="#ffb347" stroke-width="1"/>
+<text x="375" y="246" fill="#ffb347" font-size="9" font-weight="600" text-anchor="middle">I²C 控制接口</text>
+
+<!-- LCD Panel -->
+<rect x="530" y="60" width="400" height="420" rx="10" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1.5"/>
+<text x="730" y="88" fill="#ffb347" font-size="13" font-weight="700" text-anchor="middle">LCD 面板</text>
+
+<!-- Panel sub-blocks -->
+<rect x="560" y="100" width="340" height="36" rx="5" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1"/>
+<text x="730" y="124" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">TFT 模拟阵列 (AVDD 供电)</text>
+<line x1="280" y1="112" x2="530" y2="112" stroke="#ff6b6b" stroke-width="1" stroke-dasharray="4,3"/>
+<line x1="530" y1="112" x2="560" y2="118" stroke="#ff6b6b" stroke-width="1" stroke-dasharray="4,3"/>
+
+<rect x="560" y="148" width="340" height="36" rx="5" fill="#dce3f0" stroke="#ffb347" stroke-width="1"/>
+<text x="730" y="172" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">栅极驱动 (VGH 开启 / VGL 关断)</text>
+<line x1="280" y1="170" x2="530" y2="170" stroke="#ffb347" stroke-width="1" stroke-dasharray="4,3"/>
+<line x1="280" y1="228" x2="530" y2="170" stroke="#00d4aa" stroke-width="1" stroke-dasharray="4,3"/>
+
+<rect x="560" y="196" width="340" height="36" rx="5" fill="#dce3f0" stroke="#00d4aa" stroke-width="1"/>
+<text x="730" y="220" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">像素存储电容 (VCOM 参考地)</text>
+<line x1="280" y1="344" x2="530" y2="214" stroke="#ff6b6b" stroke-width="1" stroke-dasharray="4,3"/>
+
+<rect x="560" y="244" width="340" height="36" rx="5" fill="#dce3f0" stroke="#6da3ff" stroke-width="1"/>
+<text x="730" y="268" fill="#6da3ff" font-size="10" font-weight="600" text-anchor="middle">数字时序控制器 TCON (DVDD 供电)</text>
+<line x1="280" y1="286" x2="530" y2="262" stroke="#6da3ff" stroke-width="1" stroke-dasharray="4,3"/>
+
+<rect x="560" y="292" width="340" height="36" rx="5" fill="#dce3f0" stroke="#ffb347" stroke-width="1"/>
+<text x="730" y="316" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">Gamma 电压分压网络 (Gamma Buffer)</text>
+<line x1="280" y1="402" x2="530" y2="310" stroke="#ffb347" stroke-width="1" stroke-dasharray="4,3"/>
+
+<rect x="560" y="340" width="340" height="36" rx="5" fill="#dce3f0" stroke="#00d4aa" stroke-width="1"/>
+<text x="730" y="364" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">Level-shifter: TCON→栅极驱动信号</text>
+<line x1="440" y1="120" x2="530" y2="358" stroke="#00d4aa" stroke-width="1" stroke-dasharray="4,3"/>
+
+<!-- Key parameters -->
+<rect x="560" y="392" width="340" height="80" rx="6" fill="#e4e8f2" stroke="#b0b8c8" stroke-width="1"/>
+<text x="730" y="412" fill="#5a6070" font-size="9" font-weight="600" text-anchor="middle">LCD 面板电源关键需求</text>
+<text x="580" y="432" fill="#ff6b6b" font-size="8">AVDD: TFT像素充电电源，纹波&lt;20mV</text>
+<text x="580" y="448" fill="#ffb347" font-size="8">VCOM: 影响Flicker，需10bit+ DAC精密调节</text>
+<text x="580" y="464" fill="#00d4aa" font-size="8">VGH/VGL: 栅极开关，时序必须精确</text>
+</svg>
+</div>
+<div class="prin">
+<h4>⚙️ LCD 电源架构工作原理</h4>
+<ul>
+<li><b>AVDD</b>：TFT 模拟电源(10~16V)，给像素电容充电 → 纹波必须 &lt;20mV 否则画面闪烁</li>
+<li><b>VGH</b>：栅极开启电压(15~30V) → 使 TFT 导通，像素写入数据电压</li>
+<li><b>VGL</b>：栅极关断电压(-5~-10V) → 使 TFT 截止，保持像素电压</li>
+<li><b>DVDD</b>：数字逻辑电源(1.8~3.3V) → TCON 和数字电路供电</li>
+<li><b>VCOM</b>：公共电极电压 → 精密 DAC 调节 → 直接影响 Flicker</li>
+<li><b>Gamma Buffer</b>：灰度电压缓冲 → 10bit+ 精度 → 影响色彩准确度</li>
+<li><b>Level-shifter</b>：将 TCON 低电压信号转换为栅极驱动高电压信号</li>
+<li><b>GPM</b>：Gate Pulse Modulation → 低功耗模式，降低栅极驱动功耗</li>
+</ul>
+<div class="kp">🔑 <b>VCOM 为何关键？</b>VCOM 偏移导致像素电压不对称 → 直流分量 → Flicker（闪烁）。必须通过 10bit+ DAC 精密调节，且随温度/老化需实时校准。Gamma Buffer 精度直接影响色深表现。</div>
+</div>
+<table class="ptbl"><tr><th>应用</th><th>代表型号</th><th>AVDD</th><th>VGH</th><th>VGL</th><th>VCOM</th><th>Gamma</th><th>GPM</th><th>Level-shift</th></tr>
+<tr><td>电视</td><td class="m">SM4805</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>-</td></tr>
+<tr><td>笔记本</td><td class="m">SM4405</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>-</td></tr>
+<tr><td>手机</td><td class="m">SM5119CF</td><td>✓</td><td>-</td><td>✓</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>汽车</td><td class="m">SM6751Q</td><td>✓</td><td>✓</td><td>-</td><td>✓</td><td>-</td><td>✓</td><td>-</td></tr></table>
+</div>
+</div>
+
+<!-- ===== 3.7 SoC 电源管理 ===== -->
+<div class="sec" id="s7">
+<div class="sec-hdr"><div class="sec-num">7</div><div class="sec-ttl">SoC 电源管理</div></div>
+<div class="card">
+<h3>SoC PMIC 多路电源架构 <span class="tag">多Buck+LDO集成</span></h3>
+<div class="diag">
+<svg viewBox="0 0 960 480" xmlns="http://www.w3.org/2000/svg">
+<text x="480" y="24" fill="#1a1d27" font-size="15" font-weight="700" text-anchor="middle">SoC PMIC 典型架构 (SM5007) — 多路 Buck + LDO 集成</text>
+
+<!-- VBAT -->
+<rect x="30" y="70" width="80" height="36" rx="6" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1.5"/>
+<text x="70" y="93" fill="#4f8ef7" font-size="12" font-weight="600" text-anchor="middle">VBAT</text>
+<text x="70" y="58" fill="#5a6070" font-size="9" text-anchor="middle">3.7~4.4V</text>
+
+<!-- PMIC Block -->
+<rect x="150" y="46" width="420" height="420" rx="10" fill="rgba(79,142,247,.08)" stroke="#4f8ef7" stroke-width="1.5" stroke-opacity=".4"/>
+<text x="360" y="72" fill="#4f8ef7" font-size="12" font-weight="700" text-anchor="middle">SoC PMIC (SM5007) — 51 WLCSP</text>
+<line x1="110" y1="88" x2="150" y2="88" stroke="#4f8ef7" stroke-width="2"/>
+
+<!-- Buck 1 -->
+<rect x="170" y="88" width="120" height="36" rx="5" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="230" y="108" fill="#ff6b6b" font-size="9" font-weight="600" text-anchor="middle">Buck1: Core 0.8V</text>
+<text x="230" y="120" fill="#5a6070" font-size="7" text-anchor="middle">2MHz, 大电流</text>
+
+<!-- Buck 2 -->
+<rect x="170" y="134" width="120" height="36" rx="5" fill="#dce3f0" stroke="#ffb347" stroke-width="1.5"/>
+<text x="230" y="154" fill="#ffb347" font-size="9" font-weight="600" text-anchor="middle">Buck2: GPU 0.9V</text>
+
+<!-- Buck 3 -->
+<rect x="170" y="180" width="120" height="36" rx="5" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="230" y="200" fill="#00d4aa" font-size="9" font-weight="600" text-anchor="middle">Buck3: DDR 1.2V</text>
+
+<!-- Buck 4 -->
+<rect x="170" y="226" width="120" height="36" rx="5" fill="#dce3f0" stroke="#6da3ff" stroke-width="1.5"/>
+<text x="230" y="246" fill="#6da3ff" font-size="9" font-weight="600" text-anchor="middle">Buck4: IO 1.8V</text>
+
+<!-- LDO bank -->
+<rect x="320" y="88" width="120" height="174" rx="5" fill="#dce3f0" stroke="#00d4aa" stroke-width="1"/>
+<text x="380" y="108" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">9× LDO</text>
+<text x="380" y="126" fill="#5a6070" font-size="8" text-anchor="middle">LDO1: PLL 1.0V</text>
+<text x="380" y="142" fill="#5a6070" font-size="8" text-anchor="middle">LDO2: RF 1.8V</text>
+<text x="380" y="158" fill="#5a6070" font-size="8" text-anchor="middle">LDO3: Audio</text>
+<text x="380" y="174" fill="#5a6070" font-size="8" text-anchor="middle">LDO4: Camera</text>
+<text x="380" y="190" fill="#5a6070" font-size="8" text-anchor="middle">LDO5: SD Card</text>
+<text x="380" y="206" fill="#5a6070" font-size="8" text-anchor="middle">LDO6: WiFi/BT</text>
+<text x="380" y="222" fill="#5a6070" font-size="8" text-anchor="middle">LDO7-9: 其他</text>
+
+<!-- Linear Charger -->
+<rect x="170" y="280" width="120" height="36" rx="5" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1"/>
+<text x="230" y="300" fill="#ff6b6b" font-size="9" font-weight="600" text-anchor="middle">线性充电器</text>
+<text x="230" y="312" fill="#5a6070" font-size="7" text-anchor="middle">USB小电流补充</text>
+
+<!-- Control -->
+<rect x="170" y="330" width="270" height="80" rx="6" fill="#d0d8ea" stroke="#4f8ef7" stroke-width="1"/>
+<text x="305" y="352" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">PMIC 控制器</text>
+<text x="305" y="368" fill="#5a6070" font-size="8" text-anchor="middle">上电时序控制 (Power Sequencing)</text>
+<text x="305" y="382" fill="#5a6070" font-size="8" text-anchor="middle">电压监控 + 过温/过流保护</text>
+<text x="305" y="396" fill="#5a6070" font-size="8" text-anchor="middle">I²C 寄存器配置 + 状态上报</text>
+
+<!-- I2C -->
+<rect x="170" y="424" width="270" height="28" rx="4" fill="#dce3f0" stroke="#ffb347" stroke-width="1"/>
+<text x="305" y="443" fill="#ffb347" font-size="9" font-weight="600" text-anchor="middle">I²C / SPMI 通信接口 → 主 SoC</text>
+
+<!-- SoC Block -->
+<rect x="620" y="46" width="310" height="420" rx="10" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1.5"/>
+<text x="775" y="72" fill="#6da3ff" font-size="13" font-weight="700" text-anchor="middle">应用处理器 SoC</text>
+
+<rect x="650" y="88" width="250" height="34" rx="4" fill="#f2d8d8" stroke="#ff6b6b" stroke-width="1"/>
+<text x="775" y="110" fill="#ff6b6b" font-size="9" font-weight="600" text-anchor="middle">CPU Core (Buck1 → 0.8V)</text>
+
+<rect x="650" y="132" width="250" height="34" rx="4" fill="#f2d8d8" stroke="#ffb347" stroke-width="1"/>
+<text x="775" y="154" fill="#ffb347" font-size="9" font-weight="600" text-anchor="middle">GPU (Buck2 → 0.9V)</text>
+
+<rect x="650" y="176" width="250" height="34" rx="4" fill="#f2d8d8" stroke="#00d4aa" stroke-width="1"/>
+<text x="775" y="198" fill="#00d4aa" font-size="9" font-weight="600" text-anchor="middle">DDR Controller (Buck3 → 1.2V)</text>
+
+<rect x="650" y="220" width="250" height="34" rx="4" fill="#f2d8d8" stroke="#6da3ff" stroke-width="1"/>
+<text x="775" y="242" fill="#6da3ff" font-size="9" font-weight="600" text-anchor="middle">IO Peripherals (Buck4 → 1.8V)</text>
+
+<rect x="650" y="268" width="250" height="100" rx="4" fill="#dce3f0" stroke="#00d4aa" stroke-width="1"/>
+<text x="775" y="290" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">LDO 供电域</text>
+<text x="775" y="308" fill="#5a6070" font-size="8" text-anchor="middle">PLL/RF/Audio/Camera/SD/WiFi</text>
+<text x="775" y="324" fill="#5a6070" font-size="8" text-anchor="middle">低噪声、高PSRR要求</text>
+<text x="775" y="340" fill="#5a6070" font-size="8" text-anchor="middle">LDO 从 Buck 输出级联降压</text>
+
+<!-- Power sequence -->
+<rect x="650" y="386" width="250" height="68" rx="6" fill="#e4e8f2" stroke="#b0b8c8" stroke-width="1"/>
+<text x="775" y="406" fill="#5a6070" font-size="8" font-weight="600" text-anchor="middle">上电时序 (Power Sequence)</text>
+<text x="670" y="424" fill="#ff6b6b" font-size="7">① Buck1(Core) → </text>
+<text x="746" y="424" fill="#ffb347" font-size="7">② Buck2(GPU) → </text>
+<text x="822" y="424" fill="#00d4aa" font-size="7">③ Buck3</text>
+<text x="670" y="440" fill="#6da3ff" font-size="7">④ Buck4(IO) → </text>
+<text x="752" y="440" fill="#00d4aa" font-size="7">⑤ LDO → </text>
+<text x="800" y="440" fill="#ffb347" font-size="7">⑥ SoC Reset</text>
+
+<!-- Connection lines -->
+<line x1="290" y1="106" x2="650" y2="105" stroke="#ff6b6b" stroke-width="1" stroke-dasharray="4,3"/>
+<line x1="290" y1="152" x2="650" y2="149" stroke="#ffb347" stroke-width="1" stroke-dasharray="4,3"/>
+<line x1="290" y1="198" x2="650" y2="193" stroke="#00d4aa" stroke-width="1" stroke-dasharray="4,3"/>
+<line x1="290" y1="244" x2="650" y2="237" stroke="#6da3ff" stroke-width="1" stroke-dasharray="4,3"/>
+<line x1="440" y1="175" x2="650" y2="318" stroke="#00d4aa" stroke-width="1" stroke-dasharray="4,3"/>
+</svg>
+</div>
+<div class="prin">
+<h4>⚙️ SoC PMIC 工作原理</h4>
+<ul>
+<li><b>多路 Buck</b>：SoC 需要多个电压域（Core/GPU/DDR/IO），PMIC 集成 4 路 Buck 减少外部元件</li>
+<li><b>9× LDO</b>：PLL/RF/Audio 等对噪声敏感的模块需 LDO 供电（高 PSRR），LDO 从 Buck 输出级联以提高效率</li>
+<li><b>上电时序</b>：SoC 严格要求上电顺序（Core→GPU→DDR→IO→LDO→Reset），PMIC 硬件控制时序</li>
+<li><b>2MHz 开关频率</b>：减小电感体积 → 适合手机紧凑空间</li>
+<li><b>线性充电器</b>：集成了 USB 小电流线性充电，从 USB 取电补充系统</li>
+</ul>
+<div class="kp">🔑 <b>为何不全部用 Buck？</b>PLL/RF 等模块需要极低噪声电源（PSRR &gt;60dB），Buck 输出有开关纹波(~10mVpp)，LDO 级联可滤除纹波至 &lt;1mV。LDO 从 Buck 输出取电（而非 VBAT）可提高整体效率。</div>
+</div>
+<table class="ptbl"><tr><th>型号</th><th>应用</th><th>输入电压</th><th>Buck</th><th>Boost</th><th>LDO</th><th>线性充电</th><th>开关频率</th><th>封装</th></tr>
+<tr><td class="m">SM5007</td><td>手机</td><td>4.0~6.1V</td><td>4</td><td>0</td><td>9</td><td>1</td><td>2MHz</td><td>51 WLCSP</td></tr>
+<tr><td class="m">SM6700</td><td>汽车</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr></table>
+</div>
+</div>
+
+<!-- ===== 3.8 Sub PMIC ===== -->
+<div class="sec" id="s8">
+<div class="sec-hdr"><div class="sec-num">8</div><div class="sec-ttl">接口电源管理（Sub PMIC）</div></div>
+<div class="card">
+<h3>Sub PMIC 高度集成架构 <span class="tag">充电器+电量计+闪光灯</span></h3>
+<div class="diag">
+<svg viewBox="0 0 960 440" xmlns="http://www.w3.org/2000/svg">
+<text x="480" y="24" fill="#1a1d27" font-size="15" font-weight="700" text-anchor="middle">Sub PMIC 高度集成架构（SM5735 / SM5038）</text>
+
+<rect x="30" y="46" width="900" height="380" rx="10" fill="rgba(255,179,71,.08)" stroke="#ffb347" stroke-width="1.5" stroke-opacity=".4"/>
+
+<!-- VBUS1 -->
+<rect x="50" y="80" width="70" height="32" rx="6" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1.2"/>
+<text x="85" y="101" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">VBUS1</text>
+<text x="85" y="68" fill="#5a6070" font-size="8" text-anchor="middle">有线充电</text>
+
+<!-- VBUS2 (SM5735 only) -->
+<rect x="50" y="130" width="70" height="32" rx="6" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="85" y="151" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">VBUS2</text>
+<text x="85" y="118" fill="#5a6070" font-size="8" text-anchor="middle">无线充电</text>
+<text x="85" y="170" fill="#ffb347" font-size="7" text-anchor="middle">仅SM5735</text>
+
+<!-- OVP -->
+<rect x="160" y="80" width="60" height="32" rx="5" fill="#f2d8d8" stroke="#ff6b6b" stroke-width="1.2"/>
+<text x="190" y="101" fill="#ff6b6b" font-size="9" font-weight="600" text-anchor="middle">OVP</text>
+<line x1="120" y1="96" x2="160" y2="96" stroke="#4f8ef7" stroke-width="1.5"/>
+
+<!-- Switching Charger -->
+<rect x="250" y="70" width="130" height="50" rx="6" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="315" y="90" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">开关充电器</text>
+<text x="315" y="104" fill="#5a6070" font-size="8" text-anchor="middle">3.5A Buck 充电</text>
+<line x1="220" y1="96" x2="250" y2="96" stroke="#ff6b6b" stroke-width="1.5"/>
+
+<!-- VBAT -->
+<line x1="380" y1="96" x2="420" y2="96" stroke="#ffb347" stroke-width="1.5"/>
+<rect x="410" y="80" width="60" height="32" rx="6" fill="#d0f2d8" stroke="#ffb347" stroke-width="1.2"/>
+<text x="440" y="101" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">VBAT</text>
+
+<!-- OTG Boost -->
+<rect x="250" y="140" width="130" height="40" rx="6" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="315" y="160" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">OTG Boost</text>
+<text x="315" y="174" fill="#5a6070" font-size="8" text-anchor="middle">1.5A 反向输出</text>
+<line x1="315" y1="112" x2="315" y2="140" stroke="#8a90a0" stroke-width="1" stroke-dasharray="3,2"/>
+
+<!-- Fuel Gauge -->
+<rect x="410" y="140" width="120" height="50" rx="6" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1.5"/>
+<text x="470" y="162" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">电量计</text>
+<text x="470" y="176" fill="#5a6070" font-size="8" text-anchor="middle">库仑计数+OCV</text>
+<line x1="440" y1="112" x2="440" y2="140" stroke="#ffb347" stroke-width="1.5"/>
+
+<!-- Flash LED Driver (SM5038) -->
+<rect x="580" y="70" width="130" height="50" rx="6" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="645" y="90" fill="#ff6b6b" font-size="10" font-weight="600" text-anchor="middle">Flash LED 驱动</text>
+<text x="645" y="104" fill="#5a6070" font-size="8" text-anchor="middle">高电流脉冲闪光</text>
+<text x="645" y="126" fill="#ffb347" font-size="7" text-anchor="middle">仅SM5038</text>
+<line x1="470" y1="96" x2="580" y2="95" stroke="#8a90a0" stroke-width="1" stroke-dasharray="3,2"/>
+
+<!-- RGB LED -->
+<rect x="580" y="140" width="130" height="40" rx="6" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.2"/>
+<text x="645" y="160" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">RGB LED 驱动</text>
+<text x="645" y="174" fill="#5a6070" font-size="8" text-anchor="middle">指示灯控制</text>
+
+<!-- State Machine / MCU -->
+<rect x="250" y="220" width="460" height="60" rx="8" fill="#d0d8ea" stroke="#ffb347" stroke-width="1.5"/>
+<text x="480" y="244" fill="#ffb347" font-size="11" font-weight="700" text-anchor="middle">状态机 / MCU 协调控制</text>
+<text x="480" y="262" fill="#5a6070" font-size="9" text-anchor="middle">充电策略 + SOC计算 + LED控制 + 热保护 + I²C通信</text>
+
+<!-- Battery -->
+<rect x="770" y="80" width="120" height="50" rx="6" fill="#dce3f0" stroke="#ffb347" stroke-width="1.5"/>
+<text x="830" y="102" fill="#ffb347" font-size="11" font-weight="600" text-anchor="middle">电池</text>
+<text x="830" y="118" fill="#5a6070" font-size="8" text-anchor="middle">1S Li-ion</text>
+<line x1="470" y1="190" x2="470" y2="220" stroke="#4f8ef7" stroke-width="1"/>
+<line x1="470" y1="165" x2="770" y2="105" stroke="#ffb347" stroke-width="1.5"/>
+
+<!-- I2C -->
+<rect x="350" y="310" width="260" height="30" rx="4" fill="#dce3f0" stroke="#ffb347" stroke-width="1"/>
+<text x="480" y="330" fill="#ffb347" font-size="10" font-weight="600" text-anchor="middle">I²C ←→ 主 SoC / 充电器IC</text>
+<line x1="480" y1="280" x2="480" y2="310" stroke="#ffb347" stroke-width="1"/>
+
+<!-- Integration benefit -->
+<rect x="250" y="360" width="460" height="50" rx="6" fill="#e4e8f2" stroke="#b0b8c8" stroke-width="1"/>
+<text x="480" y="382" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">✓ 单芯片替代 3~4 颗分立方案 → 减少面积和 BOM 成本</text>
+<text x="480" y="400" fill="#5a6070" font-size="9" text-anchor="middle">SM5735: 双输入(有线+无线) | SM5038: 闪光灯驱动</text>
+</svg>
+</div>
+<div class="prin">
+<h4>⚙️ Sub PMIC 工作原理</h4>
+<ul>
+<li><b>高度集成</b>：充电器 + 电量计 + OTG + Flash LED + RGB LED → 单芯片替代 3~4 颗分立方案</li>
+<li><b>双输入 (SM5735)</b>：支持 VBUS1(有线) + VBUS2(无线) 同时存在，自动切换优先级</li>
+<li><b>Flash LED (SM5038)</b>：高电流脉冲驱动相机闪光灯，需精密电流控制和热保护（闪光时瞬时电流可达 1.5A+）</li>
+<li><b>状态机协调</b>：管理充电策略（CC/CV/涓流）、SOC 计算、LED 控制时序、温度保护</li>
+</ul>
+<div class="kp">🔑 <b>Sub PMIC vs 分立方案</b>：集成方案减少 BOM（省 2~3 颗 IC）、减少 PCB 面积（省 30%+）、简化软件驱动（单一 I²C 地址）。代价是灵活性降低，各子功能不能独立选型。</div>
+</div>
+<table class="ptbl"><tr><th>参数</th><th>SM5735</th><th>SM5038</th></tr>
+<tr><td>充电器</td><td>3.5A</td><td>3.5A</td></tr>
+<tr><td>OTG</td><td>1.5A</td><td>1.5A</td></tr>
+<tr><td>双输入</td><td>✓</td><td>✗</td></tr>
+<tr><td>Flash LED</td><td>✗</td><td>✓</td></tr>
+<tr><td>电量计</td><td>✓</td><td>✓</td></tr>
+<tr><td>封装</td><td>81 WLCSP</td><td>81 WLCSP</td></tr></table>
+</div>
+</div>
+
+<!-- ===== 3.9 OLED 电源管理 ===== -->
+<div class="sec" id="s9">
+<div class="sec-hdr"><div class="sec-num">9</div><div class="sec-ttl">OLED 电源管理</div></div>
+<div class="card">
+<h3>OLED vs LCD 电源架构对比 <span class="tag">ELVDD/ELVSS/Burn-in补偿</span></h3>
+<div class="diag">
+<svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg">
+<text x="480" y="24" fill="#1a1d27" font-size="15" font-weight="700" text-anchor="middle">OLED vs LCD 面板电源架构对比</text>
+
+<!-- LCD Side -->
+<rect x="20" y="44" width="440" height="460" rx="10" fill="rgba(79,142,247,.05)" stroke="#4f8ef7" stroke-width="1" stroke-opacity=".4"/>
+<text x="240" y="72" fill="#4f8ef7" font-size="13" font-weight="700" text-anchor="middle">LCD 面板电源需求</text>
+
+<rect x="50" y="90" width="380" height="260" rx="8" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1"/>
+<text x="240" y="112" fill="#4f8ef7" font-size="11" font-weight="600" text-anchor="middle">LCD 电源轨</text>
+
+<rect x="70" y="124" width="150" height="26" rx="4" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1"/>
+<text x="145" y="142" fill="#ff6b6b" font-size="9" text-anchor="middle">AVDD (+10~16V)</text>
+
+<rect x="70" y="158" width="150" height="26" rx="4" fill="#dce3f0" stroke="#ffb347" stroke-width="1"/>
+<text x="145" y="176" fill="#ffb347" font-size="9" text-anchor="middle">VGH (+15~30V)</text>
+
+<rect x="70" y="192" width="150" height="26" rx="4" fill="#dce3f0" stroke="#00d4aa" stroke-width="1"/>
+<text x="145" y="210" fill="#00d4aa" font-size="9" text-anchor="middle">VGL (-5~-10V)</text>
+
+<rect x="70" y="226" width="150" height="26" rx="4" fill="#dce3f0" stroke="#6da3ff" stroke-width="1"/>
+<text x="145" y="244" fill="#6da3ff" font-size="9" text-anchor="middle">DVDD (1.8~3.3V)</text>
+
+<rect x="70" y="260" width="150" height="26" rx="4" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1"/>
+<text x="145" y="278" fill="#ff6b6b" font-size="9" text-anchor="middle">VCOM (精密调节)</text>
+
+<rect x="70" y="294" width="150" height="26" rx="4" fill="#dce3f0" stroke="#ffb347" stroke-width="1"/>
+<text x="145" y="312" fill="#ffb347" font-size="9" text-anchor="middle">Gamma (10bit+)</text>
+
+<!-- Features -->
+<rect x="240" y="124" width="170" height="196" rx="4" fill="#e4e8f2" stroke="#b0b8c8" stroke-width="1"/>
+<text x="325" y="144" fill="#5a6070" font-size="9" font-weight="600" text-anchor="middle">LCD 特征</text>
+<text x="260" y="164" fill="#2a3040" font-size="8">• 需要背光（LED驱动）</text>
+<text x="260" y="180" fill="#2a3040" font-size="8">• 多路高/低压轨</text>
+<text x="260" y="196" fill="#2a3040" font-size="8">• VCOM 决定 Flicker</text>
+<text x="260" y="212" fill="#2a3040" font-size="8">• Level-shifter 必需</text>
+<text x="260" y="228" fill="#2a3040" font-size="8">• Gamma 精度影响色彩</text>
+<text x="260" y="244" fill="#2a3040" font-size="8">• GPM 降低栅极功耗</text>
+<text x="260" y="260" fill="#ffb347" font-size="8" font-weight="600">• 无 Burn-in 问题</text>
+<text x="260" y="276" fill="#ffb347" font-size="8" font-weight="600">• Flicker 可校准消除</text>
+<text x="260" y="292" fill="#ffb347" font-size="8" font-weight="600">• 成本较低</text>
+
+<!-- LCD PMIC -->
+<rect x="50" y="370" width="380" height="80" rx="6" fill="#dce3f0" stroke="#4f8ef7" stroke-width="1"/>
+<text x="240" y="392" fill="#4f8ef7" font-size="10" font-weight="600" text-anchor="middle">LCD PMIC 代表型号</text>
+<text x="240" y="410" fill="#5a6070" font-size="8" text-anchor="middle">电视: SM4805/SM4807C | 笔记本: SM4405/SM4133</text>
+<text x="240" y="426" fill="#5a6070" font-size="8" text-anchor="middle">手机: SM5119CF/SM5109CF | 汽车: SM6751Q</text>
+<text x="240" y="442" fill="#5a6070" font-size="8" text-anchor="middle">+ 独立 LED 背光驱动 (SM4500/SM2006等)</text>
+
+<!-- OLED Side -->
+<rect x="500" y="44" width="440" height="460" rx="10" fill="rgba(0,212,170,.08)" stroke="#00d4aa" stroke-width="1" stroke-opacity=".4"/>
+<text x="720" y="72" fill="#00d4aa" font-size="13" font-weight="700" text-anchor="middle">OLED 面板电源需求</text>
+
+<rect x="530" y="90" width="380" height="260" rx="8" fill="#eef1f8" stroke="#b0b8c8" stroke-width="1"/>
+<text x="720" y="112" fill="#00d4aa" font-size="11" font-weight="600" text-anchor="middle">OLED 电源轨</text>
+
+<rect x="550" y="124" width="150" height="26" rx="4" fill="#dce3f0" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="625" y="142" fill="#ff6b6b" font-size="9" text-anchor="middle">ELVDD (+8~16V)</text>
+<text x="625" y="152" fill="#ff6b6b" font-size="7">像素阳极大电流</text>
+
+<rect x="550" y="162" width="150" height="26" rx="4" fill="#dce3f0" stroke="#00d4aa" stroke-width="1.5"/>
+<text x="625" y="180" fill="#00d4aa" font-size="9" text-anchor="middle">ELVSS (-5~-10V)</text>
+<text x="625" y="190" fill="#00d4aa" font-size="7">像素阴极负压</text>
+
+<rect x="550" y="200" width="150" height="26" rx="4" fill="#dce3f0" stroke="#ffb347" stroke-width="1"/>
+<text x="625" y="218" fill="#ffb347" font-size="9" text-anchor="middle">VCI (2.8~5V)</text>
+<text x="625" y="228" fill="#ffb347" font-size="7">模拟供电</text>
+
+<rect x="550" y="240" width="150" height="26" rx="4" fill="#dce3f0" stroke="#6da3ff" stroke-width="1"/>
+<text x="625" y="258" fill="#6da3ff" font-size="9" text-anchor="middle">VDDIO (1.8~3.3V)</text>
+<text x="625" y="268" fill="#6da3ff" font-size="7">数字IO</text>
+
+<rect x="550" y="280" width="150" height="26" rx="4" fill="#f2d8d8" stroke="#ff6b6b" stroke-width="1.5"/>
+<text x="625" y="298" fill="#ff6b6b" font-size="9" font-weight="600" text-anchor="middle">Burn-in 补偿</text>
+<text x="625" y="308" fill="#ff6b6b" font-size="7">亮度衰减校正</text>
+
+<!-- Features -->
+<rect x="720" y="124" width="170" height="196" rx="4" fill="#e4e8f2" stroke="#b0b8c8" stroke-width="1"/>
+<text x="805" y="144" fill="#5a6070" font-size="9" font-weight="600" text-anchor="middle">OLED 特征</text>
+<text x="740" y="164" fill="#2a3040" font-size="8">• 无需背光</text>
+<text x="740" y="180" fill="#2a3040" font-size="8">• 正负高压大电流</text>
+<text x="740" y="196" fill="#2a3040" font-size="8">• 精确电流控制</text>
+<text x="740" y="212" fill="#2a3040" font-size="8">• 无 VCOM</text>
+<text x="740" y="228" fill="#2a3040" font-size="8">• 无 Level-shifter</text>
+<text x="740" y="244" fill="#2a3040" font-size="8">• 需 Logic IC</text>
+<text x="740" y="260" fill="#ff6b6b" font-size="8" font-weight="600">• Burn-in 烧屏问题</text>
+<text x="740" y="276" fill="#ff6b6b" font-size="8" font-weight="600">• 需 Mura 补偿</text>
+<text x="740" y="292" fill="#ff6b6b" font-size="8" font-weight="600">• 成本较高</text>
+
+<!-- OLED PMIC -->
+<rect x="530" y="370" width="380" height="80" rx="6" fill="#dce3f0" stroke="#00d4aa" stroke-width="1"/>
+<text x="720" y="392" fill="#00d4aa" font-size="10" font-weight="600" text-anchor="middle">OLED PMIC 代表型号</text>
+<text x="720" y="410" fill="#5a6070" font-size="8" text-anchor="middle">手机: SM30SA/SM30SB/SM30SC/SM30SD (低→高功率)</text>
+<text x="720" y="426" fill="#5a6070" font-size="8" text-anchor="middle">笔记本: SM30NA/SM30NB/SM30NC | 平板: SM30TA/SM30TB</text>
+<text x="720" y="442" fill="#5a6070" font-size="8" text-anchor="middle">电视: SM48PM/SM48LS | 汽车: SM30AA/SM30AB</text>
+
+<!-- Arrow -->
+<text x="478" y="240" fill="#ffb347" font-size="16" text-anchor="middle">vs</text>
+</svg>
+</div>
+<div class="prin">
+<h4>⚙️ OLED 电源架构工作原理</h4>
+<ul>
+<li><b>ELVDD (+)</b>：OLED 像素阳极正高压，提供驱动电流 → Boost 升压产生</li>
+<li><b>ELVSS (-)</b>：OLED 像素阴极负压 → 反相电荷泵或 Inverting Buck-Boost 产生</li>
+<li><b>无背光</b>：OLED 自发光，不需要 LED 背光驱动 → 但需要 ELVDD/ELVSS 大电流正负高压</li>
+<li><b>Burn-in 补偿</b>：OLED 像素长期静态显示会老化 → 亮度衰减不均匀 → PMIC 需配合 TCON 做像素级亮度补偿</li>
+<li><b>Logic IC</b>：OLED 时序控制与面板驱动之间的接口芯片，类似 LCD 的 TCON 功能</li>
+<li><b>Mura 补偿</b>：OLED 面板制造不均匀导致亮度差异 → 出厂校准数据存储在面板 OTP 中</li>
+</ul>
+<div class="kp">🔑 <b>OLED vs LCD 核心差异</b>：LCD 用 VCOM 控制 Flicker（公共电极偏压），OLED 没有 VCOM 但有 Burn-in（像素老化）问题。OLED 不需要 LED 背光但需要 ELVDD/ELVSS 正负高压大电流，电源设计更复杂。</div>
+</div>
+<table class="ptbl"><tr><th>应用</th><th>型号</th><th>功率等级</th><th>说明</th></tr>
+<tr><td>手机</td><td class="m">SM30SA~D</td><td>低→高</td><td>4档功率覆盖不同屏幕尺寸</td></tr>
+<tr><td>笔记本</td><td class="m">SM30NA/NC</td><td>中/高</td><td>大尺寸需高功率</td></tr>
+<tr><td>笔记本</td><td class="m">SM30NB</td><td>-</td><td>OLED逻辑IC</td></tr>
+<tr><td>平板</td><td class="m">SM30TA/TB</td><td>-</td><td>电源IC + 逻辑IC</td></tr>
+<tr><td>电视</td><td class="m">SM48PM</td><td>-</td><td>OLED PMIC</td></tr>
+<tr><td>电视</td><td class="m">SM48LS</td><td>-</td><td>OLED电平转换器</td></tr>
+<tr><td>汽车</td><td class="m">SM30AA/AB</td><td>中/高</td><td>车规OLED电源IC</td></tr></table>
+</div>
+</div>
+
+</div>
+</body>
+</html>
